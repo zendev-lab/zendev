@@ -1,5 +1,5 @@
 name: Validate PR body
-description: Validate a PR body against required H2 section headings via zendev.
+description: Validate a PR body against required H2 section headings and optional checked checklist rows via zendev.
 
 inputs:
   body:
@@ -9,6 +9,18 @@ inputs:
     description: Path to the PR template file relative to the repo root.
     required: false
     default: ".github/pull_request_template.md"
+  require-checklist:
+    description: When true, require checked checklist rows from the template checklist section.
+    required: false
+    default: "false"
+  checklist-section:
+    description: H2 heading title (without leading ##) that contains the checklist rows.
+    required: false
+    default: "Checklist"
+  fail-on-empty-checklist:
+    description: When true, exit 1 if require-checklist is true and the template defines no `- [x]` rows.
+    required: false
+    default: "false"
 
 runs:
   using: composite
@@ -24,10 +36,19 @@ runs:
       env:
         INPUT_BODY: ${{ inputs.body }}
         INPUT_TEMPLATE: ${{ inputs.template }}
+        INPUT_REQUIRE_CHECKLIST: ${{ inputs.require-checklist }}
+        INPUT_CHECKLIST_SECTION: ${{ inputs.checklist-section }}
+        INPUT_FAIL_ON_EMPTY_CHECKLIST: ${{ inputs.fail-on-empty-checklist }}
       run: |
         set -euo pipefail
 
         zendev_root="$(cd "${GITHUB_ACTION_PATH}/../.." && pwd)"
         echo "Using zendev from ${zendev_root}"
-        uvx --from "${zendev_root}" \
-          zendev-validate-body "${INPUT_BODY}" --template "${INPUT_TEMPLATE}"
+        args=(zendev-validate-body "${INPUT_BODY}" --template "${INPUT_TEMPLATE}")
+        if [[ "${INPUT_REQUIRE_CHECKLIST}" == "true" ]]; then
+          args+=(--require-checklist --checklist-section "${INPUT_CHECKLIST_SECTION}")
+          if [[ "${INPUT_FAIL_ON_EMPTY_CHECKLIST}" == "true" ]]; then
+            args+=(--fail-on-empty-checklist)
+          fi
+        fi
+        uvx --from "${zendev_root}" "${args[@]}"

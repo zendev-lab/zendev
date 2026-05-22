@@ -83,16 +83,7 @@ jobs:
       - uses: ./actions/validate-body
         with:
           body: ${{ github.event.pull_request.body }}
-
-  checklist:
-    runs-on: ubuntu-latest
-    permissions:
-      pull-requests: read
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./actions/validate-checklist
-        with:
-          body: ${{ github.event.pull_request.body }}
+          require-checklist: "true"
 ```
 
 #### Use from another repository
@@ -106,7 +97,7 @@ jobs:
     permissions:
       pull-requests: read
     steps:
-      - uses: zendev-lab/zendev/actions/validate-title@v0.0.5
+      - uses: zendev-lab/zendev/actions/validate-title@v0.0.7
         with:
           text: ${{ github.event.pull_request.title }}
 ```
@@ -118,27 +109,18 @@ jobs:
     permissions:
       pull-requests: read
     steps:
-      - uses: zendev-lab/zendev/actions/validate-body@v0.0.5
-        with:
-          body: ${{ github.event.pull_request.body }}
-```
-
-[`actions/validate-checklist`](./actions/validate-checklist) runs `zendev-validate-checklist`,
-which parses every `- [x] …` row under `## Checklist` in your PR template and requires those
-exact lines (character-for-character except trailing newline handling) to appear in the PR body:
-
-```yaml
-jobs:
-  checklist:
-    runs-on: ubuntu-latest
-    permissions:
-      pull-requests: read
-    steps:
       - uses: actions/checkout@v4
-      - uses: zendev-lab/zendev/actions/validate-checklist@v0.0.5
+      - uses: zendev-lab/zendev/actions/validate-body@v0.0.7
         with:
           body: ${{ github.event.pull_request.body }}
+          require-checklist: "true"
 ```
+
+`actions/validate-body` validates the PR body's H2 sections against the repository PR template.
+When `require-checklist` is true, it also parses every `- [x] …` row under the configured
+`## Checklist` section and requires those exact lines (character-for-character except trailing
+newline handling) to appear in the PR body. Use `checklist-section` for a different H2 title and
+`fail-on-empty-checklist` to make a missing checklist section fail closed.
 
 Each composite action resolves its bundled zendev tree from `GITHUB_ACTION_PATH`
 (one level under `actions/`) and runs the matching CLI revision with `uvx --from`,
