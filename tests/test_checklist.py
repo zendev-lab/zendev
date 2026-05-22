@@ -1,13 +1,10 @@
-"""Tests for zendev-validate-checklist."""
+"""Tests for PR checklist extraction helpers."""
 
 from __future__ import annotations
-
-from pathlib import Path
 
 from zendev.checklist import (
     checklist_items_missing,
     extract_required_checked_tasks,
-    validate_checklist_cli,
 )
 
 _TEMPLATE = """\
@@ -57,46 +54,6 @@ def test_checklist_items_missing() -> None:
     assert missing == ["- [x] Second item here."]
 
 
-def test_validate_checklist_cli_success(tmp_path: Path) -> None:
-    template = tmp_path / "pull_request_template.md"
-    template.write_text(_TEMPLATE, encoding="utf-8")
-    body = "\n".join(
-        [
-            "## Checklist",
-            "",
-            "- [x] First item here.",
-            "- [x] Second item here.",
-            "",
-        ]
-    )
-    assert validate_checklist_cli([body, "--template", str(template)]) == 0
-
-
-def test_validate_checklist_cli_reports_missing(tmp_path: Path) -> None:
-    template = tmp_path / "pull_request_template.md"
-    template.write_text(_TEMPLATE, encoding="utf-8")
-    body = "## Checklist\n\n- [x] First item here.\n"
-    assert validate_checklist_cli([body, "--template", str(template)]) == 1
-
-
-def test_validate_checklist_cli_fail_on_empty(tmp_path: Path) -> None:
-    template = tmp_path / "t.md"
-    template.write_text("# no checklist\n", encoding="utf-8")
-    assert (
-        validate_checklist_cli(
-            [
-                "any",
-                "--template",
-                str(template),
-                "--fail-on-empty",
-            ]
-        )
-        == 1
-    )
-
-    assert validate_checklist_cli(["any", "--template", str(template)]) == 0
-
-
-def test_validate_checklist_cli_missing_template_is_noop(tmp_path: Path) -> None:
-    missing = tmp_path / "missing.md"
-    assert validate_checklist_cli(["body", "--template", str(missing)]) == 0
+def test_checklist_items_missing_empty_body() -> None:
+    required = ["- [x] First item here.", "- [x] Second item here."]
+    assert checklist_items_missing("", required) == required

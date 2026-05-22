@@ -15,7 +15,6 @@ zendev-commit = "zendev.commit:main"
 zendev-commit-msg = "zendev.commit:hook_main"
 zendev-validate-title = "zendev.title:main"
 zendev-validate-body = "zendev.body:main"
-zendev-validate-checklist = "zendev.checklist:main"
 
 [dependency-groups]
 dev = [
@@ -64,6 +63,9 @@ packages = ["src/zendev"]
 
 [tool.hatch.version]
 source = "vcs"
+
+[tool.hatch.version.raw-options]
+fallback_version = "0.0.0"
 
 [tool.pyright]
 typeCheckingMode = "standard"
