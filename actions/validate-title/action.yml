@@ -1,10 +1,14 @@
 name: Validate PR title
-description: Validate a PR title against zendev emoji commit conventions.
+description: Validate a PR title against a zendev, Conventional Commits, or gitmoji profile.
 
 inputs:
   text:
     description: Text to validate (for example github.event.pull_request.title).
     required: true
+  profile:
+    description: Commit profile (auto, zendev, conventional, or gitmoji).
+    required: false
+    default: "auto"
 
 runs:
   using: composite
@@ -19,9 +23,10 @@ runs:
       shell: bash
       env:
         INPUT_TEXT: ${{ inputs.text }}
+        INPUT_PROFILE: ${{ inputs.profile }}
       run: |
         set -euo pipefail
 
         zendev_root="$(cd "${GITHUB_ACTION_PATH}/../.." && pwd)"
         echo "Using zendev from ${zendev_root}"
-        uvx --from "${zendev_root}" zendev-validate-title "${INPUT_TEXT}"
+        uvx --from "${zendev_root}" zendev-validate-title --profile "${INPUT_PROFILE}" "${INPUT_TEXT}"

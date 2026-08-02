@@ -8,14 +8,17 @@ from pathlib import Path
 
 from zendev.commit import (
     EMOJI_MAP,
+    CommitProfile,
     ZendevAnswers,
     commit_msg_hook,
     format_commit_convention_help_body,
     is_valid_commit_message,
     message,
     report_invalid_commit_message,
+    resolve_commit_profile,
     schema_pattern,
     suggest_commit_message,
+    validate_commit_message,
 )
 
 
@@ -142,6 +145,41 @@ class TestCommitMessageValidation:
     def test_suggest_commit_message_ignores_unstructured_text(self) -> None:
         assert suggest_commit_message("ship it") is None
 
+    def test_conventional_profile_accepts_full_message_without_emoji(self) -> None:
+        message = "feat(api)!: replace the response envelope\n\nBREAKING CHANGE: use v2"
+
+        result = validate_commit_message(message, profile="conventional")
+
+        assert result.valid
+        assert result.profile is CommitProfile.CONVENTIONAL
+
+    def test_gitmoji_profile_accepts_shortcode(self) -> None:
+        result = validate_commit_message(":sparkles: (api): Add export support", profile="gitmoji")
+
+        assert result.valid
+        assert result.profile is CommitProfile.GITMOJI
+
+    def test_profiles_do_not_claim_cross_spec_compatibility(self) -> None:
+        assert not is_valid_commit_message("✨ feat: add export", profile="conventional")
+        assert not is_valid_commit_message("feat: add export", profile="gitmoji")
+
+    def test_autosquash_variants_are_allowed(self) -> None:
+        assert is_valid_commit_message("amend! ✨ feat: add export")
+        assert is_valid_commit_message("reword! ✨ feat: add export")
+
+    def test_scissors_and_custom_comment_character_are_removed(self) -> None:
+        message = "feat: add export\n\nBody\n; ------------------------ >8 ------------------------\n; ignored template"
+
+        assert is_valid_commit_message(message, profile="conventional", comment_char=";")
+
+    def test_profile_resolves_from_pyproject(self, tmp_path: Path) -> None:
+        (tmp_path / "pyproject.toml").write_text(
+            '[tool.zendev.commit]\nprofile = "gitmoji"\n',
+            encoding="utf-8",
+        )
+
+        assert resolve_commit_profile(start=tmp_path) is CommitProfile.GITMOJI
+
 
 class TestEmojiEnforcement:
     """Tests that emoji prefix is strictly validated — guards against regression."""
@@ -238,3 +276,19 @@ class TestCommitMsgHook:
         captured = capsys.readouterr()
         assert "An emoji prefix is required." in captured.err
         assert "Maybe you meant: `✨ feat: add export`." in captured.err
+
+    def test_commit_msg_hook_uses_explicit_conventional_profile(self, tmp_path: Path) -> None:
+        commit_file = tmp_path / "COMMIT_EDITMSG"
+        commit_file.write_text("feat: add export", encoding="utf-8")
+
+        assert commit_msg_hook(["--profile", "conventional", str(commit_file)]) == 0
+
+    def test_commit_msg_hook_loads_profile_from_pyproject(self, tmp_path: Path) -> None:
+        (tmp_path / "pyproject.toml").write_text(
+            '[tool.zendev.commit]\nprofile = "gitmoji"\n',
+            encoding="utf-8",
+        )
+        commit_file = tmp_path / "COMMIT_EDITMSG"
+        commit_file.write_text(":sparkles: Add export", encoding="utf-8")
+
+        assert commit_msg_hook([str(commit_file)]) == 0

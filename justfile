@@ -59,6 +59,10 @@ pre-commit:
 commit-msg:
     uvx prek run --stage commit-msg --commit-msg-filename .git/COMMIT_EDITMSG --files .git/COMMIT_EDITMSG
 
+# Refresh the offline gitmoji catalog from its pinned upstream revision
+sync-gitmoji:
+    uv run python scripts/sync_gitmoji.py
+
 # Display project information
 info:
     @echo "=== zendev ==="

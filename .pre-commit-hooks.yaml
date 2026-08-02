@@ -1,6 +1,6 @@
 - id: zendev-commit-msg
   name: zendev commit message
-  description: Validate commit messages against zendev emoji commit conventions.
+  description: Validate commit messages against zendev, Conventional Commits, or gitmoji profiles.
   entry: zendev-commit-msg
   language: python
   stages: [commit-msg]

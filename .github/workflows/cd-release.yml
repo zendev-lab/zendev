@@ -22,6 +22,13 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Verify release
+        run: |
+          uv sync --all-groups
+          uvx prek run --all-files
+          uv run pyright
+          uv run pytest -v
+
       - name: Build wheel
         run: uv build --wheel
 
