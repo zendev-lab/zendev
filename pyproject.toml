@@ -1,6 +1,6 @@
 [project]
 name = "zendev"
-description = "Personal dev workflow toolkit: unified logging + emoji commit conventions"
+description = "Personal dev workflow toolkit: unified logging and composable commit conventions"
 readme = "README.md"
 requires-python = ">=3.12"
 license = "MIT"
@@ -9,6 +9,11 @@ dependencies = [
   "questionary>=2.1",
 ]
 dynamic = ["version"]
+
+[project.urls]
+Homepage = "https://github.com/zendev-lab/zendev"
+Issues = "https://github.com/zendev-lab/zendev/issues"
+Repository = "https://github.com/zendev-lab/zendev"
 
 [project.scripts]
 zendev-commit = "zendev.commit:main"
@@ -106,6 +111,9 @@ quote-style = "double"
 indent-style = "space"
 skip-magic-trailing-comma = false
 line-ending = "auto"
+
+[tool.zendev.commit]
+profile = "zendev"
 
 [tool.uv]
 default-groups = ["check", "test"]

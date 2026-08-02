@@ -8,15 +8,19 @@ from pathlib import Path
 
 from zendev.commit import (
     EMOJI_MAP,
+    CommitProfile,
     ZendevAnswers,
     commit_msg_hook,
     format_commit_convention_help_body,
     is_valid_commit_message,
     message,
     report_invalid_commit_message,
+    resolve_commit_profile,
     schema_pattern,
     suggest_commit_message,
+    validate_commit_message,
 )
+from zendev.gitmoji import load_emoji_conventions
 
 
 def _answers(
@@ -40,21 +44,26 @@ def _answers(
 class TestEmojiMap:
     """Tests for emoji mapping."""
 
-    def test_all_types_have_emoji(self) -> None:
-        expected_types = {
-            "init",
-            "feat",
-            "fix",
-            "docs",
-            "refactor",
-            "test",
-            "ci",
-            "perf",
-            "chore",
-            "style",
-            "build",
+    def test_all_gitmoji_intentions_have_unique_types_and_emojis(self) -> None:
+        assert len(EMOJI_MAP) == 75
+        assert len(set(EMOJI_MAP.values())) == 75
+
+    def test_original_canonical_pairs_are_preserved(self) -> None:
+        expected_pairs = {
+            "init": "🎉",
+            "feat": "✨",
+            "fix": "🐛",
+            "docs": "📝",
+            "refactor": "♻️",
+            "test": "✅",
+            "ci": "👷",
+            "perf": "⚡️",
+            "chore": "🔧",
+            "style": "🎨",
+            "build": "📦️",
         }
-        assert set(EMOJI_MAP.keys()) == expected_types
+        for type_name, emoji in expected_pairs.items():
+            assert EMOJI_MAP[type_name] == emoji
 
     def test_emoji_values_are_nonempty(self) -> None:
         for type_name, emoji in EMOJI_MAP.items():
@@ -81,6 +90,10 @@ class TestMessage:
         msg = message(_answers(subject="new API", footer="migration guide", is_breaking_change=True))
         assert "BREAKING CHANGE" in msg
 
+    def test_message_supports_every_emoji_convention(self) -> None:
+        for commit_type, emoji in EMOJI_MAP.items():
+            assert message(_answers(prefix=commit_type)) == f"{emoji} {commit_type}: test"
+
 
 class TestSchemaPattern:
     """Tests for the schema_pattern() function."""
@@ -93,8 +106,11 @@ class TestSchemaPattern:
             "\U0001f4dd docs: update readme",
             "\u267b\ufe0f refactor(core): extract helper",
             "\U0001f389 init: begin project",
+            ":tada: init: begin project",
             "\u26a1 perf: optimize query",
             "\U0001f527 chore: update deps",
+            "🚀 deploy: publish package",
+            ":rocket: deploy: publish package",
         ]
         for msg in valid_messages:
             assert pattern.match(msg), f"Pattern should match: {msg}"
@@ -142,6 +158,41 @@ class TestCommitMessageValidation:
     def test_suggest_commit_message_ignores_unstructured_text(self) -> None:
         assert suggest_commit_message("ship it") is None
 
+    def test_conventional_profile_accepts_full_message_without_emoji(self) -> None:
+        message = "feat(api)!: replace the response envelope\n\nBREAKING CHANGE: use v2"
+
+        result = validate_commit_message(message, profile="conventional")
+
+        assert result.valid
+        assert result.profile is CommitProfile.CONVENTIONAL
+
+    def test_gitmoji_profile_accepts_shortcode(self) -> None:
+        result = validate_commit_message(":sparkles: (api): Add export support", profile="gitmoji")
+
+        assert result.valid
+        assert result.profile is CommitProfile.GITMOJI
+
+    def test_profiles_do_not_claim_cross_spec_compatibility(self) -> None:
+        assert not is_valid_commit_message("✨ feat: add export", profile="conventional")
+        assert not is_valid_commit_message("feat: add export", profile="gitmoji")
+
+    def test_autosquash_variants_are_allowed(self) -> None:
+        assert is_valid_commit_message("amend! ✨ feat: add export")
+        assert is_valid_commit_message("reword! ✨ feat: add export")
+
+    def test_scissors_and_custom_comment_character_are_removed(self) -> None:
+        message = "feat: add export\n\nBody\n; ------------------------ >8 ------------------------\n; ignored template"
+
+        assert is_valid_commit_message(message, profile="conventional", comment_char=";")
+
+    def test_profile_resolves_from_pyproject(self, tmp_path: Path) -> None:
+        (tmp_path / "pyproject.toml").write_text(
+            '[tool.zendev.commit]\nprofile = "gitmoji"\n',
+            encoding="utf-8",
+        )
+
+        assert resolve_commit_profile(start=tmp_path) is CommitProfile.GITMOJI
+
 
 class TestEmojiEnforcement:
     """Tests that emoji prefix is strictly validated — guards against regression."""
@@ -151,6 +202,23 @@ class TestEmojiEnforcement:
         for commit_type, emoji in EMOJI_MAP.items():
             msg = f"{emoji} {commit_type}: test subject"
             assert is_valid_commit_message(msg), f"Canonical pair should pass: {msg}"
+
+    def test_every_canonical_shortcode_type_pair_is_accepted(self) -> None:
+        for convention in load_emoji_conventions():
+            msg = f"{convention.gitmoji.code} {convention.type}: test subject"
+            assert is_valid_commit_message(msg), f"Canonical shortcode pair should pass: {msg}"
+
+    def test_begin_project_example_is_canonical(self) -> None:
+        assert is_valid_commit_message("🎉 init: begin a project")
+
+    def test_variation_selector_aliases_are_accepted(self) -> None:
+        assert is_valid_commit_message("⚡ perf: optimize query")
+        assert is_valid_commit_message("📦 build: package artifacts")
+
+    def test_token_requires_exactly_one_space_before_type(self) -> None:
+        assert not is_valid_commit_message("🎉  init: begin a project")
+        assert not is_valid_commit_message("🎉\ninit: begin a project")
+        assert not is_valid_commit_message(":tada:  init: begin a project")
 
     def test_non_emoji_prefix_rejected(self) -> None:
         """An arbitrary non-emoji token before the type must be rejected."""
@@ -167,8 +235,13 @@ class TestEmojiEnforcement:
     def test_schema_pattern_rejects_unknown_emoji(self) -> None:
         """An emoji not in EMOJI_MAP must not match the strict pattern."""
         pattern = re.compile(schema_pattern())
-        assert not pattern.match("🚀 feat: unknown emoji")
-        assert not pattern.match("💡 fix: unknown emoji")
+        assert not pattern.match("😀 feat: unknown emoji")
+        assert not pattern.match("🫠 fix: unknown emoji")
+
+    def test_schema_pattern_rejects_known_but_wrong_pair(self) -> None:
+        pattern = re.compile(schema_pattern())
+        assert not pattern.match("🚀 feat: wrong pair")
+        assert not pattern.match(":rocket: feat: wrong pair")
 
     def test_schema_pattern_relaxed_mode_still_accepts_missing_emoji(self) -> None:
         """require_emoji=False allows omitting the prefix entirely."""
@@ -238,3 +311,19 @@ class TestCommitMsgHook:
         captured = capsys.readouterr()
         assert "An emoji prefix is required." in captured.err
         assert "Maybe you meant: `✨ feat: add export`." in captured.err
+
+    def test_commit_msg_hook_uses_explicit_conventional_profile(self, tmp_path: Path) -> None:
+        commit_file = tmp_path / "COMMIT_EDITMSG"
+        commit_file.write_text("feat: add export", encoding="utf-8")
+
+        assert commit_msg_hook(["--profile", "conventional", str(commit_file)]) == 0
+
+    def test_commit_msg_hook_loads_profile_from_pyproject(self, tmp_path: Path) -> None:
+        (tmp_path / "pyproject.toml").write_text(
+            '[tool.zendev.commit]\nprofile = "gitmoji"\n',
+            encoding="utf-8",
+        )
+        commit_file = tmp_path / "COMMIT_EDITMSG"
+        commit_file.write_text(":sparkles: Add export", encoding="utf-8")
+
+        assert commit_msg_hook([str(commit_file)]) == 0

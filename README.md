@@ -1,20 +1,62 @@
 # zendev
 
-Personal dev workflow toolkit: unified logging + emoji commit conventions.
+Personal dev workflow toolkit: unified logging and composable commit-message conventions.
 
 ## Reusable `commit-msg` hook
 
-This repository now publishes a reusable `pre-commit`/`prek` hook: `zendev-commit-msg`.
+This repository publishes a reusable `pre-commit`/`prek` hook: `zendev-commit-msg`.
 
-It validates commit titles against zendev's emoji commit schema:
+The default `zendev` profile provides one strict, canonical type for every
+Gitmoji intention while preserving the original zendev pairs:
 
+- `🎉 init: begin a project`
 - `✨ feat: add export`
 - `🐛 fix(parser): handle null token`
 - `📝 docs: update README`
+- `🚀 deploy: publish the package`
 
-It also allows common git-generated commit messages such as merge, revert, `fixup!`, and `squash!`.
+It also allows common Git-generated merge, revert, and autosquash messages.
 
 Messages like `feat: add export` are rejected because the emoji prefix is required.
+
+### Commit profiles
+
+Select a profile in the consuming repository's `pyproject.toml`:
+
+```toml
+[tool.zendev.commit]
+profile = "conventional"
+```
+
+The hook and PR-title action share the same profiles:
+
+- `zendev` (default): 75 strict emoji/shortcode-to-type pairs—one for every
+  Gitmoji intention. For example, `🎉 init`, `✨ feat`, `🚀 deploy`, and
+  `🧵 concurrency` are valid; pairing those tokens with another type is rejected.
+- `conventional`: the complete [Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/)
+  shape, including optional scopes, `!`, multi-paragraph bodies,
+  `BREAKING CHANGE` / `BREAKING-CHANGE`, and Git-style footers.
+- `gitmoji`: the official [Gitmoji](https://gitmoji.dev/specification) title shape
+  with Unicode or shortcode intentions, optional scope, optional colon, and an
+  optional Git commit body.
+
+The Gitmoji catalog is vendored for deterministic, offline validation. It contains
+all 75 entries from the upstream commit pinned in
+[`scripts/sync_gitmoji.py`](./scripts/sync_gitmoji.py). Maintainers can refresh the
+snapshot with `just sync-gitmoji`; normal hook execution never uses the network.
+The vendored catalog retains Gitmoji's MIT license notice.
+
+The complete reviewable type mapping lives in
+[`emoji-conventions.toml`](./src/zendev/data/emoji-conventions.toml). Both Unicode
+tokens and Gitmoji shortcodes are accepted by the default profile, including
+`🎉 init: begin a project` and `:tada: init: begin a project`.
+
+An explicit CLI flag overrides repository configuration:
+
+```bash
+uvx --from zendev zendev-commit-msg --profile conventional .git/COMMIT_EDITMSG
+uvx --from zendev zendev-validate-title --profile gitmoji ":sparkles: Add export support"
+```
 
 ### Use from another repository
 
@@ -23,7 +65,7 @@ With `.pre-commit-config.yaml`:
 ```yaml
 repos:
   - repo: https://github.com/zendev-lab/zendev
-    rev: v0.0.5
+    rev: v0.1.0
     hooks:
       - id: zendev-commit-msg
 ```
@@ -33,7 +75,7 @@ With `prek.toml`:
 ```toml
 [[repos]]
 repo = "https://github.com/zendev-lab/zendev"
-rev = "v0.0.5"
+rev = "v0.1.0"
 hooks = [
   { id = "zendev-commit-msg" },
 ]
@@ -97,9 +139,11 @@ jobs:
     permissions:
       pull-requests: read
     steps:
-      - uses: zendev-lab/zendev/actions/validate-title@v0.0.7
+      - uses: actions/checkout@v4
+      - uses: zendev-lab/zendev/actions/validate-title@v0.1.0
         with:
           text: ${{ github.event.pull_request.title }}
+          profile: auto
 ```
 
 ```yaml
@@ -110,7 +154,7 @@ jobs:
       pull-requests: read
     steps:
       - uses: actions/checkout@v4
-      - uses: zendev-lab/zendev/actions/validate-body@v0.0.7
+      - uses: zendev-lab/zendev/actions/validate-body@v0.1.0
         with:
           body: ${{ github.event.pull_request.body }}
           require-checklist: "true"
