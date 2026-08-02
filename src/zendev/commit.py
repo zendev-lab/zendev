@@ -17,7 +17,7 @@ from typing import Literal, TextIO, TypedDict
 import questionary
 
 from zendev.conventional import ParseIssue, parse_conventional_commit
-from zendev.gitmoji import load_gitmojis, parse_gitmoji_commit
+from zendev.gitmoji import load_emoji_conventions, load_gitmojis, match_gitmoji, parse_gitmoji_commit
 
 __all__ = [
     "COMMIT_CONVENTION_EXAMPLES",
@@ -57,51 +57,16 @@ class ValidationResult:
     issue: ParseIssue | None = None
 
 
-EMOJI_MAP: dict[str, str] = {
-    "init": "\U0001f389",
-    "feat": "\u2728",
-    "fix": "\U0001f41b",
-    "docs": "\U0001f4dd",
-    "refactor": "\u267b\ufe0f",
-    "test": "\u2705",
-    "ci": "\U0001f477",
-    "perf": "\u26a1",
-    "chore": "\U0001f527",
-    "style": "\U0001f3a8",
-    "build": "\U0001f4e6",
-}
+_CONVENTIONS = load_emoji_conventions()
+_CONVENTION_BY_GITMOJI_NAME = {convention.gitmoji.name: convention for convention in _CONVENTIONS}
 
-_DESCRIPTIONS: dict[str, str] = {
-    "init": "Project initialization",
-    "feat": "A new feature",
-    "fix": "A bug fix",
-    "docs": "Documentation only changes",
-    "refactor": "A code change that neither fixes a bug nor adds a feature",
-    "test": "Adding missing or correcting existing tests",
-    "ci": "Changes to CI configuration files and scripts",
-    "perf": "A code change that improves performance",
-    "chore": "Other changes that don't modify src or test files",
-    "style": "Changes that do not affect the meaning of the code",
-    "build": "Changes that affect the build system or external dependencies",
-}
+EMOJI_MAP: dict[str, str] = {convention.type: convention.gitmoji.emoji for convention in _CONVENTIONS}
+_DESCRIPTIONS: dict[str, str] = {convention.type: convention.gitmoji.description for convention in _CONVENTIONS}
 
-# Short labels for CLI / CI help tables (single source with EMOJI_MAP).
-TYPE_SHORT_DESCRIPTIONS: dict[str, str] = {
-    "init": "Project initialization",
-    "feat": "New feature",
-    "fix": "Bug fix",
-    "refactor": "Refactoring",
-    "perf": "Performance",
-    "docs": "Documentation",
-    "test": "Tests",
-    "build": "Build / dependencies",
-    "ci": "CI configuration",
-    "chore": "Miscellaneous",
-    "style": "Code style",
-}
+# Short labels for CLI / CI help tables come directly from the vendored catalog.
+TYPE_SHORT_DESCRIPTIONS: dict[str, str] = dict(_DESCRIPTIONS)
 
-# Stable display order for help output (matches interactive type ordering intent).
-TYPE_DISPLAY_ORDER: tuple[str, ...] = (
+_LEGACY_DISPLAY_ORDER: tuple[str, ...] = (
     "init",
     "feat",
     "fix",
@@ -114,11 +79,15 @@ TYPE_DISPLAY_ORDER: tuple[str, ...] = (
     "chore",
     "style",
 )
+TYPE_DISPLAY_ORDER: tuple[str, ...] = _LEGACY_DISPLAY_ORDER + tuple(
+    convention.type for convention in _CONVENTIONS if convention.type not in _LEGACY_DISPLAY_ORDER
+)
 
 COMMIT_CONVENTION_EXAMPLES: tuple[str, ...] = (
+    "🎉 init: begin a project",
     "✨ feat: add JSON logging mode",
     "🐛 fix(parser): handle null token",
-    "📦 build: add pytest-cov dependency",
+    "🚀 deploy: publish the package",
 )
 
 BUMP_PATTERN = r"^((BREAKING[\-\ ]CHANGE|\w+)(\(.+\))?!?):"
@@ -217,18 +186,20 @@ def message(answers: ZendevAnswers) -> str:
 
 
 def schema_pattern(*, require_emoji: bool = True) -> str:
-    types = "|".join(EMOJI_MAP.keys())
+    types = "|".join(re.escape(name) for name in EMOJI_MAP)
     if require_emoji:
-        emojis = "|".join(re.escape(e) for e in EMOJI_MAP.values())
-        emoji_part = r"(" + emojis + r") "
+        pairs: list[str] = []
+        for convention in _CONVENTIONS:
+            gitmoji = convention.gitmoji
+            tokens = {gitmoji.emoji, gitmoji.emoji.replace("\ufe0f", ""), gitmoji.code}
+            token_pattern = "|".join(re.escape(token) for token in sorted(tokens, key=len, reverse=True))
+            pairs.append(r"(?:" + token_pattern + r") " + re.escape(convention.type))
+        header = r"(?:" + "|".join(pairs) + r")"
     else:
-        emoji_part = r"(\S+ )?"
+        header = r"(?:\S+ )?(?:" + types + r")"
     return (
         r"(?s)"
-        + emoji_part
-        + r"("
-        + types
-        + r")"
+        + header
         + r"(\(\S+\))?"  # optional scope
         + r"!?"
         + r": "
@@ -250,7 +221,7 @@ def normalize_commit_message(text: str, *, comment_char: str = "#") -> str:
 
 
 def _validate_zendev(normalized: str) -> ValidationResult:
-    match = re.fullmatch(schema_pattern(), normalized)
+    match = match_gitmoji(normalized)
     if match is None:
         without_emoji, _ = parse_conventional_commit(normalized)
         issue = (
@@ -263,15 +234,37 @@ def _validate_zendev(normalized: str) -> ValidationResult:
         )
         return ValidationResult(False, CommitProfile.ZENDEV, issue)
 
-    emoji_token = match.group(1).rstrip()
-    commit_type = match.group(2)
-    if EMOJI_MAP.get(commit_type) != emoji_token:
+    separator_end = len(match.token) + 1
+    if normalized[len(match.token)] != " " or separator_end >= len(normalized) or normalized[separator_end].isspace():
+        return ValidationResult(
+            False,
+            CommitProfile.ZENDEV,
+            ParseIssue(
+                "invalid-zendev-separator",
+                "The emoji or shortcode must be followed by exactly one space.",
+            ),
+        )
+
+    parsed, issue = parse_conventional_commit(match.remainder)
+    if parsed is None:
+        return ValidationResult(
+            False,
+            CommitProfile.ZENDEV,
+            issue
+            or ParseIssue(
+                "invalid-zendev-header",
+                "Expected <emoji-or-shortcode> <type>(<scope>)!: <description>.",
+            ),
+        )
+
+    expected_type = _CONVENTION_BY_GITMOJI_NAME[match.gitmoji.name].type
+    if parsed.header.type != expected_type:
         return ValidationResult(
             False,
             CommitProfile.ZENDEV,
             ParseIssue(
                 "emoji-type-mismatch",
-                f"{emoji_token} is not the configured emoji for type {commit_type!r}.",
+                f"{match.token} must be paired with type {expected_type!r}, not {parsed.header.type!r}.",
             ),
         )
     return ValidationResult(True, CommitProfile.ZENDEV)
@@ -314,11 +307,10 @@ def suggest_commit_message(text: str) -> str | None:
     normalized = normalize_commit_message(text)
     if not normalized or is_valid_commit_message(normalized):
         return None
-    if re.fullmatch(schema_pattern(require_emoji=False), normalized) is None:
+    parsed, _ = parse_conventional_commit(normalized)
+    if parsed is None:
         return None
-    first_token = normalized.split(":", 1)[0]
-    commit_type = first_token.split("(", 1)[0].rstrip("!")
-    emoji = EMOJI_MAP.get(commit_type)
+    emoji = EMOJI_MAP.get(parsed.header.type)
     if emoji is None:
         return None
     return f"{emoji} {normalized}"
@@ -326,10 +318,11 @@ def suggest_commit_message(text: str) -> str | None:
 
 def _format_type_table_lines() -> list[str]:
     lines: list[str] = []
+    type_width = max(map(len, TYPE_DISPLAY_ORDER))
     for name in TYPE_DISPLAY_ORDER:
         emoji = EMOJI_MAP[name]
         desc = TYPE_SHORT_DESCRIPTIONS[name]
-        lines.append(f"    {emoji} {name:8} {desc}")
+        lines.append(f"    {emoji} {name:{type_width}} {desc}")
     return lines
 
 
@@ -367,7 +360,8 @@ def format_commit_convention_help_body(
     else:
         parts = [
             "",
-            "  Expected: <emoji> <type>(<scope>): <description>",
+            "  Expected: <emoji-or-shortcode> <type>(<scope>)!: <description>",
+            f"  Catalog:  {len(_CONVENTIONS)} strict emoji-to-type pairs covering every Gitmoji intention",
             "",
             "  Type table:",
             *_format_type_table_lines(),
@@ -467,7 +461,8 @@ def ask() -> ZendevAnswers:
     """Interactively prompt the user for commit details."""
     choices = [
         questionary.Choice(title=f"{emoji} {name}: {_DESCRIPTIONS[name]}", value=name)
-        for name, emoji in EMOJI_MAP.items()
+        for name in TYPE_DISPLAY_ORDER
+        for emoji in (EMOJI_MAP[name],)
     ]
 
     prefix = questionary.select("Select the type of change you are committing", choices=choices).ask()

@@ -20,6 +20,7 @@ from zendev.commit import (
     suggest_commit_message,
     validate_commit_message,
 )
+from zendev.gitmoji import load_emoji_conventions
 
 
 def _answers(
@@ -43,21 +44,26 @@ def _answers(
 class TestEmojiMap:
     """Tests for emoji mapping."""
 
-    def test_all_types_have_emoji(self) -> None:
-        expected_types = {
-            "init",
-            "feat",
-            "fix",
-            "docs",
-            "refactor",
-            "test",
-            "ci",
-            "perf",
-            "chore",
-            "style",
-            "build",
+    def test_all_gitmoji_intentions_have_unique_types_and_emojis(self) -> None:
+        assert len(EMOJI_MAP) == 75
+        assert len(set(EMOJI_MAP.values())) == 75
+
+    def test_original_canonical_pairs_are_preserved(self) -> None:
+        expected_pairs = {
+            "init": "🎉",
+            "feat": "✨",
+            "fix": "🐛",
+            "docs": "📝",
+            "refactor": "♻️",
+            "test": "✅",
+            "ci": "👷",
+            "perf": "⚡️",
+            "chore": "🔧",
+            "style": "🎨",
+            "build": "📦️",
         }
-        assert set(EMOJI_MAP.keys()) == expected_types
+        for type_name, emoji in expected_pairs.items():
+            assert EMOJI_MAP[type_name] == emoji
 
     def test_emoji_values_are_nonempty(self) -> None:
         for type_name, emoji in EMOJI_MAP.items():
@@ -84,6 +90,10 @@ class TestMessage:
         msg = message(_answers(subject="new API", footer="migration guide", is_breaking_change=True))
         assert "BREAKING CHANGE" in msg
 
+    def test_message_supports_every_emoji_convention(self) -> None:
+        for commit_type, emoji in EMOJI_MAP.items():
+            assert message(_answers(prefix=commit_type)) == f"{emoji} {commit_type}: test"
+
 
 class TestSchemaPattern:
     """Tests for the schema_pattern() function."""
@@ -96,8 +106,11 @@ class TestSchemaPattern:
             "\U0001f4dd docs: update readme",
             "\u267b\ufe0f refactor(core): extract helper",
             "\U0001f389 init: begin project",
+            ":tada: init: begin project",
             "\u26a1 perf: optimize query",
             "\U0001f527 chore: update deps",
+            "🚀 deploy: publish package",
+            ":rocket: deploy: publish package",
         ]
         for msg in valid_messages:
             assert pattern.match(msg), f"Pattern should match: {msg}"
@@ -190,6 +203,23 @@ class TestEmojiEnforcement:
             msg = f"{emoji} {commit_type}: test subject"
             assert is_valid_commit_message(msg), f"Canonical pair should pass: {msg}"
 
+    def test_every_canonical_shortcode_type_pair_is_accepted(self) -> None:
+        for convention in load_emoji_conventions():
+            msg = f"{convention.gitmoji.code} {convention.type}: test subject"
+            assert is_valid_commit_message(msg), f"Canonical shortcode pair should pass: {msg}"
+
+    def test_begin_project_example_is_canonical(self) -> None:
+        assert is_valid_commit_message("🎉 init: begin a project")
+
+    def test_variation_selector_aliases_are_accepted(self) -> None:
+        assert is_valid_commit_message("⚡ perf: optimize query")
+        assert is_valid_commit_message("📦 build: package artifacts")
+
+    def test_token_requires_exactly_one_space_before_type(self) -> None:
+        assert not is_valid_commit_message("🎉  init: begin a project")
+        assert not is_valid_commit_message("🎉\ninit: begin a project")
+        assert not is_valid_commit_message(":tada:  init: begin a project")
+
     def test_non_emoji_prefix_rejected(self) -> None:
         """An arbitrary non-emoji token before the type must be rejected."""
         assert not is_valid_commit_message("X feat: add feature")
@@ -205,8 +235,13 @@ class TestEmojiEnforcement:
     def test_schema_pattern_rejects_unknown_emoji(self) -> None:
         """An emoji not in EMOJI_MAP must not match the strict pattern."""
         pattern = re.compile(schema_pattern())
-        assert not pattern.match("🚀 feat: unknown emoji")
-        assert not pattern.match("💡 fix: unknown emoji")
+        assert not pattern.match("😀 feat: unknown emoji")
+        assert not pattern.match("🫠 fix: unknown emoji")
+
+    def test_schema_pattern_rejects_known_but_wrong_pair(self) -> None:
+        pattern = re.compile(schema_pattern())
+        assert not pattern.match("🚀 feat: wrong pair")
+        assert not pattern.match(":rocket: feat: wrong pair")
 
     def test_schema_pattern_relaxed_mode_still_accepts_missing_emoji(self) -> None:
         """require_emoji=False allows omitting the prefix entirely."""

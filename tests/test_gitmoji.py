@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from zendev.gitmoji import load_gitmojis, parse_gitmoji_commit
+from zendev.gitmoji import load_emoji_conventions, load_gitmojis, parse_gitmoji_commit
 
 
 def test_catalog_is_complete_and_unique() -> None:
@@ -13,6 +13,15 @@ def test_catalog_is_complete_and_unique() -> None:
     assert len(catalog) == 75
     assert len({item.emoji for item in catalog}) == len(catalog)
     assert len({item.code for item in catalog}) == len(catalog)
+
+
+def test_emoji_convention_covers_catalog_with_unique_types() -> None:
+    conventions = load_emoji_conventions()
+
+    assert len(conventions) == 75
+    assert {item.gitmoji for item in conventions} == set(load_gitmojis())
+    assert len({item.type for item in conventions}) == len(conventions)
+    assert next(item for item in conventions if item.gitmoji.name == "tada").type == "init"
 
 
 @pytest.mark.parametrize("token_kind", ["emoji", "code"])

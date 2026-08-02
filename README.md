@@ -6,12 +6,14 @@ Personal dev workflow toolkit: unified logging and composable commit-message con
 
 This repository publishes a reusable `pre-commit`/`prek` hook: `zendev-commit-msg`.
 
-The default `zendev` profile preserves the strict emoji-to-type schema used by
-earlier releases:
+The default `zendev` profile provides one strict, canonical type for every
+Gitmoji intention while preserving the original zendev pairs:
 
+- `🎉 init: begin a project`
 - `✨ feat: add export`
 - `🐛 fix(parser): handle null token`
 - `📝 docs: update README`
+- `🚀 deploy: publish the package`
 
 It also allows common Git-generated merge, revert, and autosquash messages.
 
@@ -28,7 +30,9 @@ profile = "conventional"
 
 The hook and PR-title action share the same profiles:
 
-- `zendev` (default): zendev's backwards-compatible, strict emoji-to-type pairs.
+- `zendev` (default): 75 strict emoji/shortcode-to-type pairs—one for every
+  Gitmoji intention. For example, `🎉 init`, `✨ feat`, `🚀 deploy`, and
+  `🧵 concurrency` are valid; pairing those tokens with another type is rejected.
 - `conventional`: the complete [Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/)
   shape, including optional scopes, `!`, multi-paragraph bodies,
   `BREAKING CHANGE` / `BREAKING-CHANGE`, and Git-style footers.
@@ -41,6 +45,11 @@ all 75 entries from the upstream commit pinned in
 [`scripts/sync_gitmoji.py`](./scripts/sync_gitmoji.py). Maintainers can refresh the
 snapshot with `just sync-gitmoji`; normal hook execution never uses the network.
 The vendored catalog retains Gitmoji's MIT license notice.
+
+The complete reviewable type mapping lives in
+[`emoji-conventions.toml`](./src/zendev/data/emoji-conventions.toml). Both Unicode
+tokens and Gitmoji shortcodes are accepted by the default profile, including
+`🎉 init: begin a project` and `:tada: init: begin a project`.
 
 An explicit CLI flag overrides repository configuration:
 
