@@ -6,6 +6,7 @@ import argparse
 import re
 import sys
 from collections.abc import Sequence
+from dataclasses import dataclass
 from pathlib import Path
 from typing import TextIO
 
@@ -18,6 +19,15 @@ from zendev.commit import format_commit_convention_help_body
 from zendev.markdown_scan import iter_lines_outside_fences
 
 REQUIRED_SECTIONS: tuple[str, ...] = ("Summary", "Validation", "Notes")
+_SECTION_DIRECTIVE_RE = re.compile(r"^<!--\s*pr-body:(required|optional)\s*-->$")
+
+
+@dataclass(frozen=True)
+class BodySection:
+    """One H2 section declared by a PR template."""
+
+    heading: str
+    required: bool = True
 
 
 def _extract_h2_headings(text: str) -> list[str]:
@@ -30,34 +40,99 @@ def _extract_h2_headings(text: str) -> list[str]:
     return headings
 
 
-def _load_template_headings(template_path: Path | None) -> list[str]:
-    """Return required H2 headings from the PR template file, or fall back to defaults."""
+def _extract_template_sections(text: str) -> list[BodySection]:
+    """Parse H2 sections and optional requirement directives from a PR template."""
+    sections: list[BodySection] = []
+    pending_requirement: bool | None = None
+
+    for line in iter_lines_outside_fences(text):
+        stripped = line.strip()
+        directive = _SECTION_DIRECTIVE_RE.fullmatch(stripped)
+        if directive is not None:
+            if pending_requirement is not None:
+                raise ValueError("multiple pr-body directives appear before the same H2 section")
+            pending_requirement = directive.group(1) == "required"
+            continue
+
+        if not re.match(r"^##\s+\S", stripped):
+            continue
+
+        heading = re.sub(r"^##\s+", "", stripped)
+        sections.append(
+            BodySection(
+                heading=heading,
+                required=True if pending_requirement is None else pending_requirement,
+            )
+        )
+        pending_requirement = None
+
+    if pending_requirement is not None:
+        raise ValueError("pr-body directive is not followed by an H2 section")
+
+    headings = [section.heading for section in sections]
+    if len(headings) != len(set(headings)):
+        raise ValueError("PR template H2 headings must be unique")
+
+    return sections
+
+
+def _load_template_sections(template_path: Path | None) -> list[BodySection]:
+    """Return PR template H2 requirements, or fall back to the legacy required defaults."""
     if template_path is not None and template_path.is_file():
-        return _extract_h2_headings(template_path.read_text(encoding="utf-8"))
-    return list(REQUIRED_SECTIONS)
+        return _extract_template_sections(template_path.read_text(encoding="utf-8"))
+    return [BodySection(heading) for heading in REQUIRED_SECTIONS]
 
 
-def validate_body(body: str, required_headings: list[str]) -> tuple[bool, list[str]]:
+def _coerce_sections(sections: Sequence[BodySection | str]) -> list[BodySection]:
+    return [section if isinstance(section, BodySection) else BodySection(section) for section in sections]
+
+
+def validate_body(body: str, sections: Sequence[BodySection | str]) -> tuple[bool, list[str]]:
     """Validate PR body sections. Returns (is_valid, actual_headings)."""
+    expected = _coerce_sections(sections)
     actual = _extract_h2_headings(body)
-    return actual == required_headings, actual
+
+    expected_headings = [section.heading for section in expected]
+    if len(expected_headings) != len(set(expected_headings)):
+        return False, actual
+    if len(actual) != len(set(actual)):
+        return False, actual
+
+    positions = {heading: index for index, heading in enumerate(expected_headings)}
+    if any(heading not in positions for heading in actual):
+        return False, actual
+
+    actual_positions = [positions[heading] for heading in actual]
+    if actual_positions != sorted(actual_positions):
+        return False, actual
+
+    actual_set = set(actual)
+    if any(section.required and section.heading not in actual_set for section in expected):
+        return False, actual
+
+    return True, actual
 
 
 def report_invalid_body(
     actual: list[str],
-    expected: list[str],
+    expected: Sequence[BodySection],
     *,
     file: TextIO,
 ) -> None:
+    expected_headings = [section.heading for section in expected]
+    required_headings = [section.heading for section in expected if section.required]
+    optional_headings = [section.heading for section in expected if not section.required]
+
     print("::error::PR body headings do not match the repository template.", file=file)
-    print(f"\n  Expected headings: {expected}", file=file)
+    print(f"\n  Template order:    {expected_headings}", file=file)
+    print(f"  Required headings: {required_headings}", file=file)
+    print(f"  Optional headings: {optional_headings}", file=file)
     print(f"  Actual headings:   {actual}", file=file)
     print(file=file)
-    print("  Each PR body should contain exactly these H2 sections:", file=file)
-    for section in expected:
-        print(f"    ## {section}", file=file)
+    print("  Undeclared template H2 sections are required by default.", file=file)
+    print("  Prefix an optional template section with `<!-- pr-body:optional -->`.", file=file)
     print(file=file)
-    print("  Commit convention reference (for the Summary section):", file=file)
+    print("  Commit convention reference (for the first required section):", file=file)
     print(format_commit_convention_help_body(include_special_prefix_note=False), file=file)
 
 
@@ -124,15 +199,21 @@ def validate_body_cli(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     template_path = Path(args.template)
-    required = _load_template_headings(template_path)
+    try:
+        sections = _load_template_sections(template_path)
+    except ValueError as exc:
+        print(f"::error::Invalid PR template: {exc}")
+        return 1
 
     print("::group::PR / body check")
-    print(f"Required headings: {required}")
+    print(f"Template headings: {[section.heading for section in sections]}")
+    print(f"Required headings: {[section.heading for section in sections if section.required]}")
+    print(f"Optional headings: {[section.heading for section in sections if not section.required]}")
     print("::endgroup::")
 
-    is_valid, actual = validate_body(args.body, required)
+    is_valid, actual = validate_body(args.body, sections)
     if not is_valid:
-        report_invalid_body(actual, required, file=sys.stdout)
+        report_invalid_body(actual, sections, file=sys.stdout)
         return 1
 
     print("PR body headings are valid.")

@@ -1,5 +1,5 @@
 name: Validate PR body
-description: Validate a PR body against required H2 section headings and optional checked checklist rows via zendev.
+description: Validate required-by-default and explicitly optional PR template H2 sections plus optional checked checklist rows via zendev.
 
 inputs:
   body:
