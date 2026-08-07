@@ -161,7 +161,13 @@ jobs:
 ```
 
 `actions/validate-body` validates the PR body's H2 sections against the repository PR template.
-When `require-checklist` is true, it also parses every `- [x] …` row under the configured
+Every template H2 is required by default. Prefix an optional H2 with
+`<!-- pr-body:optional -->`; `<!-- pr-body:required -->` is accepted when an explicit marker is
+useful. Optional sections may be omitted from the PR body, but present sections must remain in
+template order and the body may not introduce undeclared or duplicate H2 headings. Directives
+inside fenced code blocks are ignored, and ambiguous or dangling directives fail closed.
+
+When `require-checklist` is true, the action also parses every `- [x] …` row under the configured
 `## Checklist` section and requires those exact lines (character-for-character except trailing
 newline handling) to appear in the PR body. Use `checklist-section` for a different H2 title and
 `fail-on-empty-checklist` to make a missing checklist section fail closed.
