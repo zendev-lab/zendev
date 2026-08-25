@@ -4,13 +4,17 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from typer.testing import CliRunner
+
 from zendev.body import (
     BodySection,
     _extract_h2_headings,
     _extract_template_sections,
+    app,
     validate_body,
-    validate_body_cli,
 )
+
+runner = CliRunner()
 
 VALID_BODY = """\
 ## Summary
@@ -190,21 +194,28 @@ def test_validate_body_cli_supports_optional_template_sections(tmp_path: Path) -
     template.write_text(OPTIONAL_TEMPLATE, encoding="utf-8")
     body = "## Why\n\nReason.\n\n## What changed\n\nChange.\n"
 
-    assert validate_body_cli([body, "--template", str(template)]) == 0
+    result = runner.invoke(app, [body, "--template", str(template)])
+
+    assert result.exit_code == 0
 
 
 def test_validate_body_cli_rejects_invalid_template_directive(tmp_path: Path) -> None:
     template = tmp_path / "pull_request_template.md"
     template.write_text("## Summary\n\n<!-- pr-body:optional -->\n", encoding="utf-8")
 
-    assert validate_body_cli(["## Summary\n", "--template", str(template)]) == 1
+    result = runner.invoke(app, ["## Summary\n", "--template", str(template)])
+
+    assert result.exit_code == 1
+    assert "Invalid PR template" in result.output
 
 
 def test_validate_body_cli_success_with_required_checklist(tmp_path: Path) -> None:
     template = tmp_path / "pull_request_template.md"
     template.write_text(CHECKLIST_TEMPLATE, encoding="utf-8")
 
-    assert validate_body_cli([CHECKLIST_BODY, "--template", str(template), "--require-checklist"]) == 0
+    result = runner.invoke(app, [CHECKLIST_BODY, "--template", str(template), "--require-checklist"])
+
+    assert result.exit_code == 0
 
 
 def test_validate_body_cli_reports_missing_required_checklist_item(tmp_path: Path) -> None:
@@ -212,24 +223,28 @@ def test_validate_body_cli_reports_missing_required_checklist_item(tmp_path: Pat
     template.write_text(CHECKLIST_TEMPLATE, encoding="utf-8")
     body = CHECKLIST_BODY.replace("- [x] Second item here.\n", "")
 
-    assert validate_body_cli([body, "--template", str(template), "--require-checklist"]) == 1
+    result = runner.invoke(app, [body, "--template", str(template), "--require-checklist"])
+
+    assert result.exit_code == 1
+    assert "missing required checked checklist items" in result.output
 
 
 def test_validate_body_cli_fail_on_empty_required_checklist(tmp_path: Path) -> None:
     template = tmp_path / "pull_request_template.md"
     template.write_text(VALID_BODY, encoding="utf-8")
 
-    assert (
-        validate_body_cli(
-            [
-                VALID_BODY,
-                "--template",
-                str(template),
-                "--require-checklist",
-                "--fail-on-empty-checklist",
-            ]
-        )
-        == 1
+    strict = runner.invoke(
+        app,
+        [
+            VALID_BODY,
+            "--template",
+            str(template),
+            "--require-checklist",
+            "--fail-on-empty-checklist",
+        ],
     )
+    permissive = runner.invoke(app, [VALID_BODY, "--template", str(template), "--require-checklist"])
 
-    assert validate_body_cli([VALID_BODY, "--template", str(template), "--require-checklist"]) == 0
+    assert strict.exit_code == 1
+    assert "configured to fail" in strict.output
+    assert permissive.exit_code == 0

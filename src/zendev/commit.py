@@ -2,19 +2,18 @@
 
 from __future__ import annotations
 
-import argparse
 import re
 import subprocess
 import sys
 import tomllib
 from collections import OrderedDict
-from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
-from typing import Literal, TextIO, TypedDict
+from typing import Annotated, Literal, TextIO, TypedDict
 
 import questionary
+import typer
 
 from zendev.conventional import ParseIssue, parse_conventional_commit
 from zendev.gitmoji import load_emoji_conventions, load_gitmojis, match_gitmoji, parse_gitmoji_commit
@@ -25,11 +24,13 @@ __all__ = [
     "TYPE_DISPLAY_ORDER",
     "TYPE_SHORT_DESCRIPTIONS",
     "CommitProfile",
+    "CommitProfileSelection",
     "ValidationResult",
     "ZendevAnswers",
     "ask",
-    "commit_msg_hook",
+    "commit_app",
     "format_commit_convention_help_body",
+    "hook_app",
     "hook_main",
     "is_valid_commit_message",
     "main",
@@ -48,6 +49,29 @@ class CommitProfile(StrEnum):
     ZENDEV = "zendev"
     CONVENTIONAL = "conventional"
     GITMOJI = "gitmoji"
+
+
+class CommitProfileSelection(StrEnum):
+    """CLI values include automatic repository configuration discovery."""
+
+    AUTO = "auto"
+    ZENDEV = "zendev"
+    CONVENTIONAL = "conventional"
+    GITMOJI = "gitmoji"
+
+
+commit_app = typer.Typer(
+    add_completion=False,
+    help="Create a commit using zendev's interactive message convention.",
+    pretty_exceptions_enable=False,
+    rich_markup_mode=None,
+)
+hook_app = typer.Typer(
+    add_completion=False,
+    help="Validate a commit message against a configured profile.",
+    pretty_exceptions_enable=False,
+    rich_markup_mode=None,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -116,8 +140,21 @@ def _configured_commit_profile(start: Path | None = None) -> CommitProfile | Non
         config_path = directory / "pyproject.toml"
         if not config_path.is_file():
             continue
-        payload = tomllib.loads(config_path.read_text(encoding="utf-8"))
-        value = payload.get("tool", {}).get("zendev", {}).get("commit", {}).get("profile")
+        try:
+            payload = tomllib.loads(config_path.read_text(encoding="utf-8"))
+        except (OSError, tomllib.TOMLDecodeError) as error:
+            raise ValueError(f"{config_path}: failed to load commit profile ({error}).") from error
+
+        tool = payload.get("tool", {})
+        if not isinstance(tool, dict):
+            raise ValueError(f"{config_path}: tool must be a TOML table.")
+        zendev = tool.get("zendev", {})
+        if not isinstance(zendev, dict):
+            raise ValueError(f"{config_path}: tool.zendev must be a TOML table.")
+        commit = zendev.get("commit", {})
+        if not isinstance(commit, dict):
+            raise ValueError(f"{config_path}: tool.zendev.commit must be a TOML table.")
+        value = commit.get("profile")
         if value is None:
             return None
         if not isinstance(value, str):
@@ -409,31 +446,38 @@ def report_invalid_commit_message(
     print(f"Received: {received_line!r}", file=file)
 
 
-def commit_msg_hook(argv: Sequence[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(
-        prog="zendev-commit-msg",
-        description="Validate commit messages against a zendev, Conventional Commits, or gitmoji profile.",
-    )
-    parser.add_argument(
-        "--profile",
-        choices=("auto", *(profile.value for profile in CommitProfile)),
-        default="auto",
-        help="Validation profile; auto reads [tool.zendev.commit] and falls back to zendev.",
-    )
-    parser.add_argument("commit_msg_file", help="Path to the commit message file provided by git/pre-commit.")
-    args = parser.parse_args(argv)
+@hook_app.command()
+def commit_message(
+    commit_msg_file: Annotated[
+        Path,
+        typer.Argument(
+            exists=True,
+            file_okay=True,
+            dir_okay=False,
+            readable=True,
+            help="Path to the commit message file provided by Git or the hook runner.",
+        ),
+    ],
+    profile: Annotated[
+        CommitProfileSelection,
+        typer.Option(
+            "--profile",
+            help="Validation profile; auto reads [tool.zendev.commit] and falls back to zendev.",
+        ),
+    ] = CommitProfileSelection.AUTO,
+) -> None:
+    """Validate the message file supplied by Git or a hook runner."""
 
-    commit_path = Path(args.commit_msg_file)
     try:
-        selected = resolve_commit_profile(args.profile, start=commit_path.parent)
+        selected = resolve_commit_profile(profile.value, start=commit_msg_file.parent)
     except ValueError as error:
-        parser.error(str(error))
-    message_text = commit_path.read_text(encoding="utf-8")
-    comment_char = _git_comment_char(commit_path.parent)
+        raise typer.BadParameter(str(error), param_hint="--profile") from error
+    message_text = commit_msg_file.read_text(encoding="utf-8")
+    comment_char = _git_comment_char(commit_msg_file.parent)
     normalized = normalize_commit_message(message_text, comment_char=comment_char)
     result = validate_commit_message(normalized, profile=selected, comment_char=comment_char)
     if result.valid:
-        return 0
+        return
 
     report_invalid_commit_message(
         normalized,
@@ -442,7 +486,7 @@ def commit_msg_hook(argv: Sequence[str] | None = None) -> int:
         profile=selected,
         result=result,
     )
-    return 1
+    raise typer.Exit(code=1)
 
 
 def _git_comment_char(cwd: Path) -> str:
@@ -501,19 +545,28 @@ def ask() -> ZendevAnswers:
     )
 
 
-def main() -> None:
-    """Entry point for zendev-commit."""
+@commit_app.command()
+def create_commit() -> None:
+    """Prompt for a commit message and invoke Git."""
+
     try:
         answers = ask()
     except KeyboardInterrupt:
         print("\nAborted.")
-        sys.exit(1)
+        raise typer.Exit(code=1) from None
 
     msg = message(answers)
     result = subprocess.run(["git", "commit", "-m", msg], check=False)
-    sys.exit(result.returncode)
+    raise typer.Exit(code=result.returncode)
+
+
+def main() -> None:
+    """Run the interactive commit CLI."""
+
+    commit_app(prog_name="zendev-commit")
 
 
 def hook_main() -> None:
-    """Entry point for the reusable commit-msg hook."""
-    sys.exit(commit_msg_hook())
+    """Run the reusable commit-msg hook CLI."""
+
+    hook_app(prog_name="zendev-commit-msg")

@@ -3,11 +3,12 @@
 
 from __future__ import annotations
 
-import argparse
 import json
 import urllib.request
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any
+
+import typer
 
 DEFAULT_UPSTREAM_COMMIT = "3022406c3c0f0631572b50c7722a7f2a0bed1541"
 DEFAULT_SOURCE_URL = (
@@ -15,6 +16,13 @@ DEFAULT_SOURCE_URL = (
     f"{DEFAULT_UPSTREAM_COMMIT}/packages/gitmojis/src/gitmojis.json"
 )
 DEFAULT_OUTPUT = Path(__file__).parents[1] / "src" / "zendev" / "data" / "gitmojis.json"
+
+app = typer.Typer(
+    add_completion=False,
+    help=__doc__,
+    pretty_exceptions_enable=False,
+    rich_markup_mode=None,
+)
 
 
 def _validated_catalog(payload: Any) -> dict[str, Any]:
@@ -42,18 +50,23 @@ def _validated_catalog(payload: Any) -> dict[str, Any]:
     }
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT, help="Vendored catalog path.")
-    args = parser.parse_args()
+@app.command()
+def sync_catalog(
+    output: Annotated[Path, typer.Option("--output", help="Vendored catalog path.")] = DEFAULT_OUTPUT,
+) -> None:
+    """Refresh the pinned catalog after validating its external payload."""
 
     with urllib.request.urlopen(DEFAULT_SOURCE_URL, timeout=30) as response:
         payload = json.load(response)
 
     catalog = _validated_catalog(payload)
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(catalog, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print(f"Wrote {len(catalog['gitmojis'])} gitmojis to {args.output}")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(json.dumps(catalog, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    print(f"Wrote {len(catalog['gitmojis'])} gitmojis to {output}")
+
+
+def main() -> None:
+    app(prog_name="sync-gitmoji")
 
 
 if __name__ == "__main__":

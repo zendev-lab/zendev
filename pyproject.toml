@@ -1,12 +1,15 @@
 [project]
 name = "zendev"
-description = "Personal dev workflow toolkit: unified logging and composable commit conventions"
+description = "Personal dev workflow toolkit for commits, reviews, and repository-native proposals"
 readme = "README.md"
 requires-python = ">=3.12"
 license = "MIT"
 dependencies = [
+  "jsonschema[format-nongpl]>=4.23",
   "loguru>=0.7",
+  "pyyaml>=6.0",
   "questionary>=2.1",
+  "typer>=0.27",
 ]
 dynamic = ["version"]
 
@@ -20,6 +23,7 @@ zendev-commit = "zendev.commit:main"
 zendev-commit-msg = "zendev.commit:hook_main"
 zendev-validate-title = "zendev.title:main"
 zendev-validate-body = "zendev.body:main"
+zendev-proposal = "zendev.proposal.cli:main"
 
 [dependency-groups]
 dev = [

@@ -9,7 +9,6 @@ from typing import TextIO
 
 from zendev.markdown_scan import iter_lines_outside_fences
 
-# Markdown task row marked checked in the template (expected to be copied into the PR unchanged).
 _CHECKED_TASK_RE = re.compile(r"^\s*-\s*\[x\]\s+.+$")
 
 

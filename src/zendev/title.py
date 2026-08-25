@@ -2,39 +2,46 @@
 
 from __future__ import annotations
 
-import argparse
 import sys
-from collections.abc import Sequence
+from typing import Annotated
+
+import typer
 
 from zendev.commit import (
-    CommitProfile,
+    CommitProfileSelection,
     normalize_commit_message,
     report_invalid_commit_message,
     resolve_commit_profile,
     validate_commit_message,
 )
 
+app = typer.Typer(
+    add_completion=False,
+    help="Validate a PR title against a configured commit profile.",
+    pretty_exceptions_enable=False,
+    rich_markup_mode=None,
+)
 
-def validate_title_cli(argv: Sequence[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(
-        prog="zendev-validate-title",
-        description="Validate a PR title against a configured commit profile.",
-    )
-    parser.add_argument(
-        "--profile",
-        choices=("auto", *(profile.value for profile in CommitProfile)),
-        default="auto",
-        help="Validation profile; auto reads [tool.zendev.commit] and falls back to zendev.",
-    )
-    parser.add_argument("text", help="PR title text to validate.")
-    args = parser.parse_args(argv)
+
+@app.command()
+def validate_title(
+    text: Annotated[str, typer.Argument(help="PR title text to validate.")],
+    profile: Annotated[
+        CommitProfileSelection,
+        typer.Option(
+            "--profile",
+            help="Validation profile; auto reads [tool.zendev.commit] and falls back to zendev.",
+        ),
+    ] = CommitProfileSelection.AUTO,
+) -> None:
+    """Validate one PR title using the selected commit profile."""
 
     try:
-        selected = resolve_commit_profile(args.profile)
+        selected = resolve_commit_profile(profile.value)
     except ValueError as error:
-        parser.error(str(error))
+        raise typer.BadParameter(str(error), param_hint="--profile") from error
 
-    normalized = normalize_commit_message(args.text)
+    normalized = normalize_commit_message(text)
     print("::group::PR / title check")
     print(f"Text: {normalized!r}")
     print("::endgroup::")
@@ -42,7 +49,7 @@ def validate_title_cli(argv: Sequence[str] | None = None) -> int:
     result = validate_commit_message(normalized, profile=selected)
     if result.valid:
         print("Title format is valid.")
-        return 0
+        return
 
     report_invalid_commit_message(
         normalized,
@@ -51,8 +58,8 @@ def validate_title_cli(argv: Sequence[str] | None = None) -> int:
         profile=selected,
         result=result,
     )
-    return 1
+    raise typer.Exit(code=1)
 
 
 def main() -> None:
-    sys.exit(validate_title_cli())
+    app(prog_name="zendev-validate-title")

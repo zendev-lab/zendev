@@ -6,12 +6,14 @@ import io
 import re
 from pathlib import Path
 
+from typer.testing import CliRunner
+
 from zendev.commit import (
     EMOJI_MAP,
     CommitProfile,
     ZendevAnswers,
-    commit_msg_hook,
     format_commit_convention_help_body,
+    hook_app,
     is_valid_commit_message,
     message,
     report_invalid_commit_message,
@@ -21,6 +23,8 @@ from zendev.commit import (
     validate_commit_message,
 )
 from zendev.gitmoji import load_emoji_conventions
+
+runner = CliRunner()
 
 
 def _answers(
@@ -259,11 +263,13 @@ class TestEmojiEnforcement:
                 f"Suggestion should start with canonical emoji: got {suggestion!r}"
             )
 
-    def test_hook_rejects_wrong_emoji(self, tmp_path: Path, capsys) -> None:
+    def test_hook_rejects_wrong_emoji(self, tmp_path: Path) -> None:
         """commit-msg hook must reject a message with wrong emoji pairing."""
         commit_file = tmp_path / "COMMIT_EDITMSG"
         commit_file.write_text("🐛 feat: wrong emoji for feat type", encoding="utf-8")
-        assert commit_msg_hook([str(commit_file)]) == 1
+        result = runner.invoke(hook_app, [str(commit_file)])
+
+        assert result.exit_code == 1
 
 
 class TestSharedCommitHelp:
@@ -292,31 +298,37 @@ class TestCommitMsgHook:
         commit_file = tmp_path / "COMMIT_EDITMSG"
         commit_file.write_text("✨ feat: add export", encoding="utf-8")
 
-        assert commit_msg_hook([str(commit_file)]) == 0
+        result = runner.invoke(hook_app, [str(commit_file)])
 
-    def test_commit_msg_hook_rejects_invalid_message(self, tmp_path: Path, capsys) -> None:
+        assert result.exit_code == 0
+
+    def test_commit_msg_hook_rejects_invalid_message(self, tmp_path: Path) -> None:
         commit_file = tmp_path / "COMMIT_EDITMSG"
         commit_file.write_text("ship it", encoding="utf-8")
 
-        assert commit_msg_hook([str(commit_file)]) == 1
-        captured = capsys.readouterr()
-        assert "Invalid commit message." in captured.err
-        assert "Type table:" in captured.err
+        result = runner.invoke(hook_app, [str(commit_file)])
 
-    def test_commit_msg_hook_rejects_missing_emoji(self, tmp_path: Path, capsys) -> None:
+        assert result.exit_code == 1
+        assert "Invalid commit message." in result.stderr
+        assert "Type table:" in result.stderr
+
+    def test_commit_msg_hook_rejects_missing_emoji(self, tmp_path: Path) -> None:
         commit_file = tmp_path / "COMMIT_EDITMSG"
         commit_file.write_text("feat: add export", encoding="utf-8")
 
-        assert commit_msg_hook([str(commit_file)]) == 1
-        captured = capsys.readouterr()
-        assert "An emoji prefix is required." in captured.err
-        assert "Maybe you meant: `✨ feat: add export`." in captured.err
+        result = runner.invoke(hook_app, [str(commit_file)])
+
+        assert result.exit_code == 1
+        assert "An emoji prefix is required." in result.stderr
+        assert "Maybe you meant: `✨ feat: add export`." in result.stderr
 
     def test_commit_msg_hook_uses_explicit_conventional_profile(self, tmp_path: Path) -> None:
         commit_file = tmp_path / "COMMIT_EDITMSG"
         commit_file.write_text("feat: add export", encoding="utf-8")
 
-        assert commit_msg_hook(["--profile", "conventional", str(commit_file)]) == 0
+        result = runner.invoke(hook_app, ["--profile", "conventional", str(commit_file)])
+
+        assert result.exit_code == 0
 
     def test_commit_msg_hook_loads_profile_from_pyproject(self, tmp_path: Path) -> None:
         (tmp_path / "pyproject.toml").write_text(
@@ -326,4 +338,16 @@ class TestCommitMsgHook:
         commit_file = tmp_path / "COMMIT_EDITMSG"
         commit_file.write_text(":sparkles: Add export", encoding="utf-8")
 
-        assert commit_msg_hook([str(commit_file)]) == 0
+        result = runner.invoke(hook_app, [str(commit_file)])
+
+        assert result.exit_code == 0
+
+    def test_commit_msg_hook_reports_invalid_repository_config(self, tmp_path: Path) -> None:
+        (tmp_path / "pyproject.toml").write_text("[tool.zendev.commit\n", encoding="utf-8")
+        commit_file = tmp_path / "COMMIT_EDITMSG"
+        commit_file.write_text("✨ feat: add export", encoding="utf-8")
+
+        result = runner.invoke(hook_app, [str(commit_file)])
+
+        assert result.exit_code == 2
+        assert "failed to load commit profile" in result.output
