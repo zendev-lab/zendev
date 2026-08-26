@@ -16,7 +16,8 @@ supersedes: []
 Publish `zendev`, `zendev-proposal`, and `zendev-log` as independent
 distributions that contribute to the implicit `zendev` namespace. Version 0.2.0
 removes the root logging re-export; users install `zendev-log` explicitly and
-import `setup_log` from `zendev.log`.
+import `setup_log` from `zendev.log`. The root distribution provides the
+unified `zendev` command and `python -m zendev` entry point.
 
 ## Motivation
 
@@ -36,7 +37,7 @@ version. Its distributions have these responsibilities:
 
 | Distribution | Namespace content | Runtime dependencies | Commands |
 | --- | --- | --- | --- |
-| `zendev` | Commit and review modules directly under `zendev` | Questionary, Typer | `zendev-commit`, `commit-msg`, `validate-title`, `validate-body` |
+| `zendev` | Commit and review modules plus `zendev.__main__` | Questionary, Typer | `zendev`; compatibility commands `zendev-commit`, `zendev-commit-msg`, `zendev-validate-title`, `zendev-validate-body` |
 | `zendev-proposal` | `zendev.proposal` | JSON Schema, PyYAML, Typer | `zendev-proposal` |
 | `zendev-log` | `zendev.log` | Loguru | None |
 
@@ -47,9 +48,19 @@ behavior is copied only when it is small and private enough to avoid creating a
 fourth public package or a dependency between these distributions.
 
 `zendev` is not an umbrella distribution and does not depend on
-`zendev-proposal` or `zendev-log`. The repository does not add
-`zendev/__main__.py`; the console scripts remain the supported command entry
-points. All public Zendev CLIs continue to use Typer.
+`zendev-proposal` or `zendev-log`. It owns `zendev/__main__.py` and the
+`zendev` console script, providing these root-owned commands:
+
+- `zendev commit`
+- `zendev commit-msg`
+- `zendev validate-title`
+- `zendev validate-body`
+
+`python -m zendev` exposes the same command tree. When `zendev-proposal` is
+also installed, the root CLI mounts its existing Typer application at
+`zendev proposal`; the standalone `zendev-proposal` command remains available
+when that distribution is installed by itself. All public Zendev CLIs continue
+to use Typer.
 
 The release workflow builds and publishes every workspace distribution from the
 same `v0.2.0` tag. Proposal repositories install `zendev-proposal` explicitly;
@@ -76,14 +87,21 @@ from zendev.log import setup_log
 
 The old root import must fail. Existing `zendev.log` imports remain valid after
 installing `zendev-log`. Proposal users install `zendev-proposal` explicitly;
-commit-tool users can continue to install only `zendev`.
+commit-tool users can continue to install only `zendev`. The existing commands
+remain compatibility entry points, while new interactive usage can use the
+unified `zendev` command. `zendev proposal` requires both `zendev` and
+`zendev-proposal`; installing only the proposal distribution continues to
+provide `zendev-proposal` without pulling in commit dependencies.
 
 ## Validation
 
 Build all three wheels and verify their file lists do not overlap. Install each
 wheel independently and then together in clean environments, exercise all five
-console scripts from their owning distributions, and confirm that uninstalling
-one distribution leaves the other namespace portions importable. Confirm that
-`from zendev import setup_log` fails while `from zendev.log import setup_log`
-succeeds with `zendev-log` installed. Run the repository's type checks, tests,
-hooks, and dependency consistency checks against the complete workspace.
+compatibility console scripts plus `zendev` and `python -m zendev`, and confirm
+that uninstalling one distribution leaves the other namespace portions
+importable. A root-only install must expose the four root commands without a
+proposal command; a combined install must also expose `zendev proposal`.
+Confirm that `from zendev import setup_log` fails while
+`from zendev.log import setup_log` succeeds with `zendev-log` installed. Run
+the repository's type checks, tests, hooks, and dependency consistency checks
+against the complete workspace.
