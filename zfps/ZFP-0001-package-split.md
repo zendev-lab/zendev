@@ -13,11 +13,11 @@ supersedes: []
 
 ## Summary
 
-Publish `zendev`, `zendev-proposal`, and `zendev-log` as independent
-distributions that contribute to the implicit `zendev` namespace. Version 0.2.0
-removes the root logging re-export; users install `zendev-log` explicitly and
-import `setup_log` from `zendev.log`. The root distribution provides the
-unified `zendev` command and `python -m zendev` entry point.
+Publish `zendev`, `zendev-proposal`, and `zendev-log` as distributions that
+contribute to the implicit `zendev` namespace. The root `zendev` distribution
+depends on both component distributions and provides the unified `zendev`
+command and `python -m zendev` entry point. Version 0.2.0 removes the root
+logging re-export; users import `setup_log` from `zendev.log`.
 
 ## Motivation
 
@@ -26,9 +26,10 @@ logging even though their users and dependencies differ. In particular, a user
 of the proposal CLI should not need the commit workflow or Loguru, and a user of
 the logging helper should not need JSON Schema or YAML support.
 
-Separating distributions makes those dependency and ownership boundaries
-explicit while preserving the existing `zendev.log` and `zendev.proposal`
-module names.
+Separating distributions makes those ownership boundaries explicit and permits
+component-only installation, while the root distribution remains the complete
+toolkit. The existing `zendev.log` and `zendev.proposal` module names remain
+stable.
 
 ## Design
 
@@ -37,7 +38,7 @@ version. Its distributions have these responsibilities:
 
 | Distribution | Namespace content | Runtime dependencies | Commands |
 | --- | --- | --- | --- |
-| `zendev` | Commit and review modules plus `zendev.__main__` | Questionary, Typer | `zendev`; compatibility commands `zendev-commit`, `zendev-commit-msg`, `zendev-validate-title`, `zendev-validate-body` |
+| `zendev` | Commit and review modules plus `zendev.__main__` | Questionary, Typer, `zendev-proposal`, `zendev-log` | `zendev`; compatibility commands `zendev-commit`, `zendev-commit-msg`, `zendev-validate-title`, `zendev-validate-body` |
 | `zendev-proposal` | `zendev.proposal` | JSON Schema, PyYAML, Typer | `zendev-proposal` |
 | `zendev-log` | `zendev.log` | Loguru | None |
 
@@ -47,25 +48,25 @@ ships its own `py.typed` marker within the namespace portion it owns. Shared
 behavior is copied only when it is small and private enough to avoid creating a
 fourth public package or a dependency between these distributions.
 
-`zendev` is not an umbrella distribution and does not depend on
-`zendev-proposal` or `zendev-log`. It owns `zendev/__main__.py` and the
-`zendev` console script, providing these root-owned commands:
+`zendev` is the complete toolkit distribution and depends on
+`zendev-proposal` and `zendev-log`. It owns `zendev/__main__.py` and the
+`zendev` console script, providing these commands:
 
 - `zendev commit`
 - `zendev commit-msg`
 - `zendev validate-title`
 - `zendev validate-body`
+- `zendev proposal`
 
-`python -m zendev` exposes the same command tree. When `zendev-proposal` is
-also installed, the root CLI mounts its existing Typer application at
-`zendev proposal`; the standalone `zendev-proposal` command remains available
+`python -m zendev` exposes the same command tree. The root CLI directly mounts
+the proposal Typer application and does not define behavior for missing
+component packages. The standalone `zendev-proposal` command remains available
 when that distribution is installed by itself. All public Zendev CLIs continue
 to use Typer.
 
 The release workflow builds and publishes every workspace distribution from the
-same `v0.2.0` tag. Proposal repositories install `zendev-proposal` explicitly;
-the existing remote pre-commit hook is removed because a hook environment built
-from the root `zendev` distribution cannot provide that independent command.
+same `v0.2.0` tag. Because installing `zendev` also installs the proposal
+distribution, the existing remote proposal hook remains supported.
 
 ## Compatibility
 
@@ -85,23 +86,21 @@ uv add zendev-log
 from zendev.log import setup_log
 ```
 
-The old root import must fail. Existing `zendev.log` imports remain valid after
-installing `zendev-log`. Proposal users install `zendev-proposal` explicitly;
-commit-tool users can continue to install only `zendev`. The existing commands
-remain compatibility entry points, while new interactive usage can use the
-unified `zendev` command. `zendev proposal` requires both `zendev` and
-`zendev-proposal`; installing only the proposal distribution continues to
-provide `zendev-proposal` without pulling in commit dependencies.
+The old root import must fail. Installing `zendev` provides `zendev.log` and
+`zendev.proposal` through its required component distributions. Users needing
+only one component may instead install `zendev-log` or `zendev-proposal`
+directly. The existing commands remain compatibility entry points, while new
+interactive usage can use the unified `zendev` command.
 
 ## Validation
 
 Build all three wheels and verify their file lists do not overlap. Install each
-wheel independently and then together in clean environments, exercise all five
-compatibility console scripts plus `zendev` and `python -m zendev`, and confirm
-that uninstalling one distribution leaves the other namespace portions
-importable. A root-only install must expose the four root commands without a
-proposal command; a combined install must also expose `zendev proposal`.
-Confirm that `from zendev import setup_log` fails while
-`from zendev.log import setup_log` succeeds with `zendev-log` installed. Run
+component wheel independently, then install the root wheel with the component
+wheels available and verify both dependencies are resolved. Exercise all five
+compatibility console scripts plus `zendev` and `python -m zendev`, including
+`zendev proposal`. Confirm that uninstalling one component leaves the other
+namespace portions importable. Confirm that `from zendev import setup_log`
+fails while `from zendev.log import setup_log` succeeds with `zendev-log`
+installed. Run
 the repository's type checks, tests, hooks, and dependency consistency checks
 against the complete workspace.
