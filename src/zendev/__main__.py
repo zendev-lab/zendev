@@ -6,6 +6,7 @@ import typer
 
 from zendev.body import validate_body_command
 from zendev.commit import commit_message, create_commit
+from zendev.proposal.cli import app as proposal_app
 from zendev.title import validate_title
 
 app = typer.Typer(
@@ -20,14 +21,7 @@ app.command("commit")(create_commit)
 app.command("commit-msg")(commit_message)
 app.command("validate-title")(validate_title)
 app.command("validate-body")(validate_body_command)
-
-try:
-    from zendev.proposal.cli import app as proposal_app
-except ModuleNotFoundError as error:
-    if error.name != "zendev.proposal":
-        raise
-else:
-    app.add_typer(proposal_app, name="proposal")
+app.add_typer(proposal_app, name="proposal")
 
 
 def main() -> None:

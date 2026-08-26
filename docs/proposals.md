@@ -28,25 +28,23 @@ $ uv add --dev zendev-proposal
 ```
 
 For an ad hoc run, use `uvx --from zendev-proposal zendev-proposal ...`.
-To use the unified command without installing either package, run:
+The complete `zendev` distribution exposes the same application through its
+unified command:
 
 ```console
-$ uvx --from zendev --with zendev-proposal zendev proposal --help
+$ uvx --from zendev zendev proposal --help
 ```
 
-Repositories using prek can invoke the installed command with a local hook:
+Repositories using prek can install the published hook directly:
 
 ```toml
 [[repos]]
-repo = "local"
+repo = "https://github.com/zendev-lab/zendev"
+rev = "v0.2.0"
 hooks = [
-  { id = "proposals", name = "proposal repository", entry = "uv run zendev-proposal check", language = "system", pass_filenames = false },
+  { id = "zendev-proposal" },
 ]
 ```
-
-The root `zendev` hook repository intentionally exposes only commit-message
-validation because its isolated hook environment does not install
-`zendev-proposal`.
 
 ## Commands
 

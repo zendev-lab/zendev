@@ -674,6 +674,8 @@ source = { editable = "." }
 dependencies = [
     { name = "questionary" },
     { name = "typer" },
+    { name = "zendev-log" },
+    { name = "zendev-proposal" },
 ]
 
 [package.dev-dependencies]
@@ -694,6 +696,8 @@ test = [
 requires-dist = [
     { name = "questionary", specifier = ">=2.1" },
     { name = "typer", specifier = ">=0.27" },
+    { name = "zendev-log", editable = "packages/zendev-log" },
+    { name = "zendev-proposal", editable = "packages/zendev-proposal" },
 ]
 
 [package.metadata.requires-dev]

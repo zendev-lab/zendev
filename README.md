@@ -18,11 +18,13 @@ repository files remain the source of truth.
 
 ## Installation
 
-Install only the distribution that owns the behavior you need:
+Install `zendev` for the complete toolkit and unified command. It installs both
+component distributions as required dependencies. The components remain
+available separately for narrower use:
 
 | Distribution | Purpose |
 | --- | --- |
-| `zendev` | Unified CLI, commit creation, and pull-request checks |
+| `zendev` | Complete toolkit and unified CLI |
 | `zendev-proposal` | Proposal validation and deterministic indexes |
 | `zendev-log` | Loguru setup helper |
 
@@ -43,8 +45,8 @@ $ uv run zendev --help
 Python 3.12 or newer is required. All command-line entry points use Typer.
 `python -m zendev` exposes the same command tree as `zendev`.
 
-Version 0.2.0 removes the logging re-export from the root namespace. Logging
-users install `zendev-log` and import it directly:
+Version 0.2.0 removes the logging re-export from the root namespace. For
+logging-only use, install `zendev-log` and import it directly:
 
 ```console
 $ uv add zendev-log
@@ -68,8 +70,8 @@ from zendev.log import setup_log
 | `zendev proposal index --check` | `zendev-proposal index --check` | Check the deterministic proposal index. |
 | `zendev proposal index --write` | `zendev-proposal index --write` | Explicitly update the proposal index. |
 
-The `proposal` group appears when `zendev-proposal` is installed alongside
-`zendev`. The standalone compatibility command does not require `zendev`.
+The complete `zendev` distribution always provides the `proposal` group. The
+standalone component command does not require `zendev`.
 
 Use `COMMAND --help` for the authoritative option reference.
 

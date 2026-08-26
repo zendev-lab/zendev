@@ -7,6 +7,8 @@ license = "MIT"
 dependencies = [
   "questionary>=2.1",
   "typer>=0.27",
+  "zendev-log",
+  "zendev-proposal",
 ]
 dynamic = ["version"]
 
@@ -118,6 +120,10 @@ profile = "zendev"
 
 [tool.uv]
 default-groups = ["check", "test"]
+
+[tool.uv.sources]
+zendev-log = { workspace = true }
+zendev-proposal = { workspace = true }
 
 [tool.uv.workspace]
 members = ["packages/*"]
