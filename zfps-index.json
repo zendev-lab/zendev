@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "zfps": [
+    {
+      "zfp": 0,
+      "id": "ZFP-0000",
+      "path": "zfps/ZFP-0000-governance.md",
+      "title": "Zendev Feature Proposal Governance",
+      "status": "Draft",
+      "type": "Governance",
+      "authors": [
+        "zrr1999"
+      ],
+      "created": "2026-08-26",
+      "supersedes": [],
+      "superseded_by": []
+    }
+  ]
+}
