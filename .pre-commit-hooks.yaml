@@ -4,9 +4,3 @@
   entry: zendev-commit-msg
   language: python
   stages: [commit-msg]
-- id: zendev-proposal
-  name: zendev proposal repository
-  description: Validate repository-native proposals and their committed index.
-  entry: zendev-proposal check
-  language: python
-  pass_filenames: false

@@ -11,6 +11,12 @@ import zendev.log as log_mod
 from zendev.log import setup_log
 
 
+def test_root_namespace_does_not_reexport_setup_log() -> None:
+    import zendev
+
+    assert not hasattr(zendev, "setup_log")
+
+
 class TestSetupLog:
     """Tests for setup_log()."""
 

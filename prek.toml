@@ -30,6 +30,6 @@ hooks = [
 [[repos]]
 repo = "local"
 hooks = [
-  { id = "zendev-zfp", name = "zendev feature proposals", entry = "uv run zendev-proposal check", language = "system", pass_filenames = false },
+  { id = "zendev-zfp", name = "zendev feature proposals", entry = "uv run --all-packages zendev-proposal check", language = "system", pass_filenames = false },
   { id = "zendev-commit-msg", name = "zendev commit message", entry = "uv run zendev-commit-msg", language = "system", stages = ["commit-msg"] },
 ]

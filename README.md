@@ -1,8 +1,8 @@
 # zendev
 
-`zendev` is a repository-native development workflow toolkit. It provides
-commit conventions, pull-request checks, and proposal-repository mechanics as
-typed Python CLIs and thin GitHub Action or hook adapters.
+Zendev is a repository-native development workflow toolkit. It provides commit
+conventions, pull-request checks, proposal-repository mechanics, and a small
+logging helper as typed Python packages and thin GitHub Action or hook adapters.
 
 ## Scope
 
@@ -18,20 +18,42 @@ repository files remain the source of truth.
 
 ## Installation
 
-Run a published command without installing it globally:
+Install only the distribution that owns the behavior you need:
+
+| Distribution | Purpose |
+| --- | --- |
+| `zendev` | Commit creation and pull-request checks |
+| `zendev-proposal` | Proposal validation and deterministic indexes |
+| `zendev-log` | Loguru setup helper |
+
+For example, run published commands without installing them globally:
 
 ```console
 $ uvx --from zendev zendev-commit-msg --help
+$ uvx --from zendev-proposal zendev-proposal --help
 ```
 
 For local development:
 
 ```console
-$ uv sync --all-groups
+$ uv sync --all-packages --all-groups
 $ uv run zendev-proposal --help
 ```
 
 Python 3.12 or newer is required. All command-line entry points use Typer.
+
+Version 0.2.0 removes the logging re-export from the root namespace. Logging
+users install `zendev-log` and import it directly:
+
+```console
+$ uv add zendev-log
+```
+
+```python
+from zendev.log import setup_log
+```
+
+`from zendev import setup_log` is no longer supported.
 
 ## Commands
 
@@ -68,4 +90,6 @@ $ just pre-commit
 
 `just ci` runs formatting, linting, type checks, tests, and coverage. The
 repository uses `uv`, Ruff, ty, Pyright, pytest, and prek; `pyproject.toml` is
-the Python configuration source of truth.
+the Python configuration source of truth. The three distributions share one uv
+workspace, lockfile, version, and release tag while contributing independent
+portions of the PEP 420 `zendev` namespace.

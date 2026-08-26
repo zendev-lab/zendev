@@ -10,7 +10,7 @@ from yaml.constructor import ConstructorError
 from yaml.nodes import MappingNode
 from yaml.resolver import BaseResolver
 
-from zendev.markdown_scan import iter_lines_outside_fences
+from zendev.proposal._markdown_scan import iter_lines_outside_fences
 from zendev.proposal.model import (
     Diagnostic,
     ProposalConfig,

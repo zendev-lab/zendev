@@ -21,6 +21,27 @@ The tool owns repository mechanics:
 Project terminology, normative semantics, process authority, and acceptance
 decisions stay in each proposal repository.
 
+Install this tool independently of the commit workflow:
+
+```console
+$ uv add --dev zendev-proposal
+```
+
+For an ad hoc run, use `uvx --from zendev-proposal zendev-proposal ...`.
+Repositories using prek can invoke the installed command with a local hook:
+
+```toml
+[[repos]]
+repo = "local"
+hooks = [
+  { id = "proposals", name = "proposal repository", entry = "uv run zendev-proposal check", language = "system", pass_filenames = false },
+]
+```
+
+The root `zendev` hook repository intentionally exposes only commit-message
+validation because its isolated hook environment does not install
+`zendev-proposal`.
+
 ## Commands
 
 Run commands from the proposal repository root or pass an explicit config:

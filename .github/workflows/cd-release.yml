@@ -24,13 +24,13 @@ jobs:
 
       - name: Verify release
         run: |
-          uv sync --all-groups
+          uv sync --all-packages --all-groups
           uvx prek run --all-files
           uv run pyright
           uv run pytest -v
 
-      - name: Build wheel
-        run: uv build --wheel
+      - name: Build wheels
+        run: uv build --all-packages --wheel
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1

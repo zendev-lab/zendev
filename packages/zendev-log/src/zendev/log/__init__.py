@@ -9,8 +9,6 @@ from loguru import logger
 
 _configured = False
 
-# TODO: Move this generic helper only after existing ``zendev.setup_log`` users have a documented migration path.
-
 
 def setup_log(*, verbose: bool = False, json: bool = False) -> int | None:
     """Configure loguru for CLI usage. Safe to call multiple times.

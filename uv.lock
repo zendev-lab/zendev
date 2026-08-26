@@ -2,6 +2,13 @@ version = 1
 revision = 3
 requires-python = ">=3.12"
 
+[manifest]
+members = [
+    "zendev",
+    "zendev-log",
+    "zendev-proposal",
+]
+
 [[package]]
 name = "annotated-doc"
 version = "0.0.5"
@@ -665,9 +672,6 @@ wheels = [
 name = "zendev"
 source = { editable = "." }
 dependencies = [
-    { name = "jsonschema", extra = ["format-nongpl"] },
-    { name = "loguru" },
-    { name = "pyyaml" },
     { name = "questionary" },
     { name = "typer" },
 ]
@@ -688,9 +692,6 @@ test = [
 
 [package.metadata]
 requires-dist = [
-    { name = "jsonschema", extras = ["format-nongpl"], specifier = ">=4.23" },
-    { name = "loguru", specifier = ">=0.7" },
-    { name = "pyyaml", specifier = ">=6.0" },
     { name = "questionary", specifier = ">=2.1" },
     { name = "typer", specifier = ">=0.27" },
 ]
@@ -705,4 +706,30 @@ dev = [
 test = [
     { name = "pytest", specifier = ">=8.0" },
     { name = "pytest-cov", specifier = ">=5.0" },
+]
+
+[[package]]
+name = "zendev-log"
+source = { editable = "packages/zendev-log" }
+dependencies = [
+    { name = "loguru" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "loguru", specifier = ">=0.7" }]
+
+[[package]]
+name = "zendev-proposal"
+source = { editable = "packages/zendev-proposal" }
+dependencies = [
+    { name = "jsonschema", extra = ["format-nongpl"] },
+    { name = "pyyaml" },
+    { name = "typer" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "jsonschema", extras = ["format-nongpl"], specifier = ">=4.23" },
+    { name = "pyyaml", specifier = ">=6.0" },
+    { name = "typer", specifier = ">=0.27" },
 ]

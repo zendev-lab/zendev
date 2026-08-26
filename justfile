@@ -8,7 +8,7 @@ venv:
 
 # Install dependencies in development mode
 install:
-    uv sync --all-groups
+    uv sync --all-packages --all-groups
     uvx prek install
 
 # Format all code (Python + justfile)
