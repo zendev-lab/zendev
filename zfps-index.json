@@ -13,6 +13,20 @@
       "created": "2026-08-26",
       "supersedes": [],
       "superseded_by": []
+    },
+    {
+      "zfp": 1,
+      "id": "ZFP-0001",
+      "path": "zfps/ZFP-0001-package-split.md",
+      "title": "Split Zendev into PEP 420 Distributions",
+      "status": "Draft",
+      "type": "Feature",
+      "authors": [
+        "zrr1999"
+      ],
+      "created": "2026-08-26",
+      "supersedes": [],
+      "superseded_by": []
     }
   ]
 }
