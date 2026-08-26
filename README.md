@@ -22,14 +22,14 @@ Install only the distribution that owns the behavior you need:
 
 | Distribution | Purpose |
 | --- | --- |
-| `zendev` | Commit creation and pull-request checks |
+| `zendev` | Unified CLI, commit creation, and pull-request checks |
 | `zendev-proposal` | Proposal validation and deterministic indexes |
 | `zendev-log` | Loguru setup helper |
 
 For example, run published commands without installing them globally:
 
 ```console
-$ uvx --from zendev zendev-commit-msg --help
+$ uvx --from zendev zendev --help
 $ uvx --from zendev-proposal zendev-proposal --help
 ```
 
@@ -37,10 +37,11 @@ For local development:
 
 ```console
 $ uv sync --all-packages --all-groups
-$ uv run zendev-proposal --help
+$ uv run zendev --help
 ```
 
 Python 3.12 or newer is required. All command-line entry points use Typer.
+`python -m zendev` exposes the same command tree as `zendev`.
 
 Version 0.2.0 removes the logging re-export from the root namespace. Logging
 users install `zendev-log` and import it directly:
@@ -57,15 +58,18 @@ from zendev.log import setup_log
 
 ## Commands
 
-| Command | Purpose |
-| --- | --- |
-| `zendev-commit` | Create and run an interactive commit. |
-| `zendev-commit-msg` | Validate a Git commit-message file. |
-| `zendev-validate-title` | Validate a PR title. |
-| `zendev-validate-body` | Validate PR body sections and optional checklist rows. |
-| `zendev-proposal check` | Validate a proposal repository and its committed index. |
-| `zendev-proposal index --check` | Check the deterministic proposal index. |
-| `zendev-proposal index --write` | Explicitly update the proposal index. |
+| Unified command | Compatibility command | Purpose |
+| --- | --- | --- |
+| `zendev commit` | `zendev-commit` | Create and run an interactive commit. |
+| `zendev commit-msg` | `zendev-commit-msg` | Validate a Git commit-message file. |
+| `zendev validate-title` | `zendev-validate-title` | Validate a PR title. |
+| `zendev validate-body` | `zendev-validate-body` | Validate PR body sections and optional checklist rows. |
+| `zendev proposal check` | `zendev-proposal check` | Validate a proposal repository and its committed index. |
+| `zendev proposal index --check` | `zendev-proposal index --check` | Check the deterministic proposal index. |
+| `zendev proposal index --write` | `zendev-proposal index --write` | Explicitly update the proposal index. |
+
+The `proposal` group appears when `zendev-proposal` is installed alongside
+`zendev`. The standalone compatibility command does not require `zendev`.
 
 Use `COMMAND --help` for the authoritative option reference.
 

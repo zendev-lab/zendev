@@ -28,6 +28,12 @@ $ uv add --dev zendev-proposal
 ```
 
 For an ad hoc run, use `uvx --from zendev-proposal zendev-proposal ...`.
+To use the unified command without installing either package, run:
+
+```console
+$ uvx --from zendev --with zendev-proposal zendev proposal --help
+```
+
 Repositories using prek can invoke the installed command with a local hook:
 
 ```toml
