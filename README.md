@@ -83,23 +83,19 @@ Use `COMMAND --help` for the authoritative option reference.
 
 - [Zendev Feature Proposals](./zfps/README.md): lightweight design records
   required before public feature changes.
-- [Commit conventions](./docs/commit-conventions.md): profiles, commit hook,
+- [`zendev-commit`](./packages/zendev-commit/README.md): profiles, commit hook,
   configuration, and vendored Gitmoji data.
-- [PR review checks](./docs/review-checks.md): title/body CLIs and composite
-  GitHub Actions.
-- [Proposal repositories](./docs/proposals.md): policy schema, validation,
+- [`zendev-review`](./packages/zendev-review/README.md): title and body
+  validation behavior.
+- [`zendev-proposal`](./packages/zendev-proposal/README.md): policy schema, validation,
   lifecycle history, and deterministic indexes.
+- [Composite Actions](./actions/README.md): GitHub workflow integration for
+  review checks.
+- [`zendev-log`](./packages/zendev-log/README.md): Loguru initialization.
 
 ## Development
 
-```console
-$ just install
-$ just ci
-$ just pre-commit
-```
-
-`just ci` runs formatting, linting, type checks, tests, and coverage. The
-repository uses `uv`, Ruff, ty, Pyright, pytest, and prek; `pyproject.toml` is
-the Python configuration source of truth. The five distributions share one uv
-workspace, lockfile, version, and release tag while contributing independent
-portions of the PEP 420 `zendev` namespace.
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for setup, validation, documentation
+ownership, vendored-data maintenance, and pull-request conventions. The five
+distributions share one uv workspace, lockfile, version, and release tag while
+contributing independent portions of the PEP 420 `zendev` namespace.

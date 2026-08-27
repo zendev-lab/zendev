@@ -1,12 +1,61 @@
 # zendev-review
 
-`zendev-review` validates pull-request titles against the configured commit
-profile and pull-request bodies against repository templates.
+`zendev-review` owns reusable pull-request title and body validation. It
+depends on `zendev-commit` so title checks reuse commit profiles instead of
+copying commit semantics.
 
 ```console
+$ uv add --dev zendev-review
 $ uvx --from zendev-review zendev-validate-title --help
 $ uvx --from zendev-review zendev-validate-body --help
 ```
 
-The package depends on `zendev-commit` for the shared title convention. The
-complete `zendev` distribution exposes both checks under its unified command.
+## Python API
+
+```python
+from zendev.body import BodySection, validate_body
+
+valid, headings = validate_body(
+    "## Motivation\n\nWhy.\n\n## Solution\n\nHow.\n",
+    [BodySection("Motivation"), BodySection("Solution")],
+)
+assert valid
+assert headings == ["Motivation", "Solution"]
+```
+
+## Title validation
+
+The title CLI uses the same profiles and repository configuration as the
+commit hook:
+
+```console
+$ uvx --from zendev-review zendev-validate-title --profile gitmoji ":sparkles: Add export support"
+```
+
+See [`zendev-commit`](../zendev-commit/README.md) for profile semantics.
+
+## Body validation
+
+The body CLI reads H2 sections from the configured PR template:
+
+```console
+$ uvx --from zendev-review zendev-validate-body "$PR_BODY" \
+    --template .github/pull_request_template.md \
+    --require-checklist
+```
+
+The section contract is:
+
+- every template H2 is required by default
+- `<!-- pr-body:optional -->` makes the following H2 optional
+- `<!-- pr-body:required -->` explicitly marks the following H2 as required
+- present sections must retain template order
+- undeclared, duplicate, ambiguous, and dangling sections or directives fail
+- directives and headings inside fenced code blocks are ignored
+
+When `--require-checklist` is present, every checked `- [x]` row under the
+configured checklist H2 must occur in the PR body. `--fail-on-empty-checklist`
+makes an empty template checklist fail instead of becoming a no-op.
+
+The [composite Actions](../../actions/README.md) expose the same behavior for
+GitHub workflows.
