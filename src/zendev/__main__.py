@@ -1,33 +1,10 @@
-"""Unified command-line entry point for Zendev."""
+"""Support ``python -m zendev`` through the unified CLI owner."""
 
 from __future__ import annotations
 
-import typer
+from zendev.cli import app, main
 
-from zendev.body import validate_body_command
-from zendev.commit import commit_message, create_commit
-from zendev.proposal.cli import app as proposal_app
-from zendev.title import validate_title
-
-app = typer.Typer(
-    add_completion=False,
-    help="Run Zendev development workflows.",
-    no_args_is_help=True,
-    pretty_exceptions_enable=False,
-    rich_markup_mode=None,
-)
-
-app.command("commit")(create_commit)
-app.command("commit-msg")(commit_message)
-app.command("validate-title")(validate_title)
-app.command("validate-body")(validate_body_command)
-app.add_typer(proposal_app, name="proposal")
-
-
-def main() -> None:
-    """Run the unified Zendev CLI."""
-
-    app(prog_name="zendev")
+__all__ = ["app", "main"]
 
 
 if __name__ == "__main__":

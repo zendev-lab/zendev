@@ -18,13 +18,15 @@ repository files remain the source of truth.
 
 ## Installation
 
-Install `zendev` for the complete toolkit and unified command. It installs both
-component distributions as required dependencies. The components remain
+Install `zendev` for the complete toolkit and unified command. It installs all
+four component distributions as required dependencies. The components remain
 available separately for narrower use:
 
 | Distribution | Purpose |
 | --- | --- |
 | `zendev` | Complete toolkit and unified CLI |
+| `zendev-commit` | Commit profiles, validation, and interactive commits |
+| `zendev-review` | Pull-request title and body validation |
 | `zendev-proposal` | Proposal validation and deterministic indexes |
 | `zendev-log` | Loguru setup helper |
 
@@ -32,6 +34,8 @@ For example, run published commands without installing them globally:
 
 ```console
 $ uvx --from zendev zendev --help
+$ uvx --from zendev-commit zendev-commit-msg --help
+$ uvx --from zendev-review zendev-validate-body --help
 $ uvx --from zendev-proposal zendev-proposal --help
 ```
 
@@ -96,6 +100,6 @@ $ just pre-commit
 
 `just ci` runs formatting, linting, type checks, tests, and coverage. The
 repository uses `uv`, Ruff, ty, Pyright, pytest, and prek; `pyproject.toml` is
-the Python configuration source of truth. The three distributions share one uv
+the Python configuration source of truth. The five distributions share one uv
 workspace, lockfile, version, and release tag while contributing independent
 portions of the PEP 420 `zendev` namespace.

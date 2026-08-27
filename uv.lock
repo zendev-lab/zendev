@@ -5,8 +5,10 @@ requires-python = ">=3.12"
 [manifest]
 members = [
     "zendev",
+    "zendev-commit",
     "zendev-log",
     "zendev-proposal",
+    "zendev-review",
 ]
 
 [[package]]
@@ -672,10 +674,11 @@ wheels = [
 name = "zendev"
 source = { editable = "." }
 dependencies = [
-    { name = "questionary" },
     { name = "typer" },
+    { name = "zendev-commit" },
     { name = "zendev-log" },
     { name = "zendev-proposal" },
+    { name = "zendev-review" },
 ]
 
 [package.dev-dependencies]
@@ -694,10 +697,11 @@ test = [
 
 [package.metadata]
 requires-dist = [
-    { name = "questionary", specifier = ">=2.1" },
     { name = "typer", specifier = ">=0.27" },
+    { name = "zendev-commit", editable = "packages/zendev-commit" },
     { name = "zendev-log", editable = "packages/zendev-log" },
     { name = "zendev-proposal", editable = "packages/zendev-proposal" },
+    { name = "zendev-review", editable = "packages/zendev-review" },
 ]
 
 [package.metadata.requires-dev]
@@ -710,6 +714,20 @@ dev = [
 test = [
     { name = "pytest", specifier = ">=8.0" },
     { name = "pytest-cov", specifier = ">=5.0" },
+]
+
+[[package]]
+name = "zendev-commit"
+source = { editable = "packages/zendev-commit" }
+dependencies = [
+    { name = "questionary" },
+    { name = "typer" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "questionary", specifier = ">=2.1" },
+    { name = "typer", specifier = ">=0.27" },
 ]
 
 [[package]]
@@ -736,4 +754,18 @@ requires-dist = [
     { name = "jsonschema", extras = ["format-nongpl"], specifier = ">=4.23" },
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "typer", specifier = ">=0.27" },
+]
+
+[[package]]
+name = "zendev-review"
+source = { editable = "packages/zendev-review" }
+dependencies = [
+    { name = "typer" },
+    { name = "zendev-commit" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "typer", specifier = ">=0.27" },
+    { name = "zendev-commit", editable = "packages/zendev-commit" },
 ]
