@@ -19,7 +19,6 @@
       "id": "ZFP-0001",
       "path": "zfps/ZFP-0001-package-split.md",
       "title": "将 Zendev 拆分为 PEP 420 发行包",
-      "status": "Accepted",
       "type": "Feature",
       "authors": [
         "zrr1999"

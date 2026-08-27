@@ -1,7 +1,6 @@
 ---
 zfp: 1
 title: "将 Zendev 拆分为 PEP 420 发行包"
-status: Accepted
 type: Feature
 authors:
   - "zrr1999"
