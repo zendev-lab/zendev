@@ -33,10 +33,8 @@ class TestSetupLog:
         logger.remove()
         buf = io.StringIO()
         log_mod._configured = False
-        # Use a buffer sink so we can capture output
         handler_id = setup_log(verbose=True)
         assert handler_id is not None
-        # Add a test sink to verify DEBUG messages pass through
         logger.remove(handler_id)
         test_id = logger.add(buf, level="DEBUG", format="{level} {message}")
         logger.debug("test-debug-msg")
@@ -49,13 +47,12 @@ class TestSetupLog:
         log_mod._configured = False
         handler_id = setup_log(json=True)
         assert handler_id is not None
-        # Replace the stderr handler with a buffer to verify serialization
         logger.remove(handler_id)
         test_id = logger.add(buf, level="INFO", serialize=True)
         logger.info("test-json-msg")
         logger.remove(test_id)
         output = buf.getvalue()
-        assert '"text"' in output  # serialized JSON contains "text" key
+        assert '"text"' in output
 
     def test_env_override(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setenv("ZENDEV_LOG_LEVEL", "WARNING")
@@ -64,7 +61,6 @@ class TestSetupLog:
         log_mod._configured = False
         handler_id = setup_log()
         assert handler_id is not None
-        # Replace handler with buffer to verify WARNING level
         logger.remove(handler_id)
         test_id = logger.add(buf, level="WARNING", format="{level} {message}")
         logger.info("should-not-appear")

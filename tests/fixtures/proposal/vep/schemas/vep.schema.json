@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["vep", "title", "status", "type", "requires"],
+  "additionalProperties": false,
+  "properties": {
+    "vep": {"type": "integer", "minimum": 0},
+    "title": {"type": "string", "minLength": 1},
+    "status": {
+      "type": "string",
+      "enum": ["Draft", "Review", "Accepted", "Rejected", "Withdrawn", "Superseded"]
+    },
+    "type": {"const": "Technical"},
+    "requires": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^VEP-[0-9]{4}$"}
+    }
+  }
+}

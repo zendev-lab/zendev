@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "veps": [
+    {
+      "vep": 0,
+      "id": "VEP-0000",
+      "path": "veps/VEP-0000-foundation.md",
+      "title": "Foundation",
+      "status": "Accepted",
+      "type": "Technical",
+      "requires": [],
+      "required_by": [
+        "VEP-0001"
+      ]
+    },
+    {
+      "vep": 1,
+      "id": "VEP-0001",
+      "path": "veps/VEP-0001-composition.md",
+      "title": "Composition",
+      "status": "Draft",
+      "type": "Technical",
+      "requires": [
+        "VEP-0000"
+      ],
+      "required_by": []
+    }
+  ]
+}

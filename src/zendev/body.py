@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-import argparse
 import re
 import sys
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TextIO
+from typing import Annotated, TextIO
+
+import typer
 
 from zendev.checklist import (
     checklist_items_missing,
@@ -20,6 +21,13 @@ from zendev.markdown_scan import iter_lines_outside_fences
 
 REQUIRED_SECTIONS: tuple[str, ...] = ("Summary", "Validation", "Notes")
 _SECTION_DIRECTIVE_RE = re.compile(r"^<!--\s*pr-body:(required|optional)\s*-->$")
+
+app = typer.Typer(
+    add_completion=False,
+    help="Validate a PR body against the repository PR template.",
+    pretty_exceptions_enable=False,
+    rich_markup_mode=None,
+)
 
 
 @dataclass(frozen=True)
@@ -168,42 +176,47 @@ def validate_template_checklist(
     return True
 
 
-def validate_body_cli(argv: Sequence[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(
-        prog="zendev-validate-body",
-        description="Validate a PR body against the repository PR template.",
-    )
-    parser.add_argument("body", help="PR body text to validate.")
-    parser.add_argument(
-        "--template",
-        metavar="PATH",
-        default=".github/pull_request_template.md",
-        help="Path to the PR template file (default: .github/pull_request_template.md).",
-    )
-    parser.add_argument(
-        "--require-checklist",
-        action="store_true",
-        help="Also require every checked checklist row from the template checklist section to appear in the body.",
-    )
-    parser.add_argument(
-        "--checklist-section",
-        metavar="TITLE",
-        default="Checklist",
-        help='H2 title (without "##") naming the checklist section (default: Checklist).',
-    )
-    parser.add_argument(
-        "--fail-on-empty-checklist",
-        action="store_true",
-        help=("When --require-checklist is set, exit 1 if the template defines no `- [x]` rows in that section."),
-    )
-    args = parser.parse_args(argv)
+@app.command()
+def validate_body_command(
+    body: Annotated[str, typer.Argument(help="PR body text to validate.")],
+    template: Annotated[
+        Path,
+        typer.Option(
+            "--template",
+            metavar="PATH",
+            help="Path to the PR template file.",
+        ),
+    ] = Path(".github/pull_request_template.md"),
+    require_checklist: Annotated[
+        bool,
+        typer.Option(
+            "--require-checklist",
+            help="Require checked rows from the template checklist section in the body.",
+        ),
+    ] = False,
+    checklist_section: Annotated[
+        str,
+        typer.Option(
+            "--checklist-section",
+            metavar="TITLE",
+            help='H2 title, without "##", containing the checklist rows.',
+        ),
+    ] = "Checklist",
+    fail_on_empty_checklist: Annotated[
+        bool,
+        typer.Option(
+            "--fail-on-empty-checklist",
+            help="Fail when checklist validation is requested but the template has no checked rows.",
+        ),
+    ] = False,
+) -> None:
+    """Validate PR body sections and optional required checklist rows."""
 
-    template_path = Path(args.template)
     try:
-        sections = _load_template_sections(template_path)
+        sections = _load_template_sections(template)
     except ValueError as exc:
         print(f"::error::Invalid PR template: {exc}")
-        return 1
+        raise typer.Exit(code=1) from exc
 
     print("::group::PR / body check")
     print(f"Template headings: {[section.heading for section in sections]}")
@@ -211,23 +224,21 @@ def validate_body_cli(argv: Sequence[str] | None = None) -> int:
     print(f"Optional headings: {[section.heading for section in sections if not section.required]}")
     print("::endgroup::")
 
-    is_valid, actual = validate_body(args.body, sections)
+    is_valid, actual = validate_body(body, sections)
     if not is_valid:
         report_invalid_body(actual, sections, file=sys.stdout)
-        return 1
+        raise typer.Exit(code=1)
 
     print("PR body headings are valid.")
 
-    if args.require_checklist and not validate_template_checklist(
-        args.body,
-        template_path=template_path,
-        section_heading=args.checklist_section,
-        fail_on_empty=args.fail_on_empty_checklist,
+    if require_checklist and not validate_template_checklist(
+        body,
+        template_path=template,
+        section_heading=checklist_section,
+        fail_on_empty=fail_on_empty_checklist,
     ):
-        return 1
-
-    return 0
+        raise typer.Exit(code=1)
 
 
 def main() -> None:
-    sys.exit(validate_body_cli())
+    app(prog_name="zendev-validate-body")

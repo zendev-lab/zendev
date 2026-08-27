@@ -1,0 +1,85 @@
+version = 1
+
+[proposal]
+prefix = "VEP"
+number_field = "vep"
+documents_dir = "veps"
+schema = "schemas/vep.schema.json"
+index = "veps-index.json"
+metadata_title = "plain"
+
+[drafts]
+directory = "drafts"
+schema = "schemas/draft.schema.json"
+marker = "> Pre-VEP design draft. Non-normative."
+pre_proposal = true
+
+[templates]
+Technical = "templates/technical.md"
+
+[summary]
+prefix = "**Executive Summary:**"
+minimum_sentences = 2
+maximum_sentences = 4
+
+[graph]
+fields = ["requires"]
+requires_field = "requires"
+accepted_status = "Accepted"
+superseded_status = "Superseded"
+
+[history]
+initial_status = "Draft"
+protect_records = true
+bootstrap_numbers = [0]
+
+[history.transitions]
+Draft = ["Draft", "Review", "Withdrawn"]
+Review = ["Review", "Draft", "Accepted", "Rejected", "Withdrawn"]
+Accepted = ["Accepted", "Superseded"]
+Rejected = ["Rejected"]
+Withdrawn = ["Withdrawn"]
+Superseded = ["Superseded"]
+
+[index]
+version = 1
+entries_key = "veps"
+include_drafts = false
+
+[[index.fields]]
+name = "vep"
+source = "metadata"
+key = "vep"
+
+[[index.fields]]
+name = "id"
+source = "identifier"
+
+[[index.fields]]
+name = "path"
+source = "path"
+
+[[index.fields]]
+name = "title"
+source = "metadata"
+key = "title"
+
+[[index.fields]]
+name = "status"
+source = "metadata"
+key = "status"
+
+[[index.fields]]
+name = "type"
+source = "metadata"
+key = "type"
+
+[[index.fields]]
+name = "requires"
+source = "metadata"
+key = "requires"
+
+[[index.fields]]
+name = "required_by"
+source = "inverse"
+key = "requires"

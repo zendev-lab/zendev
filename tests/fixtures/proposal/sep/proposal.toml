@@ -1,0 +1,69 @@
+version = 1
+
+[proposal]
+prefix = "SEP"
+number_field = "sep"
+documents_dir = "seps"
+schema = "schemas/sep.schema.json"
+index = "seps-index.json"
+metadata_title = "prefixed"
+
+[drafts]
+directory = "drafts"
+require_summary = true
+
+[templates]
+"Standards Track" = "templates/standards-track.md"
+
+[summary]
+prefix = "**Executive Summary**:"
+
+[history]
+initial_status = "Draft"
+protect_records = true
+bootstrap_numbers = [0]
+
+[history.transitions]
+Draft = ["Draft", "Accepted", "Rejected"]
+Accepted = ["Accepted", "Superseded"]
+Rejected = ["Rejected"]
+Superseded = ["Superseded"]
+
+[index]
+version = 1
+entries_key = "documents"
+include_drafts = true
+
+[[index.fields]]
+name = "path"
+source = "path"
+
+[[index.fields]]
+name = "sep"
+source = "metadata"
+key = "sep"
+
+[[index.fields]]
+name = "title"
+source = "metadata"
+key = "title"
+
+[[index.fields]]
+name = "status"
+source = "metadata"
+key = "status"
+
+[[index.fields]]
+name = "type"
+source = "metadata"
+key = "type"
+
+[[index.fields]]
+name = "authors"
+source = "metadata"
+key = "authors"
+
+[[index.fields]]
+name = "requires"
+source = "metadata"
+key = "requires"
