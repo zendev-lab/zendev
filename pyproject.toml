@@ -1,15 +1,15 @@
 [project]
 name = "zendev"
-description = "Personal dev workflow toolkit for commits, reviews, and repository-native proposals"
+description = "Complete repository-native development workflow toolkit"
 readme = "README.md"
 requires-python = ">=3.12"
 license = "MIT"
 dependencies = [
-  "jsonschema[format-nongpl]>=4.23",
-  "loguru>=0.7",
-  "pyyaml>=6.0",
-  "questionary>=2.1",
   "typer>=0.27",
+  "zendev-commit",
+  "zendev-log",
+  "zendev-proposal",
+  "zendev-review",
 ]
 dynamic = ["version"]
 
@@ -19,11 +19,7 @@ Issues = "https://github.com/zendev-lab/zendev/issues"
 Repository = "https://github.com/zendev-lab/zendev"
 
 [project.scripts]
-zendev-commit = "zendev.commit:main"
-zendev-commit-msg = "zendev.commit:hook_main"
-zendev-validate-title = "zendev.title:main"
-zendev-validate-body = "zendev.body:main"
-zendev-proposal = "zendev.proposal.cli:main"
+zendev = "zendev.__main__:main"
 
 [dependency-groups]
 dev = [
@@ -86,7 +82,7 @@ testpaths = ["tests"]
 
 [tool.ruff]
 line-length = 120
-src = ["src", "tests"]
+src = ["src", "packages", "tests"]
 target-version = "py312"
 
 [tool.ruff.lint]
@@ -121,3 +117,12 @@ profile = "zendev"
 
 [tool.uv]
 default-groups = ["check", "test"]
+
+[tool.uv.sources]
+zendev-commit = { workspace = true }
+zendev-log = { workspace = true }
+zendev-proposal = { workspace = true }
+zendev-review = { workspace = true }
+
+[tool.uv.workspace]
+members = ["packages/*"]

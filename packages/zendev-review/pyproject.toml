@@ -1,0 +1,37 @@
+[project]
+name = "zendev-review"
+description = "Pull-request title and body validation"
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"
+dependencies = [
+  "typer>=0.27",
+  "zendev-commit",
+]
+dynamic = ["version"]
+
+[project.urls]
+Homepage = "https://github.com/zendev-lab/zendev"
+Issues = "https://github.com/zendev-lab/zendev/issues"
+Repository = "https://github.com/zendev-lab/zendev"
+
+[project.scripts]
+zendev-validate-title = "zendev.title:main"
+zendev-validate-body = "zendev.body:main"
+
+[build-system]
+requires = ["hatch-vcs", "hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/zendev"]
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.version.raw-options]
+root = "../.."
+fallback_version = "0.0.0"
+
+[tool.uv.sources]
+zendev-commit = { workspace = true }
