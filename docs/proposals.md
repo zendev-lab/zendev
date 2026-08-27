@@ -145,10 +145,11 @@ as a single frontmatter field.
 
 ### Draft policy
 
-All drafts use YAML frontmatter. `drafts.schema` selects a dedicated schema; if
-omitted, drafts use the formal proposal schema. A draft must not assign a
-proposal number, its H1 must match its metadata title, and an optional `marker`
-must immediately follow that H1.
+Omit `[drafts]` when the repository does not use proposal drafts. When it is
+configured, drafts use YAML frontmatter. `drafts.schema` selects a dedicated
+schema; if omitted, drafts use the formal proposal schema. A draft must not
+assign a proposal number, its H1 must match its metadata title, and an optional
+`marker` must immediately follow that H1.
 
 `pre_proposal = true` models non-normative exploration before the proposal
 lifecycle. It additionally forbids status metadata, status sections, and

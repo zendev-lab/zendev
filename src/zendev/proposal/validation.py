@@ -69,10 +69,11 @@ def _validate_schema(
     diagnostics: list[Diagnostic],
 ) -> None:
     formal_validator = _load_schema(config, config.schema_path)
+    drafts = config.drafts
     draft_validator = (
         formal_validator
-        if config.drafts.schema_path == config.schema_path
-        else _load_schema(config, config.drafts.schema_path)
+        if drafts is None or drafts.schema_path == config.schema_path
+        else _load_schema(config, drafts.schema_path)
     )
     for document in state.documents:
         validator = draft_validator if document.is_draft else formal_validator
@@ -182,6 +183,9 @@ def _validate_formal_shape(config: ProposalConfig, document: ProposalDocument, d
 def _validate_frontmatter_draft(
     config: ProposalConfig, document: ProposalDocument, diagnostics: list[Diagnostic]
 ) -> None:
+    drafts = config.drafts
+    if drafts is None:
+        raise AssertionError("draft documents require configured draft policy")
     if document.metadata.get(config.number_field) is not None:
         diagnostics.append(
             Diagnostic(
@@ -191,7 +195,7 @@ def _validate_frontmatter_draft(
             )
         )
     status = document.metadata.get(config.status_field)
-    if config.drafts.pre_proposal and status is not None:
+    if drafts.pre_proposal and status is not None:
         diagnostics.append(
             Diagnostic(
                 code="proposal.draft.status",
@@ -199,7 +203,7 @@ def _validate_frontmatter_draft(
                 message=f"pre-proposals must not assign `{config.status_field}`",
             )
         )
-    elif not config.drafts.pre_proposal and status != "Draft":
+    elif not drafts.pre_proposal and status != "Draft":
         diagnostics.append(
             Diagnostic(
                 code="proposal.draft.status",
@@ -230,16 +234,16 @@ def _validate_frontmatter_draft(
         )
 
     nonempty = [line.strip() for line in document.body.splitlines() if line.strip()]
-    if config.drafts.marker is not None and (len(nonempty) < 2 or nonempty[1] != config.drafts.marker):
+    if drafts.marker is not None and (len(nonempty) < 2 or nonempty[1] != drafts.marker):
         diagnostics.append(
             Diagnostic(
                 code="proposal.draft.marker",
                 path=document.relative_path,
-                message=f"draft H1 must be followed by `{config.drafts.marker}`",
+                message=f"draft H1 must be followed by `{drafts.marker}`",
             )
         )
 
-    if not config.drafts.pre_proposal:
+    if not drafts.pre_proposal:
         return
     status_pattern = re.compile(rf"(?im)^\s*(?:{re.escape(config.status_field)}\s*:|#+\s+status\b)")
     if status_pattern.search(document.body):
@@ -731,9 +735,10 @@ def validate_repository(config: ProposalConfig, *, base_ref: str | None = None) 
     for document in state.documents:
         if document.is_draft:
             _validate_frontmatter_draft(config, document, diagnostics)
+            if config.drafts is not None and config.drafts.require_summary:
+                _validate_summary(config, document, diagnostics)
         else:
             _validate_formal_shape(config, document, diagnostics)
-        if not document.is_draft or config.drafts.require_summary:
             _validate_summary(config, document, diagnostics)
         _validate_sections(config, document, templates, diagnostics)
 

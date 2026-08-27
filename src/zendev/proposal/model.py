@@ -109,7 +109,7 @@ class ProposalConfig:
     type_field: str
     status_field: str
     documents_dir: Path
-    drafts: DraftPolicy
+    drafts: DraftPolicy | None
     schema_path: Path
     index_path: Path
     number_width: int

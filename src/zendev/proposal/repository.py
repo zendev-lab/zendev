@@ -128,6 +128,8 @@ def _read_document(
 
 
 def _draft_paths(config: ProposalConfig) -> tuple[Path, ...]:
+    if config.drafts is None:
+        return ()
     return tuple(sorted(path for path in config.drafts.directory.glob("*.md") if path.name != "README.md"))
 
 

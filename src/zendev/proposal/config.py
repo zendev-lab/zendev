@@ -207,7 +207,9 @@ def _load_drafts(
     root: Path,
     formal_schema: Path,
     config_path: Path,
-) -> DraftPolicy:
+) -> DraftPolicy | None:
+    if raw is None:
+        return None
     table = _mapping(raw, config_path=config_path, field="drafts")
     _reject_unknown(table, _DRAFT_KEYS, config_path=config_path, field="drafts")
     directory = _repo_path(

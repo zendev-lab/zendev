@@ -72,6 +72,32 @@ def test_vep_fixture_validates_and_builds_inverse_index(tmp_path: Path) -> None:
     assert payload["veps"][1]["requires"] == ["VEP-0000"]
 
 
+def test_repository_without_drafts_does_not_require_a_draft_directory(tmp_path: Path) -> None:
+    repository = _copy_fixture(tmp_path, "vep")
+    policy = repository / "proposal.toml"
+    policy.write_text(
+        policy.read_text(encoding="utf-8").replace(
+            """[drafts]
+directory = "drafts"
+schema = "schemas/draft.schema.json"
+marker = "> Pre-VEP design draft. Non-normative."
+pre_proposal = true
+
+""",
+            "",
+        ),
+        encoding="utf-8",
+    )
+    shutil.rmtree(repository / "drafts")
+
+    config = load_config(policy)
+    result = validate_repository(config)
+
+    assert result.ok
+    assert result.state.draft_count == 0
+    assert len(result.state.documents) == 2
+
+
 def test_sep_frontmatter_draft_is_validated_and_indexed(tmp_path: Path) -> None:
     repository = _copy_fixture(tmp_path, "sep")
     config = load_config(repository / "proposal.toml")
