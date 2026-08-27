@@ -8,9 +8,6 @@ schema = "schemas/zfp.schema.json"
 index = "zfps-index.json"
 metadata_title = "plain"
 
-[drafts]
-directory = "zfp-drafts"
-
 [templates]
 Feature = "templates/zfp.md"
 Governance = "templates/zfp.md"

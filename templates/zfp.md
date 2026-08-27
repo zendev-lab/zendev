@@ -1,32 +1,32 @@
 ---
 zfp: 0
-title: "Title"
+title: "标题"
 status: Draft
 type: Feature
 authors:
-  - "GitHub handle"
+  - "GitHub 用户名"
 created: 2026-08-26
 supersedes: []
 ---
 
-# ZFP-0000: Title
+# ZFP-0000: 标题
 
-## Summary
+## 摘要
 
-State the decision in a few sentences.
+用几句话直接陈述要接受的决策。
 
-## Motivation
+## 动机
 
-Explain the concrete problem and why it needs a durable decision.
+说明具体问题，以及为什么它需要一份持久的决策记录。
 
-## Design
+## 设计
 
-Describe the smallest public contract that solves the problem.
+描述能够解决问题的最小公开契约。
 
-## Compatibility
+## 兼容性
 
-Identify affected users, migrations, and rollback boundaries.
+说明受影响的用户、迁移方式和回滚边界。
 
-## Validation
+## 验证
 
-Define observable evidence that will show the implementation is correct.
+定义能够证明实现正确的可观察证据。
