@@ -14,18 +14,6 @@ Governance = "templates/zfp.md"
 
 [graph]
 fields = ["supersedes"]
-supersedes_field = "supersedes"
-accepted_status = "Accepted"
-superseded_status = "Superseded"
-
-[history]
-initial_status = "Draft"
-protect_records = true
-
-[history.transitions]
-Draft = ["Draft", "Accepted"]
-Accepted = ["Accepted", "Superseded"]
-Superseded = ["Superseded"]
 
 [index]
 version = 1
@@ -49,11 +37,6 @@ source = "path"
 name = "title"
 source = "metadata"
 key = "title"
-
-[[index.fields]]
-name = "status"
-source = "metadata"
-key = "status"
 
 [[index.fields]]
 name = "type"

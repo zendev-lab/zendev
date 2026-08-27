@@ -6,7 +6,6 @@
   "required": [
     "zfp",
     "title",
-    "status",
     "type",
     "authors",
     "created",
@@ -23,10 +22,6 @@
       "type": "string",
       "minLength": 1,
       "pattern": "^(?!ZFP-[0-9]{4}:).+"
-    },
-    "status": {
-      "type": "string",
-      "enum": ["Draft", "Accepted", "Superseded"]
     },
     "type": {
       "type": "string",

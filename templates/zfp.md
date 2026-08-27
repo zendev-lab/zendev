@@ -1,7 +1,6 @@
 ---
 zfp: 0
 title: "标题"
-status: Draft
 type: Feature
 authors:
   - "GitHub 用户名"
@@ -13,7 +12,7 @@ supersedes: []
 
 ## 摘要
 
-用几句话直接陈述要接受的决策。
+用几句话直接陈述提案内容。
 
 ## 动机
 
