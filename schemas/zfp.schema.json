@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/zendev-lab/zendev/main/schemas/zfp.schema.json",
+  "title": "ZFP frontmatter",
+  "type": "object",
+  "required": [
+    "zfp",
+    "title",
+    "type",
+    "authors",
+    "created",
+    "supersedes"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "zfp": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9999
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!ZFP-[0-9]{4}:).+"
+    },
+    "type": {
+      "type": "string",
+      "enum": ["Feature", "Governance"]
+    },
+    "authors": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "created": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "supersedes": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^ZFP-[0-9]{4}$"
+      }
+    }
+  }
+}

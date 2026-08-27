@@ -1,0 +1,64 @@
+version = 1
+
+[proposal]
+prefix = "ZFP"
+number_field = "zfp"
+documents_dir = "zfps"
+schema = "schemas/zfp.schema.json"
+index = "zfps-index.json"
+metadata_title = "plain"
+
+[templates]
+Feature = "templates/zfp.md"
+Governance = "templates/zfp.md"
+
+[graph]
+fields = ["supersedes"]
+
+[index]
+version = 1
+entries_key = "zfps"
+include_drafts = false
+
+[[index.fields]]
+name = "zfp"
+source = "metadata"
+key = "zfp"
+
+[[index.fields]]
+name = "id"
+source = "identifier"
+
+[[index.fields]]
+name = "path"
+source = "path"
+
+[[index.fields]]
+name = "title"
+source = "metadata"
+key = "title"
+
+[[index.fields]]
+name = "type"
+source = "metadata"
+key = "type"
+
+[[index.fields]]
+name = "authors"
+source = "metadata"
+key = "authors"
+
+[[index.fields]]
+name = "created"
+source = "metadata"
+key = "created"
+
+[[index.fields]]
+name = "supersedes"
+source = "metadata"
+key = "supersedes"
+
+[[index.fields]]
+name = "superseded_by"
+source = "inverse"
+key = "supersedes"

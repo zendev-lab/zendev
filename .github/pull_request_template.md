@@ -1,11 +1,17 @@
-## Summary
+## 动机
 
-<!-- Describe the change and its motivation. Reference related issues if applicable. -->
+<!-- 要解决什么问题、为什么现在做、为什么属于这里的 owner 或约束？ -->
 
-## Validation
+## 解决方案
 
-<!-- Describe how you tested the change (commands run, tests added, manual checks). -->
+<!-- 具体做了什么，以及带来的行为、架构或用户影响是什么？ -->
 
-## Notes
+<!-- pr-body:optional -->
+## 说明
 
-<!-- Optional: migration notes, follow-up items, or anything the reviewer should know. -->
+<!-- 兼容性、迁移、安全性、风险或 PR stack 依赖。若无相关内容，可省略本节。 -->
+
+<!-- pr-body:optional -->
+## 后续工作
+
+<!-- 描述明确不在本 PR 内、但建议继续推进的具体工作。若无后续工作，可省略。 -->

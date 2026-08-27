@@ -49,6 +49,8 @@ Use `COMMAND --help` for the authoritative option reference.
 
 ## Workflows
 
+- [Zendev Feature Proposals](./zfps/README.md): lightweight design records
+  required before public feature changes.
 - [Commit conventions](./docs/commit-conventions.md): profiles, commit hook,
   configuration, and vendored Gitmoji data.
 - [PR review checks](./docs/review-checks.md): title/body CLIs and composite
