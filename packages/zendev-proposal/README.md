@@ -55,7 +55,16 @@ repo = "https://github.com/zendev-lab/zendev"
 rev = "v0.2.0"
 hooks = [
   { id = "zendev-proposal" },
+  { id = "zendev-proposal-index" },
 ]
+```
+
+`zendev-proposal` is the read-only commit gate and also checks the committed
+index. It always runs, including deletion-only commits. The index writer is a
+manual-stage hook so CI cannot repair drift and pass with an uncommitted change:
+
+```console
+$ uvx prek run --stage manual zendev-proposal-index
 ```
 
 ## Commands

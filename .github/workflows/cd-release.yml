@@ -28,7 +28,7 @@ jobs:
         run: |
           uv sync --all-packages --all-groups
           uvx prek run --all-files
-          uv run pyright
+          uv run pyrefly check
           uv run pytest -v
 
   build:

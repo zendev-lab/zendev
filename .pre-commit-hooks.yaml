@@ -4,9 +4,19 @@
   entry: zendev-commit-msg
   language: python
   stages: [commit-msg]
+- id: zendev-proposal-index
+  name: zendev proposal index
+  description: Explicitly update the deterministic proposal index.
+  entry: zendev-proposal index --write
+  language: python
+  pass_filenames: false
+  always_run: true
+  stages: [manual]
 - id: zendev-proposal
   name: zendev proposal repository
   description: Validate repository-native proposals and their committed index.
   entry: zendev-proposal check
   language: python
   pass_filenames: false
+  always_run: true
+  stages: [pre-commit]

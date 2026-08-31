@@ -17,3 +17,14 @@ jobs:
           persist-credentials: false
       - uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff # v6
       - uses: j178/prek-action@ac910e82abb151969526c7d8f66b79315a12eb6f # v1
+
+      - name: Validate public hook manifest
+        run: uvx prek validate-manifest .pre-commit-hooks.yaml
+
+      - name: Exercise public hooks
+        run: |
+          printf '%s\n' '✨ feat(hooks): validate public hooks' > .git/COMMIT_EDITMSG
+          uvx prek try-repo . zendev-proposal --all-files
+          uvx prek try-repo . zendev-proposal-index --stage manual --all-files
+          uvx prek try-repo . zendev-commit-msg --stage commit-msg --commit-msg-filename .git/COMMIT_EDITMSG
+          git diff --exit-code

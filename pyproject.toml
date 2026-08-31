@@ -27,7 +27,9 @@ dev = [
   { include-group = "test" },
 ]
 check = [
-  "pyright>=1.1",
+  "pyrefly==1.2.0",
+  "types-PyYAML>=6.0",
+  "types-jsonschema>=4.26",
 ]
 test = [
   "pytest>=8.0",
@@ -72,9 +74,13 @@ source = "vcs"
 [tool.hatch.version.raw-options]
 fallback_version = "0.0.0"
 
-[tool.pyright]
-typeCheckingMode = "standard"
-pythonVersion = "3.12"
+[tool.pyrefly]
+python-version = "3.12.0"
+infer-with-first-use = false
+project-includes = ["src", "packages", "tests"]
+project-excludes = ["**/__pycache__/**", "**/_version.py"]
+disable-project-excludes-heuristics = true
+use-ignore-files = false
 
 [tool.pytest]
 addopts = ["--strict-markers", "--tb=short"]
