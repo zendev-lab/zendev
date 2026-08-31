@@ -16,9 +16,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Check PR title
+        if: >-
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.user.login != 'renovate[bot]'
         uses: ./actions/validate-title
         with:
           text: ${{ github.event.pull_request.title }}
+
+      - name: Skip PR title check for Renovate
+        if: >-
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.user.login == 'renovate[bot]'
+        run: echo "Renovate PR titles are exempt from the repository title convention."
 
   body:
     name: PR body
@@ -26,6 +35,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Check PR body
+        if: >-
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.user.login != 'renovate[bot]'
         uses: ./actions/validate-body
         with:
           body: ${{ github.event.pull_request.body }}
+
+      - name: Skip PR body check for Renovate
+        if: >-
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.user.login == 'renovate[bot]'
+        run: echo "Renovate PR bodies are exempt from the human PR description template."
