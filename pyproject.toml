@@ -28,6 +28,7 @@ dev = [
 ]
 check = [
   "pyright>=1.1",
+  "ty>=0.0.75",
 ]
 test = [
   "pytest>=8.0",
@@ -112,9 +113,6 @@ indent-style = "space"
 skip-magic-trailing-comma = false
 line-ending = "auto"
 
-[tool.zendev.commit]
-profile = "zendev"
-
 [tool.uv]
 default-groups = ["check", "test"]
 
@@ -126,3 +124,6 @@ zendev-review = { workspace = true }
 
 [tool.uv.workspace]
 members = ["packages/*"]
+
+[tool.zendev.commit]
+profile = "zendev"

@@ -4,25 +4,67 @@ hooks = [
   { id = "check-added-large-files" },
   { id = "check-case-conflict" },
   { id = "check-executables-have-shebangs" },
+  { id = "check-illegal-windows-names" },
+  { id = "check-shebang-scripts-are-executable" },
+  { id = "check-symlinks" },
+  { id = "check-toml" },
   { id = "check-yaml" },
   { id = "check-json" },
   { id = "check-merge-conflict" },
+  { id = "destroyed-symlinks" },
+  { id = "detect-private-key" },
   { id = "end-of-file-fixer" },
+  { id = "fix-byte-order-marker" },
+  { id = "forbid-new-submodules" },
   { id = "mixed-line-ending" },
   { id = "trailing-whitespace" },
 ]
 
 [[repos]]
 repo = "https://github.com/astral-sh/ruff-pre-commit"
-rev = "v0.15.6"
+rev = "v0.16.5"
 hooks = [
   { id = "ruff-check", args = ["--fix"] },
   { id = "ruff-format" },
 ]
 
 [[repos]]
+repo = "https://github.com/astral-sh/uv-pre-commit"
+rev = "0.12.7"
+hooks = [{ id = "uv-lock" }]
+
+[[repos]]
+repo = "https://github.com/tombi-toml/tombi-pre-commit"
+rev = "v1.5.0"
+hooks = [
+  { id = "tombi-format", exclude = "^uv\\.lock$" },
+  { id = "tombi-lint", args = ["--error-on-warnings"], exclude = "^uv\\.lock$" },
+]
+
+[[repos]]
+repo = "https://github.com/rhysd/actionlint"
+rev = "v1.7.12"
+hooks = [{ id = "actionlint" }]
+
+[[repos]]
+repo = "https://github.com/zizmorcore/zizmor-pre-commit"
+rev = "v1.30.0"
+hooks = [{ id = "zizmor", args = ["--min-severity", "medium"] }]
+
+[[repos]]
+repo = "https://github.com/lycheeverse/lychee"
+rev = "lychee-v0.24.2"
+hooks = [
+  {
+    id = "lychee",
+    files = "\\.md$",
+    args = ["--offline", "--scheme", "file", "--no-progress"],
+  },
+]
+
+[[repos]]
 repo = "https://github.com/crate-ci/typos"
-rev = "v1.31.1"
+rev = "v1.50.0"
 hooks = [
   { id = "typos", args = ["--force-exclude"] },
 ]
@@ -31,5 +73,7 @@ hooks = [
 repo = "local"
 hooks = [
   { id = "zendev-zfp", name = "zendev feature proposals", entry = "uv run zendev proposal check", language = "system", pass_filenames = false },
+  { id = "ty", name = "ty", entry = "uv run ty check .", language = "system", pass_filenames = false },
+  { id = "pyright", name = "pyright", entry = "uv run pyright", language = "system", pass_filenames = false },
   { id = "zendev-commit-msg", name = "zendev commit message", entry = "uv run zendev-commit-msg", language = "system", stages = ["commit-msg"] },
 ]
