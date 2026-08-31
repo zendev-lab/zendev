@@ -29,6 +29,11 @@ hooks = [
 ]
 
 [[repos]]
+repo = "https://github.com/astral-sh/ty-pre-commit"
+rev = "v0.0.75"
+hooks = [{ id = "ty" }]
+
+[[repos]]
 repo = "https://github.com/astral-sh/uv-pre-commit"
 rev = "0.12.7"
 hooks = [{ id = "uv-lock" }]
@@ -73,7 +78,6 @@ hooks = [
 repo = "local"
 hooks = [
   { id = "zendev-zfp", name = "zendev feature proposals", entry = "uv run zendev proposal check", language = "system", pass_filenames = false },
-  { id = "ty", name = "ty", entry = "uv run ty check .", language = "system", pass_filenames = false },
   { id = "pyright", name = "pyright", entry = "uv run pyright", language = "system", pass_filenames = false },
   { id = "zendev-commit-msg", name = "zendev commit message", entry = "uv run zendev-commit-msg", language = "system", stages = ["commit-msg"] },
 ]

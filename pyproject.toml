@@ -28,7 +28,6 @@ dev = [
 ]
 check = [
   "pyright>=1.1",
-  "ty>=0.0.75",
 ]
 test = [
   "pytest>=8.0",

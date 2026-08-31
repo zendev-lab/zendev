@@ -20,7 +20,7 @@ format:
 # Type checking and linting
 check:
     uvx ruff check --fix
-    uv run ty check .
+    uvx ty check .
     uv run pyright
 
 # Run all tests
