@@ -76,9 +76,8 @@ fallback_version = "0.0.0"
 
 [tool.pyrefly]
 python-version = "3.12.0"
-infer-with-first-use = false
 project-includes = ["src", "packages", "tests"]
-project-excludes = ["**/__pycache__/**", "**/_version.py"]
+project-excludes = ["**/_version.py"]
 disable-project-excludes-heuristics = true
 use-ignore-files = false
 
