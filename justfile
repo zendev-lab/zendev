@@ -21,7 +21,7 @@ format:
 check:
     uvx ruff check --fix
     uvx ty check .
-    uv run pyrefly check
+    uvx pyrefly check
 
 # Run all tests
 test:
