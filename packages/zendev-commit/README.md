@@ -58,6 +58,11 @@ messages are accepted.
 
 ## Commit hook
 
+The published hook runs `uv run zendev-commit-msg` in the consuming
+repository, so the command version comes from its `pyproject.toml` and
+`uv.lock`. The `zendev-commit` development dependency installed above is
+sufficient; the complete `zendev` toolkit also provides this command.
+
 With `.pre-commit-config.yaml`:
 
 ```yaml

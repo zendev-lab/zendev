@@ -1,22 +1,22 @@
 - id: zendev-commit-msg
   name: zendev commit message
   description: Validate commit messages against zendev, Conventional Commits, or gitmoji profiles.
-  entry: zendev-commit-msg
-  language: python
+  entry: uv run zendev-commit-msg
+  language: system
   stages: [commit-msg]
 - id: zendev-proposal-index
   name: zendev proposal index
   description: Explicitly update the deterministic proposal index.
-  entry: zendev-proposal index --write
-  language: python
+  entry: uv run zendev proposal index --write
+  language: system
   pass_filenames: false
   always_run: true
   stages: [manual]
 - id: zendev-proposal
   name: zendev proposal repository
   description: Validate repository-native proposals and their committed index.
-  entry: zendev-proposal check
-  language: python
+  entry: uv run zendev proposal check
+  language: system
   pass_filenames: false
   always_run: true
   stages: [pre-commit]

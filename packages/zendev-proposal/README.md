@@ -49,6 +49,14 @@ if not result.ok:
 
 Repositories using prek can install the published hook directly:
 
+```console
+$ uv add --dev zendev
+```
+
+The hooks run `uv run zendev proposal ...` in the consuming repository, so the
+tool version comes from its `pyproject.toml` and `uv.lock` rather than a second
+hook-managed Python environment.
+
 ```toml
 [[repos]]
 repo = "https://github.com/zendev-lab/zendev"
