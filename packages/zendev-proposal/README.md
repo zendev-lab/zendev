@@ -24,16 +24,16 @@ decisions stay in each proposal repository.
 
 Install this tool independently of the commit workflow:
 
-```console
-$ uv add --dev zendev-proposal
+```shell
+uv add --dev zendev-proposal
 ```
 
 For an ad hoc run, use `uvx --from zendev-proposal zendev-proposal ...`.
 The complete `zendev` distribution exposes the same application through its
 unified command:
 
-```console
-$ uvx --from zendev zendev proposal --help
+```shell
+uvx --from zendev zendev proposal --help
 ```
 
 ## Python API
@@ -64,17 +64,17 @@ hooks = [
 index. It always runs, including deletion-only commits. The index writer is a
 manual-stage hook so CI cannot repair drift and pass with an uncommitted change:
 
-```console
-$ uvx prek run --stage manual zendev-proposal-index
+```shell
+uvx prek run --stage manual zendev-proposal-index
 ```
 
 ## Commands
 
 Run commands from the proposal repository root or pass an explicit config:
 
-```console
-$ zendev-proposal check [--config proposal.toml] [--base-ref REF] [--json]
-$ zendev-proposal index [--config proposal.toml] (--check | --write) [--json]
+```shell
+zendev-proposal check [--config proposal.toml] [--base-ref REF] [--json]
+zendev-proposal index [--config proposal.toml] (--check | --write) [--json]
 ```
 
 `check` uses `PROPOSAL_BASE_REF` when `--base-ref` is absent. History validation
