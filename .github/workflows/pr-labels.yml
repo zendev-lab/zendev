@@ -1,4 +1,4 @@
-name: Automation - PR Labels
+name: PR - Labels
 
 on:
   # This workflow never checks out or executes pull request code. Its only
