@@ -14,6 +14,7 @@ The tool owns repository mechanics:
 - required H2 sections derived from repository templates
 - frontmatter-bearing drafts with either the formal or a dedicated draft schema
 - proposal relation integrity and inverse index edges
+- optional defined-concept IDs and matching HTML anchors
 - optional Git-backed deletion, number-reuse, initial-state, and transition checks
 - deterministic index checking and explicit writes
 - stable human and JSON diagnostics
@@ -252,6 +253,21 @@ reason = "One-time bootstrap correction recorded by Process VEP-0000."
 
 Waivers apply only to the exact path and transition. Their required reason is a
 review record, not a second lifecycle state.
+
+### Defined concepts
+
+Omit `[defines]` when the repository does not track concept ownership. When it
+is present, each `defines` ID must have exactly one matching HTML anchor, each
+matching anchor must be declared, and a concept may have only one current
+owner. Ownership may move along the configured `supersedes` relation when the
+previous owners are superseded.
+
+```toml
+[defines]
+field = "defines"
+anchor_prefix = "term-"
+id_pattern = "[a-z][a-z0-9]*(?:-[a-z0-9]+)*"
+```
 
 ## Index fields
 

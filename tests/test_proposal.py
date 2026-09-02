@@ -425,3 +425,49 @@ def test_missing_base_ref_is_a_tool_error(tmp_path: Path) -> None:
         validate_repository(load_config(repository / "proposal.toml"), base_ref="missing")
 
     assert error.value.diagnostic.code == "proposal.history.base-ref"
+
+
+def test_defines_requires_a_matching_anchor(tmp_path: Path) -> None:
+    repository = _copy_fixture(tmp_path, "vep")
+    draft = repository / "drafts" / "temporal-model.md"
+    draft.write_text(
+        draft.read_text(encoding="utf-8").replace("defines: []\n", "defines:\n  - tempo\n"),
+        encoding="utf-8",
+    )
+
+    result = validate_repository(load_config(repository / "proposal.toml"))
+
+    assert "proposal.defines.missing-anchor" in _codes(result)
+
+
+def test_defines_rejects_an_undeclared_anchor(tmp_path: Path) -> None:
+    repository = _copy_fixture(tmp_path, "vep")
+    draft = repository / "drafts" / "temporal-model.md"
+    draft.write_text(
+        draft.read_text(encoding="utf-8") + '\n<a id="term-tempo"></a>\n',
+        encoding="utf-8",
+    )
+
+    result = validate_repository(load_config(repository / "proposal.toml"))
+
+    assert "proposal.defines.undeclared-anchor" in _codes(result)
+
+
+def test_defines_rejects_duplicate_current_owners(tmp_path: Path) -> None:
+    repository = _copy_fixture(tmp_path, "vep")
+    first = repository / "drafts" / "temporal-model.md"
+    second = repository / "drafts" / "other-model.md"
+    first.write_text(
+        first.read_text(encoding="utf-8").replace("defines: []\n", "defines:\n  - tempo\n")
+        + '\n<a id="term-tempo"></a>\n',
+        encoding="utf-8",
+    )
+    second.write_text(
+        '---\ntitle: "Other model"\ndefines:\n  - tempo\n---\n\n# Other model\n\n'
+        '> Pre-VEP design draft. Non-normative.\n\n<a id="term-tempo"></a>\n',
+        encoding="utf-8",
+    )
+
+    result = validate_repository(load_config(repository / "proposal.toml"))
+
+    assert "proposal.defines.duplicate-owner" in _codes(result)

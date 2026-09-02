@@ -723,6 +723,121 @@ def _validate_history(
             )
 
 
+def _defined_ids(document: ProposalDocument, field: str) -> list[str]:
+    values = document.metadata.get(field)
+    if not isinstance(values, list):
+        return []
+    return [value for value in values if isinstance(value, str)]
+
+
+def _superseded_closure(
+    config: ProposalConfig,
+    start: str,
+    documents_by_id: dict[str, ProposalDocument],
+) -> set[str]:
+    policy = config.graph
+    if policy is None or policy.supersedes_field is None:
+        return set()
+    seen: set[str] = set()
+    pending = [start]
+    while pending:
+        identifier = pending.pop()
+        document = documents_by_id.get(identifier)
+        if document is None:
+            continue
+        for target in edge_identifiers(config, document, policy.supersedes_field):
+            if target not in seen:
+                seen.add(target)
+                pending.append(target)
+    return seen
+
+
+def _validate_defines(
+    config: ProposalConfig,
+    state: RepositoryState,
+    diagnostics: list[Diagnostic],
+) -> None:
+    policy = config.defines
+    if policy is None:
+        return
+
+    anchor_re = re.compile(rf'<a id="{re.escape(policy.anchor_prefix)}({policy.id_pattern})"></a>')
+    owners: dict[str, list[ProposalDocument]] = defaultdict(list)
+
+    for document in state.documents:
+        raw = document.metadata.get(policy.field)
+        if raw is not None and not isinstance(raw, list):
+            diagnostics.append(
+                Diagnostic(
+                    code="proposal.defines.invalid-field",
+                    path=document.relative_path,
+                    message=f"`{policy.field}` must be an array of concept IDs",
+                )
+            )
+            continue
+        declared = _defined_ids(document, policy.field)
+        declared_set = set(declared)
+        anchors = anchor_re.findall(document.body)
+        for identifier in declared:
+            anchor = f'<a id="{policy.anchor_prefix}{identifier}"></a>'
+            count = document.body.count(anchor)
+            if count != 1:
+                diagnostics.append(
+                    Diagnostic(
+                        code="proposal.defines.missing-anchor",
+                        path=document.relative_path,
+                        message=(
+                            f"`{policy.field}` entry `{identifier}` requires exactly one "
+                            f"`{anchor}` anchor; found {count}"
+                        ),
+                    )
+                )
+            owners[identifier].append(document)
+        for identifier in sorted(set(anchors) - declared_set):
+            diagnostics.append(
+                Diagnostic(
+                    code="proposal.defines.undeclared-anchor",
+                    path=document.relative_path,
+                    message=(
+                        f"definition anchor `{policy.anchor_prefix}{identifier}` must be declared in `{policy.field}`"
+                    ),
+                )
+            )
+
+    documents_by_id = {
+        identifier: document
+        for document in state.formal_documents
+        if (identifier := document.identifier(config)) is not None
+    }
+    superseded_status = config.graph.superseded_status if config.graph is not None else "Superseded"
+    for identifier, defining_documents in sorted(owners.items()):
+        if len(defining_documents) == 1:
+            continue
+        current = [
+            document
+            for document in defining_documents
+            if document.metadata.get(config.status_field) != superseded_status
+        ]
+        if len(current) == 1 and (current_id := current[0].identifier(config)) is not None:
+            superseded = _superseded_closure(config, current_id, documents_by_id)
+            previous = [document for document in defining_documents if document is not current[0]]
+            if all(
+                document.metadata.get(config.status_field) == superseded_status
+                and (previous_id := document.identifier(config)) is not None
+                and previous_id in superseded
+                for document in previous
+            ):
+                continue
+        locations = ", ".join(document.relative_path for document in defining_documents)
+        diagnostics.append(
+            Diagnostic(
+                code="proposal.defines.duplicate-owner",
+                path=current[0].relative_path if len(current) == 1 else defining_documents[0].relative_path,
+                message=f"`{identifier}` is defined by {locations}",
+            )
+        )
+
+
 def validate_repository(config: ProposalConfig, *, base_ref: str | None = None) -> ValidationResult:
     """Validate repository mechanics while leaving project terminology local."""
 
@@ -743,6 +858,7 @@ def validate_repository(config: ProposalConfig, *, base_ref: str | None = None) 
         _validate_sections(config, document, templates, diagnostics)
 
     _validate_graph(config, state, diagnostics)
+    _validate_defines(config, state, diagnostics)
     if base_ref is not None:
         _validate_history(config, state, base_ref, diagnostics)
 
