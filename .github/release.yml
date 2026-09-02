@@ -1,0 +1,7 @@
+changelog:
+  exclude:
+    labels:
+      - dependencies
+      - documentation
+    authors:
+      - renovate[bot]

@@ -1,0 +1,43 @@
+name: Automation - PR Labels
+
+on:
+  # This workflow never checks out or executes pull request code. Its only
+  # untrusted input is reduced to a boolean by the expression evaluator.
+  pull_request_target: # zizmor: ignore[dangerous-triggers]
+    types: [opened, edited, reopened]
+
+permissions: {}
+
+jobs:
+  documentation:
+    name: Documentation label
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Reconcile documentation label
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          IS_DOCUMENTATION: ${{ startsWith(github.event.pull_request.title, '📝 docs') }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          has_documentation_label="$(
+            gh api \
+              --header "X-GitHub-Api-Version: 2026-03-10" \
+              "repos/${GH_REPO}/issues/${PR_NUMBER}/labels" \
+              --jq 'any(.name == "documentation")'
+          )"
+
+          if [[ "$IS_DOCUMENTATION" == "true" && "$has_documentation_label" == "false" ]]; then
+            gh api \
+              --method POST \
+              --header "X-GitHub-Api-Version: 2026-03-10" \
+              "repos/${GH_REPO}/issues/${PR_NUMBER}/labels" \
+              --field "labels[]=documentation"
+          elif [[ "$IS_DOCUMENTATION" == "false" && "$has_documentation_label" == "true" ]]; then
+            gh api \
+              --method DELETE \
+              --header "X-GitHub-Api-Version: 2026-03-10" \
+              "repos/${GH_REPO}/issues/${PR_NUMBER}/labels/documentation"
+          fi
