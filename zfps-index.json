@@ -41,9 +41,9 @@
       "superseded_by": []
     },
     {
-      "zfp": 3,
-      "id": "ZFP-0003",
-      "path": "zfps/ZFP-0003-numeric-proposal-index.md",
+      "zfp": 4,
+      "id": "ZFP-0004",
+      "path": "zfps/ZFP-0004-numeric-proposal-index.md",
       "title": "数值提案索引身份",
       "type": "Feature",
       "authors": [
