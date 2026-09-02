@@ -10,7 +10,8 @@ ZFP 不编码采纳或实现状态，合并只表示提案文本进入版本库�
 ZFP 的 pull request 复用仓库统一中文模板和 `zendev` 标题约定。新提案、修订和
 替代分别使用 `propose`、`revise` 和 `supersede`；这些动词是评审惯例，不是机器
 状态。新提案和修订的标题只写主题，不写提案编号；替代类标题须写明被替代的
-`ZFP-NNNN`，但不写新提案编号。新提案编号只出现在文件名、frontmatter 和索引中。
+`ZFP-NNNN` 和新提案主题，形如 `supersede ZFP-NNNN with <topic>`，但不写新提案
+编号。新提案编号只出现在文件名、frontmatter 和索引中。
 
 提交的[索引](../zfps-index.json)由提案 frontmatter 确定性生成，可用以下命令检查：
 
