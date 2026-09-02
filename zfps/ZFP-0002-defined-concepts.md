@@ -14,7 +14,7 @@ supersedes: []
 
 为 `zendev-proposal` 增加可选的 `[defines]` 策略。开启后，提案与草稿中的概念
 ID 必须与 HTML 锚点一一对应，并且一个概念在当前只能有一个所有者；所有权可以
-沿配置的 `supersedes` 关系交接。
+沿 `supersedes` 替代链交接。
 
 ## 动机
 
@@ -38,8 +38,9 @@ id_pattern = "[a-z][a-z0-9]*(?:-[a-z0-9]+)*"
 - `field` 列出的每个字符串必须对应恰好一个
   `<a id="{anchor_prefix}{id}"></a>` 锚点；
 - 匹配该前缀与 `id_pattern` 的锚点必须出现在 `field` 中；
-- 同一 ID 当前只能有一个所有者；若配置了 `graph.supersedes_field`，被替代
-  提案可以把所有权交给沿 supersession 闭包到达的当前提案。
+- 同一 ID 当前只能有一个所有者；被替代的旧提案仍可保留历史定义。若配置了
+  `graph.supersedes_field`，所有权只能交给替代链上的现行提案：旧提案必须
+  出现在现行提案的 `supersedes` 传递闭包里。
 
 该策略不检查自然语言定义质量，也不引入项目词表。
 
