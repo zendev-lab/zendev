@@ -9,7 +9,8 @@ ZFP 不编码采纳或实现状态，合并只表示提案文本进入版本库�
 
 ZFP pull request 复用仓库统一中文模板和 `zendev` title profile。title 使用
 `docs(zfp)` scope，并以 `propose`、`revise` 或 `supersede` 表达本次文档变更；这些
-动词是评审惯例，不是机器状态。
+动词是评审惯例，不是机器状态。title 只写主题，不包含 `ZFP-NNNN`；编号只出现在
+文件名、frontmatter 和索引中。
 
 提交的[索引](../zfps-index.json)由提案 frontmatter 确定性生成，可用以下命令检查：
 
