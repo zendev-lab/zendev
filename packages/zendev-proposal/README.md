@@ -259,8 +259,9 @@ review record, not a second lifecycle state.
 Omit `[defines]` when the repository does not track concept ownership. When it
 is present, each `defines` ID must have exactly one matching HTML anchor, each
 matching anchor must be declared, and a concept may have only one current
-owner. Ownership may move along the configured `supersedes` relation when the
-previous owners are superseded.
+owner. A superseded proposal may keep the historical definition. Ownership
+moves only along the `supersedes` chain: previous owners must appear in the
+current proposal's `supersedes` transitive closure.
 
 ```toml
 [defines]
