@@ -13,7 +13,7 @@ ZFP pull request 复用仓库统一中文模板和 `zendev` title profile。titl
 
 提交的[索引](../zfps-index.json)由提案 frontmatter 确定性生成，可用以下命令检查：
 
-```console
-$ uv run zendev proposal check
-$ uv run zendev proposal index --check
+```shell
+uv run zendev proposal check
+uv run zendev proposal index --check
 ```

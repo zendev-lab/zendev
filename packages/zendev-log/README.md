@@ -3,8 +3,8 @@
 `zendev-log` provides a small, idempotent Loguru setup helper for command-line
 applications.
 
-```console
-$ uv add zendev-log
+```shell
+uv add zendev-log
 ```
 
 ```python

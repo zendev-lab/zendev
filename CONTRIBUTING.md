@@ -5,24 +5,24 @@
 Zendev requires Python 3.12 or newer. Install the complete workspace before
 changing code or generated metadata:
 
-```console
-$ uv sync --all-packages --all-groups
+```shell
+uv sync --all-packages --all-groups
 ```
 
 Run the repository gates before opening or updating a pull request:
 
-```console
-$ just ci
-$ uvx prek run --all-files
-$ uv pip check
+```shell
+just ci
+uvx prek run --all-files
+uv pip check
 ```
 
 When ZFP documents, templates, or policy change, also verify the proposal set
 and its committed index:
 
-```console
-$ uv run zendev proposal check
-$ uv run zendev proposal index --check
+```shell
+uv run zendev proposal check
+uv run zendev proposal index --check
 ```
 
 `just ci` formats and lints code, runs ty and Pyright, and executes the test
@@ -34,8 +34,8 @@ contracts rather than implementation control flow.
 The commit package keeps an offline Gitmoji catalog pinned to an upstream
 revision. Refresh it only through the repository task:
 
-```console
-$ just sync-gitmoji
+```shell
+just sync-gitmoji
 ```
 
 The task validates the upstream payload before updating the vendored file.
