@@ -25,7 +25,7 @@ $ uv run zendev proposal check
 $ uv run zendev proposal index --check
 ```
 
-`just ci` formats and lints code, runs ty and Pyright, and executes the test
+`just ci` formats and lints code, runs ty and Pyrefly, and executes the test
 suite with coverage. Tests should assert observable behavior and public
 contracts rather than implementation control flow.
 

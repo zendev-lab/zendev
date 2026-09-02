@@ -27,7 +27,9 @@ dev = [
   { include-group = "test" },
 ]
 check = [
-  "pyright>=1.1",
+  "pyrefly==1.2.0",
+  "types-PyYAML>=6.0",
+  "types-jsonschema>=4.26",
 ]
 test = [
   "pytest>=8.0",
@@ -72,9 +74,14 @@ source = "vcs"
 [tool.hatch.version.raw-options]
 fallback_version = "0.0.0"
 
-[tool.pyright]
-typeCheckingMode = "standard"
-pythonVersion = "3.12"
+[tool.pyrefly]
+python-version = "3.12.0"
+project-includes = ["src", "packages", "tests"]
+project-excludes = ["**/_version.py"]
+disable-project-excludes-heuristics = true
+# TODO: Remove this workaround once https://github.com/facebook/pyrefly/issues/4525
+# is fixed in the pinned Pyrefly release.
+use-ignore-files = false
 
 [tool.pytest]
 addopts = ["--strict-markers", "--tb=short"]
@@ -112,9 +119,6 @@ indent-style = "space"
 skip-magic-trailing-comma = false
 line-ending = "auto"
 
-[tool.zendev.commit]
-profile = "zendev"
-
 [tool.uv]
 default-groups = ["check", "test"]
 
@@ -126,3 +130,6 @@ zendev-review = { workspace = true }
 
 [tool.uv.workspace]
 members = ["packages/*"]
+
+[tool.zendev.commit]
+profile = "zendev"

@@ -12,13 +12,17 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
 
-      - uses: extractions/setup-just@v3
+      - uses: extractions/setup-just@f8a3cce218d9f83db3a2ecd90e41ac3de6cdfd9b # v3.1.0
+        with:
+          just-version: "1.58.0"
 
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff # v6
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.14"
 
@@ -33,7 +37,7 @@ jobs:
         run: uv build --all-packages --wheel
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@04b047e8bb82a0c002c8312c1c880fbc6a999d45 # v5
         with:
           files: coverage.xml
           fail_ci_if_error: false

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Refresh the vendored gitmoji catalog from a pinned upstream revision."""
 
 from __future__ import annotations
@@ -15,7 +14,7 @@ DEFAULT_SOURCE_URL = (
     "https://raw.githubusercontent.com/carloscuesta/gitmoji/"
     f"{DEFAULT_UPSTREAM_COMMIT}/packages/gitmojis/src/gitmojis.json"
 )
-DEFAULT_OUTPUT = Path(__file__).parents[1] / "src" / "zendev" / "data" / "gitmojis.json"
+DEFAULT_OUTPUT = Path(__file__).parents[1] / "packages" / "zendev-commit" / "src" / "zendev" / "data" / "gitmojis.json"
 
 app = typer.Typer(
     add_completion=False,
