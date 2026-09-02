@@ -32,12 +32,20 @@ def edge_identifiers(config: ProposalConfig, document: ProposalDocument, field: 
     return tuple(identifier for value in raw if (identifier := normalize_reference(config, value)) is not None)
 
 
-def _identifier_sort_key(config: ProposalConfig, identifier: str) -> tuple[int, int, str]:
-    prefix = f"{config.prefix}-"
-    suffix = identifier.removeprefix(prefix)
-    if identifier.startswith(prefix) and suffix.isdigit():
-        return (0, int(suffix), identifier)
-    return (1, 0, identifier)
+def reference_number(config: ProposalConfig, value: object) -> int | None:
+    """Normalize an integer or canonical string edge to its numeric proposal key."""
+
+    identifier = normalize_reference(config, value)
+    if identifier is None:
+        return None
+    return int(identifier.removeprefix(f"{config.prefix}-"))
+
+
+def edge_numbers(config: ProposalConfig, document: ProposalDocument, field: str) -> tuple[int, ...]:
+    raw = document.metadata.get(field)
+    if not isinstance(raw, list):
+        return ()
+    return tuple(number for value in raw if (number := reference_number(config, value)) is not None)
 
 
 def _document_sort_key(config: ProposalConfig, document: ProposalDocument) -> tuple[int, int, str]:
@@ -54,37 +62,35 @@ def build_index(config: ProposalConfig, state: RepositoryState) -> dict[str, obj
     inverse_relations = {
         field.key for field in config.index.fields if field.source == "inverse" and field.key is not None
     }
-    identifiers = {
-        identifier: document for document in documents if (identifier := document.identifier(config)) is not None
-    }
-    inverse: dict[str, dict[str, set[str]]] = {
-        identifier: {relation: set() for relation in inverse_relations} for identifier in identifiers
+    numbers = {number: document for document in documents if (number := document.number(config)) is not None}
+    inverse: dict[int, dict[str, set[int]]] = {
+        number: {relation: set() for relation in inverse_relations} for number in numbers
     }
     for document in documents:
-        source = document.identifier(config)
+        source = document.number(config)
         if source is None:
             continue
         for relation in inverse_relations:
-            for target in edge_identifiers(config, document, relation):
+            for target in edge_numbers(config, document, relation):
                 if target in inverse:
                     inverse[target][relation].add(source)
 
     entries: list[dict[str, object]] = []
     for document in sorted(documents, key=lambda item: _document_sort_key(config, item)):
-        identifier = document.identifier(config)
+        number = document.number(config)
         entry: dict[str, object] = {}
         for field in config.index.fields:
             if field.source == "metadata":
                 assert field.key is not None
                 value: object = document.metadata.get(field.key)
-            elif field.source == "identifier":
-                value = identifier
+                if config.graph is not None and field.key in config.graph.fields:
+                    value = list(edge_numbers(config, document, field.key))
             elif field.source == "path":
                 value = document.relative_path
             else:
                 assert field.key is not None
-                values = set() if identifier is None else inverse.get(identifier, {}).get(field.key, set())
-                value = sorted(values, key=lambda item: _identifier_sort_key(config, item))
+                values = set() if number is None else inverse.get(number, {}).get(field.key, set())
+                value = sorted(values)
             entry[field.name] = value
         entries.append(entry)
 
