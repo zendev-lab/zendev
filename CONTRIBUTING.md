@@ -17,12 +17,11 @@ uvx prek run --all-files
 uv pip check
 ```
 
-When ZFP documents, templates, or policy change, also verify the proposal set
-and its committed index:
+When ZFP documents, templates, or policy change, write a drifted index into the
+same change:
 
 ```shell
-uv run zendev proposal check
-uv run zendev proposal index --check
+uv run zendev proposal check --fix
 ```
 
 `just ci` formats and lints code, runs ty and Pyrefly, and executes the test
@@ -56,7 +55,8 @@ Documentation stays with the code or policy that owns it:
 | `CONTRIBUTING.md` | Development gates, data maintenance, documentation ownership, and PR rules |
 
 Do not recreate a general `docs/` directory or duplicate component behavior in
-the root README.
+the root README. Copyable command examples use `shell` fences and must not start
+with `$ `. Mixed command-and-output transcripts may keep a session fence.
 
 ## Zendev Feature Proposals
 

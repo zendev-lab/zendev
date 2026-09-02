@@ -67,12 +67,11 @@ from zendev.log import setup_log
 | Unified command | Compatibility command | Purpose |
 | --- | --- | --- |
 | `zendev commit` | `zendev-commit` | Create and run an interactive commit. |
-| `zendev commit-msg` | `zendev-commit-msg` | Validate a Git commit-message file. |
-| `zendev validate-title` | `zendev-validate-title` | Validate a PR title. |
-| `zendev validate-body` | `zendev-validate-body` | Validate PR body sections and optional checklist rows. |
+| `zendev commit check` | `zendev-commit-msg` | Validate a Git commit-message file. |
+| `zendev review title` | `zendev-validate-title` | Validate a PR title. |
+| `zendev review body` | `zendev-validate-body` | Validate PR body sections and optional checklist rows. |
 | `zendev proposal check` | `zendev-proposal check` | Validate a proposal repository and its committed index. |
-| `zendev proposal index --check` | `zendev-proposal index --check` | Check the deterministic proposal index. |
-| `zendev proposal index --write` | `zendev-proposal index --write` | Explicitly update the proposal index. |
+| `zendev proposal check --fix` | `zendev-proposal check --fix` | Write the deterministic proposal index. |
 
 The complete `zendev` distribution always provides the `proposal` group. The
 standalone component command does not require `zendev`.

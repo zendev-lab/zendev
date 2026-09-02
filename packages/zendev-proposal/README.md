@@ -16,7 +16,7 @@ The tool owns repository mechanics:
 - proposal relation integrity and inverse index edges
 - optional defined-concept IDs and matching HTML anchors
 - optional Git-backed deletion, number-reuse, initial-state, and transition checks
-- deterministic index checking and explicit writes
+- deterministic index checking and `--fix` writes
 - stable human and JSON diagnostics
 
 Project terminology, normative semantics, process authority, and acceptance
@@ -55,17 +55,16 @@ Repositories using prek can install the published hook directly:
 repo = "https://github.com/zendev-lab/zendev"
 rev = "v0.2.0"
 hooks = [
-  { id = "zendev-proposal" },
-  { id = "zendev-proposal-index" },
+  { id = "zendev-proposal-check" },
 ]
 ```
 
-`zendev-proposal` is the read-only commit gate and also checks the committed
-index. It always runs, including deletion-only commits. The index writer is a
-manual-stage hook so CI cannot repair drift and pass with an uncommitted change:
+`zendev-proposal-check` is the read-only commit gate and also checks the
+committed index. It always runs, including deletion-only commits. It never
+receives `--fix`. Repair drift locally, then commit the result:
 
 ```shell
-uvx prek run --stage manual zendev-proposal-index
+zendev proposal check --fix
 ```
 
 ## Commands
@@ -73,8 +72,7 @@ uvx prek run --stage manual zendev-proposal-index
 Run commands from the proposal repository root or pass an explicit config:
 
 ```shell
-zendev-proposal check [--config proposal.toml] [--base-ref REF] [--json]
-zendev-proposal index [--config proposal.toml] (--check | --write) [--json]
+zendev-proposal check [--config proposal.toml] [--base-ref REF] [--fix] [--json]
 ```
 
 `check` uses `PROPOSAL_BASE_REF` when `--base-ref` is absent. History validation
@@ -87,8 +85,9 @@ Exit codes have stable meanings:
 - `1`: proposal documents, graph, history, or committed index are invalid
 - `2`: the tool could not load its configuration, schema, templates, or Git ref
 
-`check` and `index --check` never write. `index --write` validates proposal
-documents before replacing the configured index.
+`check` never writes. `check --fix` validates proposal documents before replacing
+the configured index. The index may be absent before the first explicit
+`check --fix`.
 
 ## Policy file
 
@@ -179,8 +178,7 @@ key = "requires"
 
 All configured paths must remain under the repository root. The schema and
 template files must already exist. Unknown policy keys are rejected so a typo
-cannot silently disable a check. The index may be absent before the first
-explicit `index --write`.
+cannot silently disable a check.
 
 ### Title modes
 
@@ -292,7 +290,7 @@ path. JSON uses UTF-8, two-space indentation, and one trailing newline.
   "diagnostics": [
     {
       "code": "proposal.index.drift",
-      "hint": "Run `zendev-proposal index --write` and commit the result.",
+      "hint": "Run `zendev-proposal check --fix` and commit the result.",
       "line": null,
       "message": "committed proposal index is missing or out of date",
       "path": "veps-index.json"

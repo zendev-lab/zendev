@@ -25,7 +25,6 @@ jobs:
       - name: Exercise public hooks
         run: |
           printf '%s\n' '✨ feat(hooks): validate public hooks' > .git/COMMIT_EDITMSG
-          uvx prek try-repo . zendev-proposal --all-files
-          uvx prek try-repo . zendev-proposal-index --stage manual --all-files
+          uvx prek try-repo . zendev-proposal-check --all-files
           uvx prek try-repo . zendev-commit-msg --stage commit-msg --commit-msg-filename .git/COMMIT_EDITMSG
           git diff --exit-code
