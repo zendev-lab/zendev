@@ -32,18 +32,18 @@ available separately for narrower use:
 
 For example, run published commands without installing them globally:
 
-```console
-$ uvx --from zendev zendev --help
-$ uvx --from zendev-commit zendev-commit-msg --help
-$ uvx --from zendev-review zendev-validate-body --help
-$ uvx --from zendev-proposal zendev-proposal --help
+```shell
+uvx --from zendev zendev --help
+uvx --from zendev-commit zendev-commit-msg --help
+uvx --from zendev-review zendev-validate-body --help
+uvx --from zendev-proposal zendev-proposal --help
 ```
 
 For local development:
 
-```console
-$ uv sync --all-packages --all-groups
-$ uv run zendev --help
+```shell
+uv sync --all-packages --all-groups
+uv run zendev --help
 ```
 
 Python 3.12 or newer is required. All command-line entry points use Typer.
@@ -52,8 +52,8 @@ Python 3.12 or newer is required. All command-line entry points use Typer.
 Version 0.2.0 removes the logging re-export from the root namespace. For
 logging-only use, install `zendev-log` and import it directly:
 
-```console
-$ uv add zendev-log
+```shell
+uv add zendev-log
 ```
 
 ```python

@@ -76,7 +76,7 @@ from zendev import setup_log
 
 迁移为显式安装和导入：
 
-```console
+```shell
 uv add zendev-log
 ```
 

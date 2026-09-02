@@ -4,10 +4,10 @@
 validation, the interactive commit flow, and its vendored data. It can be
 installed and used without the complete `zendev` toolkit.
 
-```console
-$ uv add --dev zendev-commit
-$ uvx --from zendev-commit zendev-commit --help
-$ uvx --from zendev-commit zendev-commit-msg --help
+```shell
+uv add --dev zendev-commit
+uvx --from zendev-commit zendev-commit --help
+uvx --from zendev-commit zendev-commit-msg --help
 ```
 
 `zendev-commit-msg` validates complete commit messages. `zendev-commit`
@@ -81,14 +81,14 @@ hooks = [
 
 Install the Git hook:
 
-```console
-$ uvx prek install --hook-type commit-msg
+```shell
+uvx prek install --hook-type commit-msg
 ```
 
 An explicit command is also available:
 
-```console
-$ uvx --from zendev-commit zendev-commit-msg --profile conventional .git/COMMIT_EDITMSG
+```shell
+uvx --from zendev-commit zendev-commit-msg --profile conventional .git/COMMIT_EDITMSG
 ```
 
 ## Gitmoji data

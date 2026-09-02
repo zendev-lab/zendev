@@ -4,10 +4,10 @@
 depends on `zendev-commit` so title checks reuse commit profiles instead of
 copying commit semantics.
 
-```console
-$ uv add --dev zendev-review
-$ uvx --from zendev-review zendev-validate-title --help
-$ uvx --from zendev-review zendev-validate-body --help
+```shell
+uv add --dev zendev-review
+uvx --from zendev-review zendev-validate-title --help
+uvx --from zendev-review zendev-validate-body --help
 ```
 
 ## Python API
@@ -28,8 +28,8 @@ assert headings == ["Motivation", "Solution"]
 The title CLI uses the same profiles and repository configuration as the
 commit hook:
 
-```console
-$ uvx --from zendev-review zendev-validate-title --profile gitmoji ":sparkles: Add export support"
+```shell
+uvx --from zendev-review zendev-validate-title --profile gitmoji ":sparkles: Add export support"
 ```
 
 See [`zendev-commit`](../zendev-commit/README.md) for profile semantics.
@@ -38,8 +38,8 @@ See [`zendev-commit`](../zendev-commit/README.md) for profile semantics.
 
 The body CLI reads H2 sections from the configured PR template:
 
-```console
-$ uvx --from zendev-review zendev-validate-body "$PR_BODY" \
+```shell
+uvx --from zendev-review zendev-validate-body "$PR_BODY" \
     --template .github/pull_request_template.md \
     --require-checklist
 ```
