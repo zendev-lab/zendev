@@ -1,5 +1,5 @@
 ---
-zfp: 3
+zfp: 4
 title: "数值提案索引身份"
 type: Feature
 authors:
@@ -8,7 +8,7 @@ created: 2026-09-02
 supersedes: []
 ---
 
-# ZFP-0003: 数值提案索引身份
+# ZFP-0004: 数值提案索引身份
 
 ## 摘要
 
