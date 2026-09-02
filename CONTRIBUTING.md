@@ -69,11 +69,15 @@ machine metadata and technical identifiers remain English. See
 ## Pull requests
 
 Use a valid Gitmoji-style title. ZFP pull requests use `docs(zfp)` and one of
-these verbs as a review convention, not as a machine-enforced lifecycle:
+these verbs as a review convention, not as a machine-enforced lifecycle.
+Propose and revise titles name the topic only. They do not include a
+`ZFP-NNNN` identifier; that belongs in the filename, frontmatter, and index.
+A superseding pull request names the replaced proposal and the new topic,
+but not the new proposal number.
 
-- `📝 docs(zfp): propose ZFP-NNNN <topic>`
-- `📝 docs(zfp): revise ZFP-NNNN <topic>`
-- `📝 docs(zfp): supersede ZFP-NNNN with ZFP-MMMM`
+- `📝 docs(zfp): propose <topic>`
+- `📝 docs(zfp): revise <topic>`
+- `📝 docs(zfp): supersede ZFP-NNNN with <topic>`
 
 The pull-request body must retain the Chinese H2 structure in
 [the repository template](./.github/pull_request_template.md): `动机` and

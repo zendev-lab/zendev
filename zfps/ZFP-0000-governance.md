@@ -36,9 +36,11 @@ pull request 只需关联对应 ZFP，可以独立评审和合入。
 命令和技术标识保持英文。schema 和校验器不检查自然语言，也不维护 `language`
 字段。
 
-ZFP pull request 复用仓库统一中文模板和 `zendev` title profile。新提案、修订和
+ZFP 的 pull request 复用仓库统一中文模板和 `zendev` 标题约定。新提案、修订和
 替代分别使用 `propose`、`revise` 和 `supersede`；这些动词帮助人类识别变更意图，
-不构成机器状态或合并门禁。
+不构成机器状态或合并门禁。新提案和修订的标题只写主题，不写提案编号；替代类
+标题须写明被替代的 `ZFP-NNNN` 和新提案主题，形如
+`supersede ZFP-NNNN with <topic>`，但不写新提案编号。
 
 提案永久保留在 Git 中。后续提案替代旧提案时，在新文档的 `supersedes` 中引用旧
 提案；索引据此派生 `superseded_by`。不改变提案含义的编辑修订可以直接更新原记录。
