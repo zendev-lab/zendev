@@ -8,6 +8,7 @@ from collections.abc import Mapping
 from pathlib import Path
 
 from zendev.proposal.model import (
+    DefinesPolicy,
     Diagnostic,
     DraftPolicy,
     GraphPolicy,
@@ -22,7 +23,17 @@ from zendev.proposal.model import (
     SummaryPolicy,
 )
 
-_TOP_LEVEL_KEYS = {"version", "proposal", "drafts", "templates", "summary", "graph", "history", "index"}
+_TOP_LEVEL_KEYS = {
+    "version",
+    "proposal",
+    "drafts",
+    "templates",
+    "summary",
+    "graph",
+    "history",
+    "defines",
+    "index",
+}
 _PROPOSAL_KEYS = {
     "prefix",
     "number_field",
@@ -50,6 +61,7 @@ _HISTORY_KEYS = {"initial_status", "protect_records", "bootstrap_numbers", "tran
 _HISTORY_WAIVER_KEYS = {"path", "from_status", "to_status", "reason"}
 _INDEX_KEYS = {"version", "entries_key", "include_drafts", "fields"}
 _INDEX_FIELD_KEYS = {"name", "source", "key"}
+_DEFINES_KEYS = {"field", "anchor_prefix", "id_pattern"}
 
 
 def _index_source(value: str) -> IndexSource:
@@ -484,6 +496,39 @@ def _load_index(raw: object, config_path: Path) -> IndexPolicy:
     )
 
 
+def _load_defines(raw: object, config_path: Path) -> DefinesPolicy | None:
+    if raw is None:
+        return None
+    table = _mapping(raw, config_path=config_path, field="defines")
+    _reject_unknown(table, _DEFINES_KEYS, config_path=config_path, field="defines")
+    id_pattern = _string(
+        table,
+        "id_pattern",
+        config_path=config_path,
+        field="defines",
+        default=r"[a-z][a-z0-9]*(?:-[a-z0-9]+)*",
+    )
+    try:
+        re.compile(id_pattern)
+    except re.error as error:
+        raise _error(
+            config_path,
+            "proposal.config.regex",
+            f"invalid `defines.id_pattern`: {error}",
+        ) from error
+    return DefinesPolicy(
+        field=_string(table, "field", config_path=config_path, field="defines", default="defines"),
+        anchor_prefix=_string(
+            table,
+            "anchor_prefix",
+            config_path=config_path,
+            field="defines",
+            default="term-",
+        ),
+        id_pattern=id_pattern,
+    )
+
+
 def load_config(path: str | Path = "proposal.toml") -> ProposalConfig:
     """Load a proposal repository's single executable policy file."""
 
@@ -627,6 +672,7 @@ def load_config(path: str | Path = "proposal.toml") -> ProposalConfig:
     summary = _load_summary(payload.get("summary"), config_path)
     graph = _load_graph(payload.get("graph"), config_path)
     history = _load_history(payload.get("history"), config_path)
+    defines = _load_defines(payload.get("defines"), config_path)
     index = _load_index(payload.get("index"), config_path)
 
     return ProposalConfig(
@@ -666,5 +712,6 @@ def load_config(path: str | Path = "proposal.toml") -> ProposalConfig:
         summary=summary,
         graph=graph,
         history=history,
+        defines=defines,
         index=index,
     )

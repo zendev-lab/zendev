@@ -14,6 +14,7 @@ The tool owns repository mechanics:
 - required H2 sections derived from repository templates
 - frontmatter-bearing drafts with either the formal or a dedicated draft schema
 - proposal relation integrity and inverse index edges
+- optional defined-concept IDs and matching HTML anchors
 - optional Git-backed deletion, number-reuse, initial-state, and transition checks
 - deterministic index checking and explicit writes
 - stable human and JSON diagnostics
@@ -23,16 +24,16 @@ decisions stay in each proposal repository.
 
 Install this tool independently of the commit workflow:
 
-```console
-$ uv add --dev zendev-proposal
+```shell
+uv add --dev zendev-proposal
 ```
 
 For an ad hoc run, use `uvx --from zendev-proposal zendev-proposal ...`.
 The complete `zendev` distribution exposes the same application through its
 unified command:
 
-```console
-$ uvx --from zendev zendev proposal --help
+```shell
+uvx --from zendev zendev proposal --help
 ```
 
 ## Python API
@@ -63,17 +64,17 @@ hooks = [
 index. It always runs, including deletion-only commits. The index writer is a
 manual-stage hook so CI cannot repair drift and pass with an uncommitted change:
 
-```console
-$ uvx prek run --stage manual zendev-proposal-index
+```shell
+uvx prek run --stage manual zendev-proposal-index
 ```
 
 ## Commands
 
 Run commands from the proposal repository root or pass an explicit config:
 
-```console
-$ zendev-proposal check [--config proposal.toml] [--base-ref REF] [--json]
-$ zendev-proposal index [--config proposal.toml] (--check | --write) [--json]
+```shell
+zendev-proposal check [--config proposal.toml] [--base-ref REF] [--json]
+zendev-proposal index [--config proposal.toml] (--check | --write) [--json]
 ```
 
 `check` uses `PROPOSAL_BASE_REF` when `--base-ref` is absent. History validation
@@ -252,6 +253,22 @@ reason = "One-time bootstrap correction recorded by Process VEP-0000."
 
 Waivers apply only to the exact path and transition. Their required reason is a
 review record, not a second lifecycle state.
+
+### Defined concepts
+
+Omit `[defines]` when the repository does not track concept ownership. When it
+is present, each `defines` ID must have exactly one matching HTML anchor, each
+matching anchor must be declared, and a concept may have only one current
+owner. A superseded proposal may keep the historical definition. Ownership
+moves only along the `supersedes` chain: previous owners must appear in the
+current proposal's `supersedes` transitive closure.
+
+```toml
+[defines]
+field = "defines"
+anchor_prefix = "term-"
+id_pattern = "[a-z][a-z0-9]*(?:-[a-z0-9]+)*"
+```
 
 ## Index fields
 

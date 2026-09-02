@@ -83,3 +83,7 @@ key = "requires"
 name = "required_by"
 source = "inverse"
 key = "requires"
+
+[defines]
+field = "defines"
+anchor_prefix = "term-"

@@ -100,6 +100,13 @@ class IndexPolicy:
 
 
 @dataclass(frozen=True, slots=True)
+class DefinesPolicy:
+    field: str
+    anchor_prefix: str
+    id_pattern: str
+
+
+@dataclass(frozen=True, slots=True)
 class ProposalConfig:
     root: Path
     config_path: Path
@@ -119,6 +126,7 @@ class ProposalConfig:
     summary: SummaryPolicy | None
     graph: GraphPolicy | None
     history: HistoryPolicy | None
+    defines: DefinesPolicy | None
     index: IndexPolicy
 
     def format_identifier(self, number: int) -> str:
