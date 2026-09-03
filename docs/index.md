@@ -13,7 +13,7 @@ or governance decisions.
 Run the complete toolkit without a global installation:
 
 ```shell
-uvx --from zendev zendev --help
+uvx zendev --help
 ```
 
 Or add it to a project:

@@ -25,5 +25,6 @@ review its diff:
 uv run zendev proposal check --fix
 ```
 
-Read [Architecture](architecture.md) for ownership boundaries and
-[Contributing](contributing.md) for documentation-specific work.
+Read [Architecture](architecture.md) for ownership boundaries,
+[Contributing](contributing.md) for documentation-specific work, and
+[Deployment](deployment.md) for the Cloudflare release path.

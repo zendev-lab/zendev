@@ -18,7 +18,7 @@ valid, headings = validate_body(
 assert valid
 ```
 
-Read the official [Message checks guide](https://zendev-lab.github.io/zendev/guides/message-checks/),
-[CLI reference](https://zendev-lab.github.io/zendev/reference/cli/), and
-[GitHub Actions integration](https://zendev-lab.github.io/zendev/integrations/github-actions/)
+Read the official [Message checks guide](https://docs.zendev.zrr.dev/guides/message-checks/),
+[CLI reference](https://docs.zendev.zrr.dev/reference/cli/), and
+[GitHub Actions integration](https://docs.zendev.zrr.dev/integrations/github-actions/)
 for template rules, checklist behavior, and automation.

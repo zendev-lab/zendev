@@ -1,7 +1,7 @@
 [project]
 site_name = "zendev"
 site_description = "Repository-native development workflow toolkit"
-site_url = "https://zendev-lab.github.io/zendev/"
+site_url = "https://docs.zendev.zrr.dev/"
 repo_url = "https://github.com/zendev-lab/zendev"
 repo_name = "zendev-lab/zendev"
 edit_uri = "edit/main/docs/"
@@ -37,6 +37,7 @@ nav = [
     "development/index.md",
     { "Architecture" = "development/architecture.md" },
     { "Contributing" = "development/contributing.md" },
+    { "Deployment" = "development/deployment.md" },
     { "Zendev Feature Proposals ↗" = "https://github.com/zendev-lab/zendev/tree/main/zfps" },
   ] },
 ]

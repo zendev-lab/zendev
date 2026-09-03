@@ -14,7 +14,7 @@ uvx zendev-proposal check --help
 The complete toolkit exposes the same application:
 
 ```shell
-uvx --from zendev zendev proposal check
+uvx zendev proposal check
 ```
 
 ```python
@@ -24,7 +24,7 @@ config = load_config("proposal.toml")
 result = validate_repository(config)
 ```
 
-Read the official [Proposals guide](https://zendev-lab.github.io/zendev/guides/proposals/),
-[Configuration reference](https://zendev-lab.github.io/zendev/reference/configuration/),
-and [hook integration](https://zendev-lab.github.io/zendev/integrations/prek/)
+Read the official [Proposals guide](https://docs.zendev.zrr.dev/guides/proposals/),
+[Configuration reference](https://docs.zendev.zrr.dev/reference/configuration/),
+and [hook integration](https://docs.zendev.zrr.dev/integrations/prek/)
 for the supported repository contract.

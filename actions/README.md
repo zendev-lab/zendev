@@ -10,9 +10,9 @@ Available Actions:
 - `zendev-lab/zendev/actions/validate-body@v0.3.0`
 
 Read the official
-[GitHub Actions integration](https://zendev-lab.github.io/zendev/integrations/github-actions/)
+[GitHub Actions integration](https://docs.zendev.zrr.dev/integrations/github-actions/)
 for permissions, inputs, and copyable workflows. The
-[Message checks guide](https://zendev-lab.github.io/zendev/guides/message-checks/)
+[Message checks guide](https://docs.zendev.zrr.dev/guides/message-checks/)
 defines title, body, template, and optional checklist behavior.
 
 Inside this repository, use `./actions/validate-title` or

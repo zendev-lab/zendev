@@ -15,7 +15,7 @@ uv add --dev zendev
 Run a published command without adding a project dependency:
 
 ```shell
-uvx --from zendev zendev --help
+uvx zendev --help
 ```
 
 For a narrower consumer, install a component distribution directly:

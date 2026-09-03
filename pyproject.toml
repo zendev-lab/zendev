@@ -14,7 +14,7 @@ dependencies = [
 dynamic = ["version"]
 
 [project.urls]
-Documentation = "https://zendev-lab.github.io/zendev/"
+Documentation = "https://docs.zendev.zrr.dev/"
 Homepage = "https://github.com/zendev-lab/zendev"
 Issues = "https://github.com/zendev-lab/zendev/issues"
 Repository = "https://github.com/zendev-lab/zendev"

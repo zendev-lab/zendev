@@ -20,7 +20,7 @@ uv run zendev --help
 Run it without a global installation:
 
 ```shell
-uvx --from zendev zendev --help
+uvx zendev --help
 ```
 
 Python 3.12 or newer is required. `python -m zendev` exposes the same command
@@ -34,7 +34,7 @@ zendev message check --title --text "✨ feat: add export"
 zendev proposal check
 ```
 
-Read the [official documentation](https://zendev-lab.github.io/zendev/) for
+Read the [official documentation](https://docs.zendev.zrr.dev/) for
 concepts, guides, integrations, and the public reference.
 
 ## Packages
@@ -48,7 +48,7 @@ concepts, guides, integrations, and the public reference.
 | `zendev-log` | Loguru setup helper |
 
 The component distributions remain independently installable for narrower use.
-See the [package reference](https://zendev-lab.github.io/zendev/reference/packages/)
+See the [package reference](https://docs.zendev.zrr.dev/reference/packages/)
 for their public boundaries.
 
 ## Contributing and design

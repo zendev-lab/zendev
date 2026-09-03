@@ -6,7 +6,7 @@ installed without the complete `zendev` toolkit.
 
 ```shell
 uv add --dev zendev-commit
-uvx --from zendev-commit zendev-commit --help
+uvx zendev-commit --help
 ```
 
 ```python
@@ -19,9 +19,9 @@ result = validate_commit_message(
 assert result.valid
 ```
 
-Read the official [Commits guide](https://zendev-lab.github.io/zendev/guides/commits/),
-[Configuration reference](https://zendev-lab.github.io/zendev/reference/configuration/),
-and [hook integration](https://zendev-lab.github.io/zendev/integrations/prek/)
+Read the official [Commits guide](https://docs.zendev.zrr.dev/guides/commits/),
+[Configuration reference](https://docs.zendev.zrr.dev/reference/configuration/),
+and [hook integration](https://docs.zendev.zrr.dev/integrations/prek/)
 for profiles, commands, and repository setup.
 
 The vendored Gitmoji catalog and its retained license live under

@@ -5,6 +5,7 @@ __pycache__/
 dist/
 build/
 site/
+.wrangler/
 
 # Virtual environments
 .venv/
