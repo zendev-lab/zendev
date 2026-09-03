@@ -28,7 +28,7 @@ Install this tool independently of the commit workflow:
 uv add --dev zendev-proposal
 ```
 
-For an ad hoc run, use `uvx --from zendev-proposal zendev-proposal ...`.
+For an ad hoc run, use `uvx zendev-proposal ...`.
 The complete `zendev` distribution exposes the same application through its
 unified command:
 
