@@ -68,8 +68,98 @@ def test_vep_fixture_validates_and_builds_inverse_index(tmp_path: Path) -> None:
     assert result.ok
     assert check_index(config, result.state) is None
     payload = json.loads(expected_index_text(config, result.state))
-    assert payload["veps"][0]["required_by"] == ["VEP-0001"]
-    assert payload["veps"][1]["requires"] == ["VEP-0000"]
+    assert payload["version"] == 2
+    assert payload["veps"][0]["vep"] == 0
+    assert "id" not in payload["veps"][0]
+    assert payload["veps"][0]["defines"] == ["foundation"]
+    assert payload["veps"][0]["required_by"] == [1]
+    assert payload["veps"][1]["requires"] == [0]
+
+
+def test_index_field_shorthand_matches_explicit_metadata_table(tmp_path: Path) -> None:
+    repository = _copy_fixture(tmp_path, "vep")
+    policy = repository / "proposal.toml"
+    shorthand = load_config(policy)
+    shorthand_text = expected_index_text(shorthand, load_repository(shorthand))
+    policy.write_text(
+        policy.read_text(encoding="utf-8").replace(
+            '  "title",\n',
+            '  { name = "title", source = "metadata", key = "title" },\n',
+        ),
+        encoding="utf-8",
+    )
+
+    explicit = load_config(policy)
+
+    assert explicit.index.fields[2].name == "title"
+    assert explicit.index.fields[2].source == "metadata"
+    assert explicit.index.fields[2].key == "title"
+    assert expected_index_text(explicit, load_repository(explicit)) == shorthand_text
+
+
+def test_index_fields_reject_duplicate_names_across_shorthand_and_tables(tmp_path: Path) -> None:
+    repository = _copy_fixture(tmp_path, "vep")
+    policy = repository / "proposal.toml"
+    policy.write_text(
+        policy.read_text(encoding="utf-8").replace(
+            '  "title",\n',
+            '  "title",\n  { name = "title", source = "metadata", key = "title" },\n',
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ProposalToolError) as error:
+        load_config(policy)
+
+    assert error.value.diagnostic.code == "proposal.config.duplicate"
+
+
+def test_identifier_index_source_is_rejected(tmp_path: Path) -> None:
+    repository = _copy_fixture(tmp_path, "vep")
+    policy = repository / "proposal.toml"
+    policy.write_text(
+        policy.read_text(encoding="utf-8").replace(
+            '{ name = "path", source = "path" }',
+            '{ name = "id", source = "identifier" }',
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ProposalToolError) as error:
+        load_config(policy)
+
+    assert error.value.diagnostic.code == "proposal.config.index-source"
+
+
+def test_index_version_one_is_rejected(tmp_path: Path) -> None:
+    repository = _copy_fixture(tmp_path, "vep")
+    policy = repository / "proposal.toml"
+    policy.write_text(
+        policy.read_text(encoding="utf-8").replace(
+            "[index]\nversion = 2\n",
+            "[index]\nversion = 1\n",
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ProposalToolError) as error:
+        load_config(policy)
+
+    assert error.value.diagnostic.code == "proposal.config.index-version"
+
+
+def test_empty_index_field_shorthand_is_rejected(tmp_path: Path) -> None:
+    repository = _copy_fixture(tmp_path, "vep")
+    policy = repository / "proposal.toml"
+    policy.write_text(
+        policy.read_text(encoding="utf-8").replace('  "title",\n', '  "",\n'),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ProposalToolError) as error:
+        load_config(policy)
+
+    assert error.value.diagnostic.code == "proposal.config.type"
 
 
 def test_repository_without_drafts_does_not_require_a_draft_directory(tmp_path: Path) -> None:
@@ -107,8 +197,11 @@ def test_sep_frontmatter_draft_is_validated_and_indexed(tmp_path: Path) -> None:
     assert result.ok
     assert len(result.state.documents) == 2
     payload = json.loads(expected_index_text(config, result.state))
+    assert payload["version"] == 2
     assert payload["documents"][1]["sep"] is None
     assert payload["documents"][0]["authors"] == ["Doe, Jane"]
+    assert payload["documents"][0]["requires"] == []
+    assert payload["documents"][1]["requires"] == [0]
 
 
 def test_real_yaml_parser_preserves_quoted_commas_and_rejects_duplicate_keys() -> None:
@@ -333,7 +426,9 @@ def test_index_cli_writes_only_with_explicit_write(tmp_path: Path) -> None:
         ["index", "--config", str(repository / "proposal.toml"), "--write"],
     )
     assert written.exit_code == 0
-    assert json.loads(index.read_text(encoding="utf-8"))["veps"][0]["id"] == "VEP-0000"
+    entry = json.loads(index.read_text(encoding="utf-8"))["veps"][0]
+    assert entry["vep"] == 0
+    assert "id" not in entry
 
 
 @pytest.mark.parametrize("operation", [[], ["--check", "--write"]])

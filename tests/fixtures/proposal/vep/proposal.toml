@@ -42,47 +42,18 @@ Withdrawn = ["Withdrawn"]
 Superseded = ["Superseded"]
 
 [index]
-version = 1
+version = 2
 entries_key = "veps"
-include_drafts = false
-
-[[index.fields]]
-name = "vep"
-source = "metadata"
-key = "vep"
-
-[[index.fields]]
-name = "id"
-source = "identifier"
-
-[[index.fields]]
-name = "path"
-source = "path"
-
-[[index.fields]]
-name = "title"
-source = "metadata"
-key = "title"
-
-[[index.fields]]
-name = "status"
-source = "metadata"
-key = "status"
-
-[[index.fields]]
-name = "type"
-source = "metadata"
-key = "type"
-
-[[index.fields]]
-name = "requires"
-source = "metadata"
-key = "requires"
-
-[[index.fields]]
-name = "required_by"
-source = "inverse"
-key = "requires"
+fields = [
+  "vep",
+  { name = "path", source = "path" },
+  "title",
+  "status",
+  "type",
+  "requires",
+  "defines",
+  { name = "required_by", source = "inverse", key = "requires" },
+]
 
 [defines]
 field = "defines"

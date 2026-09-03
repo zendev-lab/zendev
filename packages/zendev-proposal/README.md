@@ -149,32 +149,25 @@ Withdrawn = ["Withdrawn"]
 Superseded = ["Superseded"]
 
 [index]
-version = 1
+version = 2
 entries_key = "veps"
-include_drafts = false
-
-[[index.fields]]
-name = "vep"
-source = "metadata"
-key = "vep"
-
-[[index.fields]]
-name = "id"
-source = "identifier"
-
-[[index.fields]]
-name = "path"
-source = "path"
-
-[[index.fields]]
-name = "requires"
-source = "metadata"
-key = "requires"
-
-[[index.fields]]
-name = "required_by"
-source = "inverse"
-key = "requires"
+fields = [
+  "vep",
+  { name = "path", source = "path" },
+  "title",
+  "status",
+  "type",
+  "areas",
+  "authors",
+  "created",
+  "requires",
+  "amends",
+  "supersedes",
+  "defines",
+  { name = "required_by", source = "inverse", key = "requires" },
+  { name = "amended_by", source = "inverse", key = "amends" },
+  { name = "superseded_by", source = "inverse", key = "supersedes" },
+]
 ```
 
 All configured paths must remain under the repository root. The schema and
@@ -219,8 +212,9 @@ section policy in the template instead of duplicating it in Python.
 ### Graph policy
 
 Every configured graph field rejects duplicate, self, and missing-target edges.
-Integer references and canonical strings such as `VEP-0001` are normalized to
-the same identifier.
+Integer references and canonical strings such as `VEP-0001` identify the same
+proposal number. Index format 2 emits that number, so a proposal with `vep: 1`
+and an edge to `VEP-0000` is indexed as `"vep": 1` and `"requires": [0]`.
 
 The optional role fields add semantic checks:
 
@@ -230,8 +224,8 @@ The optional role fields add semantic checks:
 - `supersedes_field`: validates coordinated supersession and exactly one
   accepted forward superseder
 
-Index fields with `source = "inverse"` derive reverse edges without storing two
-writable authorities in proposal frontmatter.
+Index fields with `source = "inverse"` derive numeric reverse edges without
+storing two writable authorities in proposal frontmatter.
 
 ### History policy and waivers
 
@@ -272,15 +266,28 @@ id_pattern = "[a-z][a-z0-9]*(?:-[a-z0-9]+)*"
 
 ## Index fields
 
-Index fields are emitted in configuration order. Supported sources are:
+Index format 2 uses the configured numeric proposal field as its only proposal
+key. It does not emit a second formatted `id`. Graph fields and their derived
+inverse fields contain numeric proposal keys; other metadata, including
+`defines`, is copied without relation normalization.
+
+Index fields are emitted in configuration order. A string such as `"title"` is
+shorthand for `{ name = "title", source = "metadata", key = "title" }`.
+Tables remain available for renamed metadata and non-metadata sources.
+Supported sources are:
 
 - `metadata`: copy the configured frontmatter `key`
-- `identifier`: emit the formatted prefix and number
 - `path`: emit the repository-relative Markdown path
-- `inverse`: derive sources that point to this proposal through relation `key`
+- `inverse`: derive numeric sources that point to this proposal through relation
+  `key`
 
 Documents sort by number, followed by unnumbered frontmatter drafts sorted by
 path. JSON uses UTF-8, two-space indentation, and one trailing newline.
+
+Index version 1 and `source = "identifier"` are not accepted. Migrate by
+setting `index.version = 2`, removing the formatted `id` field, and regenerating
+the committed index. Forward and inverse graph edges change from formatted
+strings to numbers.
 
 ## JSON diagnostics
 

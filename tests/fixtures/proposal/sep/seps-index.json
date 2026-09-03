@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "documents": [
     {
       "path": "seps/SEP-0000-process.md",
@@ -21,7 +21,9 @@
       "authors": [
         "Doe, Jane"
       ],
-      "requires": []
+      "requires": [
+        0
+      ]
     }
   ]
 }

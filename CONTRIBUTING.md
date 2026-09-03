@@ -71,7 +71,9 @@ machine metadata and technical identifiers remain English. See
 Use a valid Gitmoji-style title. ZFP pull requests use `docs(zfp)` and one of
 these verbs as a review convention, not as a machine-enforced lifecycle.
 Propose and revise titles name the topic only. They do not include a
-`ZFP-NNNN` identifier; that belongs in the filename, frontmatter, and index.
+`ZFP-NNNN` identifier; the formatted identifier belongs in filenames and
+references, while the numeric proposal number belongs in frontmatter and the
+generated index.
 A superseding pull request names the replaced proposal and the new topic,
 but not the new proposal number.
 

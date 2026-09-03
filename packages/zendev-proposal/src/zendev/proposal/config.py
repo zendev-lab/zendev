@@ -68,8 +68,6 @@ def _index_source(value: str) -> IndexSource:
     match value:
         case "metadata":
             return "metadata"
-        case "identifier":
-            return "identifier"
         case "path":
             return "path"
         case "inverse":
@@ -425,11 +423,21 @@ def _load_index(raw: object, config_path: Path) -> IndexPolicy:
         raise _error(
             config_path,
             "proposal.config.type",
-            "`index.fields` must be a non-empty array of tables",
+            "`index.fields` must be a non-empty array of strings or tables",
         )
 
     fields: list[IndexField] = []
     for index, raw_field in enumerate(raw_fields):
+        if isinstance(raw_field, str):
+            if not raw_field:
+                raise _error(
+                    config_path,
+                    "proposal.config.type",
+                    f"`index.fields[{index}]` must be a non-empty string or table",
+                )
+            fields.append(IndexField(name=raw_field, source="metadata", key=raw_field))
+            continue
+
         field = _mapping(raw_field, config_path=config_path, field=f"index.fields[{index}]")
         _reject_unknown(
             field,
@@ -443,7 +451,7 @@ def _load_index(raw: object, config_path: Path) -> IndexPolicy:
             config_path=config_path,
             field=f"index.fields[{index}]",
         )
-        if source not in {"metadata", "identifier", "path", "inverse"}:
+        if source not in {"metadata", "path", "inverse"}:
             raise _error(
                 config_path,
                 "proposal.config.index-source",
@@ -456,7 +464,7 @@ def _load_index(raw: object, config_path: Path) -> IndexPolicy:
                 "proposal.config.index-key",
                 f"`index.fields[{index}].key` is required for source `{source}`",
             )
-        if source in {"identifier", "path"} and key is not None:
+        if source == "path" and key is not None:
             raise _error(
                 config_path,
                 "proposal.config.index-key",
@@ -479,9 +487,13 @@ def _load_index(raw: object, config_path: Path) -> IndexPolicy:
     if len(names) != len(set(names)):
         raise _error(config_path, "proposal.config.duplicate", "`index.fields` names must be unique")
 
-    version = _integer(table, "version", config_path=config_path, field="index", default=1)
-    if version < 1:
-        raise _error(config_path, "proposal.config.range", "`index.version` must be positive")
+    version = _integer(table, "version", config_path=config_path, field="index", default=2)
+    if version != 2:
+        raise _error(
+            config_path,
+            "proposal.config.index-version",
+            "`index.version` must be 2",
+        )
     return IndexPolicy(
         version=version,
         entries_key=_string(table, "entries_key", config_path=config_path, field="index"),

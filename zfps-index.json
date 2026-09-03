@@ -1,9 +1,8 @@
 {
-  "version": 1,
+  "version": 2,
   "zfps": [
     {
       "zfp": 0,
-      "id": "ZFP-0000",
       "path": "zfps/ZFP-0000-governance.md",
       "title": "Zendev 功能提案治理",
       "type": "Governance",
@@ -16,7 +15,6 @@
     },
     {
       "zfp": 1,
-      "id": "ZFP-0001",
       "path": "zfps/ZFP-0001-package-split.md",
       "title": "将 Zendev 拆分为 PEP 420 发行包",
       "type": "Feature",
@@ -29,7 +27,6 @@
     },
     {
       "zfp": 2,
-      "id": "ZFP-0002",
       "path": "zfps/ZFP-0002-defined-concepts.md",
       "title": "可选的定义所有权校验",
       "type": "Feature",
@@ -42,7 +39,6 @@
     },
     {
       "zfp": 4,
-      "id": "ZFP-0004",
       "path": "zfps/ZFP-0004-numeric-proposal-index.md",
       "title": "数值提案索引身份",
       "type": "Feature",

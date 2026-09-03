@@ -30,40 +30,15 @@ Rejected = ["Rejected"]
 Superseded = ["Superseded"]
 
 [index]
-version = 1
+version = 2
 entries_key = "documents"
 include_drafts = true
-
-[[index.fields]]
-name = "path"
-source = "path"
-
-[[index.fields]]
-name = "sep"
-source = "metadata"
-key = "sep"
-
-[[index.fields]]
-name = "title"
-source = "metadata"
-key = "title"
-
-[[index.fields]]
-name = "status"
-source = "metadata"
-key = "status"
-
-[[index.fields]]
-name = "type"
-source = "metadata"
-key = "type"
-
-[[index.fields]]
-name = "authors"
-source = "metadata"
-key = "authors"
-
-[[index.fields]]
-name = "requires"
-source = "metadata"
-key = "requires"
+fields = [
+  { name = "path", source = "path" },
+  "sep",
+  "title",
+  "status",
+  "type",
+  "authors",
+  "requires",
+]
