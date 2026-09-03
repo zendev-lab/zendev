@@ -5,6 +5,10 @@ Static Assets. `wrangler.toml` is the deployment source of truth: it publishes
 the generated `site/` directory as the `zendev-docs` Worker and attaches the
 `docs.zendev.zrr.dev` custom domain.
 
+Cloudflare Workers Builds owns production and preview deployment. GitHub Actions
+only validates the documentation; it does not store Cloudflare credentials or
+deploy the site.
+
 ## Validate without deploying
 
 Build the site and run Wrangler's local deployment checks:
@@ -16,33 +20,32 @@ npx --yes wrangler@4.128.0 deploy --dry-run
 
 The dry run does not require Cloudflare credentials and does not upload assets.
 
-## Configure GitHub once
+## Configure Workers Builds once
 
-Create a Cloudflare API token with the **Edit Cloudflare Workers** template,
-restricted to the account and `zrr.dev` zone used by the site. Then add the
-account ID and token as GitHub Actions secrets:
+Create or select the `zendev-docs` Worker in the Cloudflare account that owns
+the active `zrr.dev` zone. Connect its **Settings > Builds** Git integration to
+the `zendev-lab/zendev` repository. The Cloudflare Workers and Pages GitHub App
+must have access to that organization and repository.
 
-```shell
-gh secret set CLOUDFLARE_ACCOUNT_ID --repo zendev-lab/zendev
-gh secret set CLOUDFLARE_API_TOKEN --repo zendev-lab/zendev
-```
+Use these build settings:
 
-The first deployment creates the Worker and the `docs.zendev.zrr.dev` custom-domain
-DNS record. The zone must already be active in Cloudflare, and the hostname must
-not have an existing CNAME record.
+| Setting | Value |
+| --- | --- |
+| Production branch | `main` |
+| Root directory | Leave empty (repository root) |
+| Build variable | `SKIP_DEPENDENCY_INSTALL=1` |
+| Build command | `pipx run --spec uv==0.12.1 uv run --locked --group docs zensical build --clean --strict` |
+| Deploy command | `npx --yes wrangler@4.128.0 deploy --strict` |
+| Non-production branch deploy command | `npx --yes wrangler@4.128.0 versions upload` |
 
-Run the workflow manually for the first deployment:
+Enable non-production branch builds when pull requests should receive preview
+versions. Cloudflare reports the result back to GitHub as a
+`Workers Builds: zendev-docs` check.
 
-```shell
-gh workflow run cd-documentation.yml --repo zendev-lab/zendev
-```
+Workers Builds creates and retains its deployment token on the Cloudflare side;
+the GitHub repository does not need `CLOUDFLARE_API_TOKEN` or
+`CLOUDFLARE_ACCOUNT_ID` secrets.
 
-After the deployment and public URL are verified, enable automatic deployment
-for future pushes to `main`:
-
-```shell
-gh variable set CLOUDFLARE_DEPLOY_ENABLED --body true --repo zendev-lab/zendev
-```
-
-Until that variable is set, pushes to `main` skip the deployment job. Manual
-dispatch remains available for setup and recovery.
+The first production build creates the `docs.zendev.zrr.dev` custom-domain DNS
+record and its certificate. The zone must already be active in Cloudflare, and
+the hostname must not have an existing CNAME record.

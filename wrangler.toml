@@ -1,6 +1,7 @@
 name = "zendev-docs"
 compatibility_date = "2026-09-03"
 workers_dev = true
+preview_urls = true
 
 [[routes]]
 pattern = "docs.zendev.zrr.dev"
