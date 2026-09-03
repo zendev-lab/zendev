@@ -2,17 +2,12 @@
 
 `zendev-commit` owns commit profiles, Conventional Commits and Gitmoji
 validation, the interactive commit flow, and its vendored data. It can be
-installed and used without the complete `zendev` toolkit.
+installed without the complete `zendev` toolkit.
 
 ```shell
 uv add --dev zendev-commit
-uvx --from zendev-commit zendev-commit --help
+uvx zendev-commit --help
 ```
-
-`zendev-commit` interactively builds a message and invokes `git commit`.
-Complete-message validation lives on `zendev message check`.
-
-## Python API
 
 ```python
 from zendev.commit import CommitProfile, validate_commit_message
@@ -24,88 +19,11 @@ result = validate_commit_message(
 assert result.valid
 ```
 
-## Profiles
+Read the official [Commits guide](https://docs.zendev.zrr.dev/guides/commits/),
+[Configuration reference](https://docs.zendev.zrr.dev/reference/configuration/),
+and [hook integration](https://docs.zendev.zrr.dev/integrations/prek/)
+for profiles, commands, and repository setup.
 
-Configure the default profile in the consuming repository:
-
-```toml
-[tool.zendev.commit]
-profile = "conventional"
-```
-
-The `--profile` option overrides repository configuration. `auto` reads the
-nearest `pyproject.toml` and falls back to `zendev`.
-
-| Profile | Contract |
-| --- | --- |
-| `zendev` | A Gitmoji emoji or shortcode paired with its canonical commit type. |
-| `conventional` | Conventional Commits 1.0.0, including scopes, breaking changes, bodies, and footers. |
-| `gitmoji` | The Gitmoji title shape with Unicode or shortcode intentions and optional scope/body. |
-
-Examples accepted by the default profile:
-
-```text
-🎉 init: begin a project
-✨ feat: add export
-🐛 fix(parser): handle null token
-:memo: docs: update README
-🚀 deploy: publish the package
-```
-
-Git-generated `Merge`, `Revert`, `fixup!`, `squash!`, `amend!`, and `reword!`
-messages are accepted.
-
-## Message hook
-
-With `.pre-commit-config.yaml`:
-
-```yaml
-repos:
-  - repo: https://github.com/zendev-lab/zendev
-    rev: v0.3.0
-    hooks:
-      - id: zendev-message-check
-```
-
-With `prek.toml`:
-
-```toml
-[[repos]]
-repo = "https://github.com/zendev-lab/zendev"
-rev = "v0.3.0"
-hooks = [
-  { id = "zendev-message-check" },
-]
-```
-
-Install the Git hook:
-
-```shell
-uvx prek install --hook-type commit-msg
-```
-
-Pass CLI flags through hook `args`:
-
-```toml
-{ id = "zendev-message-check", args = ["--profile", "conventional"] }
-```
-
-An explicit command is also available:
-
-```shell
-uvx --from zendev zendev message check --profile conventional .git/COMMIT_EDITMSG
-```
-
-## Gitmoji data
-
-The default profile uses the vendored catalog in
-[`src/zendev/data/gitmojis.json`](./src/zendev/data/gitmojis.json) and the
-reviewable pairing table in
-[`src/zendev/data/emoji-conventions.toml`](./src/zendev/data/emoji-conventions.toml).
-Validation is deterministic and does not access the network.
-
-The retained upstream license is in
-[`src/zendev/data/LICENSE.gitmoji`](./src/zendev/data/LICENSE.gitmoji).
-Maintainers should follow the
-[vendored-data procedure](../../CONTRIBUTING.md#vendored-gitmoji-data) when
-refreshing the catalog.
+The vendored Gitmoji catalog and its retained license live under
+`src/zendev/data/`. Maintainers should follow the repository contributor guide
+when refreshing that data.

@@ -1,0 +1,55 @@
+[project]
+site_name = "zendev"
+site_description = "Repository-native development workflow toolkit"
+site_url = "https://docs.zendev.zrr.dev/"
+repo_url = "https://github.com/zendev-lab/zendev"
+repo_name = "zendev-lab/zendev"
+edit_uri = "edit/main/docs/"
+strict = true
+
+nav = [
+  { "Home" = "index.md" },
+  { "Getting started" = "getting-started.md" },
+  { "Concepts" = [
+    "concepts/index.md",
+    { "Repository-native development" = "concepts/repository-native.md" },
+    { "Configuration ownership" = "concepts/configuration-ownership.md" },
+  ] },
+  { "Guides" = [
+    "guides/index.md",
+    { "Commits" = "guides/commits.md" },
+    { "Message checks" = "guides/message-checks.md" },
+    { "Proposals" = "guides/proposals.md" },
+  ] },
+  { "Integrations" = [
+    "integrations/index.md",
+    { "prek" = "integrations/prek.md" },
+    { "GitHub Actions" = "integrations/github-actions.md" },
+  ] },
+  { "Reference" = [
+    "reference/index.md",
+    { "CLI" = "reference/cli.md" },
+    { "Configuration" = "reference/configuration.md" },
+    { "Hooks" = "reference/hooks.md" },
+    { "Packages" = "reference/packages.md" },
+  ] },
+  { "Development" = [
+    "development/index.md",
+    { "Architecture" = "development/architecture.md" },
+    { "Contributing" = "development/contributing.md" },
+    { "Zendev Feature Proposals ↗" = "https://github.com/zendev-lab/zendev/tree/main/zfps" },
+  ] },
+]
+
+[project.theme]
+features = [
+  "content.action.edit",
+  "content.action.view",
+  "content.code.copy",
+  "navigation.indexes",
+  "navigation.instant",
+  "navigation.path",
+  "navigation.top",
+  "search.highlight",
+  "toc.follow",
+]
