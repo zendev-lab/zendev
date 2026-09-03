@@ -44,7 +44,7 @@ runs:
 
         zendev_root="$(cd "${GITHUB_ACTION_PATH}/../.." && pwd)"
         echo "Using zendev from ${zendev_root}"
-        args=(zendev-validate-body "${INPUT_BODY}" --template "${INPUT_TEMPLATE}")
+        args=(zendev message check --body --text "${INPUT_BODY}" --template "${INPUT_TEMPLATE}")
         if [[ "${INPUT_REQUIRE_CHECKLIST}" == "true" ]]; then
           args+=(--require-checklist --checklist-section "${INPUT_CHECKLIST_SECTION}")
           if [[ "${INPUT_FAIL_ON_EMPTY_CHECKLIST}" == "true" ]]; then

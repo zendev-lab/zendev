@@ -1,13 +1,13 @@
-- id: zendev-commit-msg
-  name: zendev commit message
-  description: Validate commit messages against zendev, Conventional Commits, or gitmoji profiles.
-  entry: zendev-commit-msg
+- id: zendev-message-check
+  name: zendev message check
+  description: Validate a commit or pull-request message.
+  entry: zendev message check
   language: python
   stages: [commit-msg]
 - id: zendev-proposal-check
   name: zendev proposal check
   description: Validate repository-native proposals and their committed index.
-  entry: zendev-proposal check
+  entry: zendev proposal check
   language: python
   pass_filenames: false
   always_run: true

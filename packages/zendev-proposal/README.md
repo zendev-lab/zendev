@@ -59,9 +59,14 @@ hooks = [
 ]
 ```
 
-`zendev-proposal-check` is the read-only commit gate and also checks the
-committed index. It always runs, including deletion-only commits. It never
-receives `--fix`. Repair drift locally, then commit the result:
+`zendev-proposal-check` is the commit gate and also checks the committed index.
+It always runs, including deletion-only commits. The published hook is
+read-only by default. Write the index by adding `--fix` to hook `args`, or run
+the command directly:
+
+```toml
+{ id = "zendev-proposal-check", args = ["--fix"] }
+```
 
 ```shell
 zendev proposal check --fix

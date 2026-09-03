@@ -7,11 +7,10 @@ installed and used without the complete `zendev` toolkit.
 ```shell
 uv add --dev zendev-commit
 uvx --from zendev-commit zendev-commit --help
-uvx --from zendev-commit zendev-commit-msg --help
 ```
 
-`zendev-commit-msg` validates complete commit messages. `zendev-commit`
-interactively builds a message and invokes `git commit`.
+`zendev-commit` interactively builds a message and invokes `git commit`.
+Complete-message validation lives on `zendev message check`.
 
 ## Python API
 
@@ -56,16 +55,16 @@ Examples accepted by the default profile:
 Git-generated `Merge`, `Revert`, `fixup!`, `squash!`, `amend!`, and `reword!`
 messages are accepted.
 
-## Commit hook
+## Message hook
 
 With `.pre-commit-config.yaml`:
 
 ```yaml
 repos:
   - repo: https://github.com/zendev-lab/zendev
-    rev: v0.1.0
+    rev: v0.3.0
     hooks:
-      - id: zendev-commit-msg
+      - id: zendev-message-check
 ```
 
 With `prek.toml`:
@@ -73,9 +72,9 @@ With `prek.toml`:
 ```toml
 [[repos]]
 repo = "https://github.com/zendev-lab/zendev"
-rev = "v0.1.0"
+rev = "v0.3.0"
 hooks = [
-  { id = "zendev-commit-msg" },
+  { id = "zendev-message-check" },
 ]
 ```
 
@@ -85,10 +84,16 @@ Install the Git hook:
 uvx prek install --hook-type commit-msg
 ```
 
+Pass CLI flags through hook `args`:
+
+```toml
+{ id = "zendev-message-check", args = ["--profile", "conventional"] }
+```
+
 An explicit command is also available:
 
 ```shell
-uvx --from zendev-commit zendev-commit-msg --profile conventional .git/COMMIT_EDITMSG
+uvx --from zendev zendev message check --profile conventional .git/COMMIT_EDITMSG
 ```
 
 ## Gitmoji data

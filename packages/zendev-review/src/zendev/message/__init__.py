@@ -194,3 +194,7 @@ def check_command(
         checklist_section=checklist_section,
         fail_on_empty_checklist=fail_on_empty_checklist,
     )
+
+
+def main() -> None:
+    app(prog_name="zendev-message")

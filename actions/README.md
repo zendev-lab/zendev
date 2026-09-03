@@ -1,8 +1,8 @@
 # Composite Actions
 
-The actions in this directory are thin GitHub workflow adapters around the
-`zendev-review` commands from the same pinned zendev revision. Validation
-semantics and standalone CLI usage belong to the
+The actions in this directory are thin GitHub workflow adapters around
+`zendev message check` from the same pinned zendev revision. Validation
+semantics belong to the
 [`zendev-review` README](../packages/zendev-review/README.md).
 
 ## Validate a pull-request title

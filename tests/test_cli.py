@@ -12,12 +12,10 @@ import typer
 from typer.testing import CliRunner
 
 from zendev.__main__ import app as module_app
-from zendev.body import app as body_app
 from zendev.cli import app as zendev_app
-from zendev.commit import commit_app, hook_app
+from zendev.commit import commit_app
 from zendev.message import app as message_app
 from zendev.proposal.cli import app as proposal_app
-from zendev.title import app as title_app
 
 runner = CliRunner()
 FIXTURES = Path(__file__).parent / "fixtures" / "proposal"
@@ -31,8 +29,8 @@ def _copy_fixture(tmp_path: Path, name: str) -> Path:
 
 @pytest.mark.parametrize(
     "app",
-    [zendev_app, commit_app, hook_app, title_app, body_app, message_app, proposal_app],
-    ids=["zendev", "commit", "commit-msg", "title", "body", "message", "proposal"],
+    [zendev_app, commit_app, message_app, proposal_app],
+    ids=["zendev", "commit", "message", "proposal"],
 )
 def test_public_cli_help_is_available(app: typer.Typer) -> None:
     result = runner.invoke(app, ["--help"])
@@ -101,3 +99,15 @@ def test_unified_cli_drift_hint_uses_zendev_proposal_check(tmp_path: Path) -> No
 
     assert result.exit_code == 1
     assert payload["diagnostics"][0]["hint"] == "Run `zendev proposal check --fix` and commit the result."
+
+
+def test_public_hooks_use_check_ids() -> None:
+    manifest = Path(__file__).resolve().parents[1] / ".pre-commit-hooks.yaml"
+    text = manifest.read_text(encoding="utf-8")
+
+    assert "id: zendev-message-check" in text
+    assert "id: zendev-proposal-check" in text
+    assert "entry: zendev message check" in text
+    assert "entry: zendev proposal check" in text
+    for removed in ("zendev-commit-msg", "zendev-proposal-index", "zendev-validate-title", "zendev-validate-body"):
+        assert removed not in text

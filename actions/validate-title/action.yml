@@ -29,4 +29,4 @@ runs:
 
         zendev_root="$(cd "${GITHUB_ACTION_PATH}/../.." && pwd)"
         echo "Using zendev from ${zendev_root}"
-        uvx --from "${zendev_root}" zendev-validate-title --profile "${INPUT_PROFILE}" "${INPUT_TEXT}"
+        uvx --from "${zendev_root}" zendev message check --title --profile "${INPUT_PROFILE}" --text "${INPUT_TEXT}"

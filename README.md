@@ -26,7 +26,7 @@ available separately for narrower use:
 | --- | --- |
 | `zendev` | Complete toolkit and unified CLI |
 | `zendev-commit` | Commit profiles, validation, and interactive commits |
-| `zendev-review` | Pull-request title and body validation |
+| `zendev-review` | Commit and pull-request message validation |
 | `zendev-proposal` | Proposal validation and deterministic indexes |
 | `zendev-log` | Loguru setup helper |
 
@@ -34,8 +34,8 @@ For example, run published commands without installing them globally:
 
 ```shell
 uvx --from zendev zendev --help
-uvx --from zendev-commit zendev-commit-msg --help
-uvx --from zendev-review zendev-validate-body --help
+uvx --from zendev-commit zendev-commit --help
+uvx --from zendev-review zendev-message --help
 uvx --from zendev-proposal zendev-proposal --help
 ```
 
@@ -64,12 +64,10 @@ from zendev.log import setup_log
 
 ## Commands
 
-| Unified command | Compatibility command | Purpose |
+| Unified command | Component command | Purpose |
 | --- | --- | --- |
 | `zendev commit` | `zendev-commit` | Create and run an interactive commit. |
-| `zendev message check [FILE]` | `zendev-commit-msg` | Validate a commit or pull-request message. |
-| `zendev message check --title --text TEXT` | `zendev-validate-title` | Validate a title. |
-| `zendev message check --body --text TEXT` | `zendev-validate-body` | Validate a pull-request body. |
+| `zendev message check [FILE]` | `zendev-message check [FILE]` | Validate a commit or pull-request message. |
 | `zendev proposal check` | `zendev-proposal check` | Validate a proposal repository and its committed index. |
 | `zendev proposal check --fix` | `zendev-proposal check --fix` | Write the deterministic proposal index. |
 
@@ -77,6 +75,10 @@ from zendev.log import setup_log
 checks the title, and a multi-line input checks the complete commit message.
 `--title` and `--body` select a single part. `--body` uses the pull-request
 template schema; a complete message does not.
+
+Public hooks are `zendev-message-check` and `zendev-proposal-check`. They run
+the matching `check` command. Add CLI flags through hook `args`, for example
+`args = ["--fix"]` on `zendev-proposal-check`.
 
 The complete `zendev` distribution always provides the `proposal` group. The
 standalone component command does not require `zendev`.
@@ -87,10 +89,9 @@ Use `COMMAND --help` for the authoritative option reference.
 
 - [Zendev Feature Proposals](./zfps/README.md): lightweight design records
   required before public feature changes.
-- [`zendev-commit`](./packages/zendev-commit/README.md): profiles, commit hook,
+- [`zendev-commit`](./packages/zendev-commit/README.md): profiles, message hook,
   configuration, and vendored Gitmoji data.
-- [`zendev-review`](./packages/zendev-review/README.md): title and body
-  validation behavior.
+- [`zendev-review`](./packages/zendev-review/README.md): message check behavior.
 - [`zendev-proposal`](./packages/zendev-proposal/README.md): policy schema, validation,
   lifecycle history, and deterministic indexes.
 - [Composite Actions](./actions/README.md): GitHub workflow integration for
