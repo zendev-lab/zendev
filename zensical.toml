@@ -37,7 +37,6 @@ nav = [
     "development/index.md",
     { "Architecture" = "development/architecture.md" },
     { "Contributing" = "development/contributing.md" },
-    { "Deployment" = "development/deployment.md" },
     { "Zendev Feature Proposals ↗" = "https://github.com/zendev-lab/zendev/tree/main/zfps" },
   ] },
 ]

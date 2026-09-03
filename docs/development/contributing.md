@@ -32,6 +32,9 @@ Checks` in `CI - Static Checks`.
   them into the site.
 - Keep contributor-only operating instructions in `CONTRIBUTING.md`.
 - Use copyable `shell` blocks without a leading `$ ` prompt.
+- Use `uv` for Python project workflows and `uvx` for one-off Python tools.
+- Use `vp` for JavaScript project workflows and `vpx` for one-off JavaScript
+  tools.
 
 Do not commit generated `site/` output or add custom CSS, JavaScript, plugins,
 or a shared documentation preset without a demonstrated product requirement.
