@@ -13,9 +13,9 @@ ZFP 的 pull request 复用仓库统一中文模板和 `zendev` 标题约定。�
 `ZFP-NNNN` 和新提案主题，形如 `supersede ZFP-NNNN with <topic>`，但不写新提案
 编号。新提案编号只出现在文件名、frontmatter 和索引中。
 
-提交的[索引](../zfps-index.json)由提案 frontmatter 确定性生成，可用以下命令检查：
+提交的[索引](../zfps-index.json)由提案 frontmatter 确定性生成。检查或写回索引：
 
 ```shell
 uv run zendev proposal check
-uv run zendev proposal index --check
+uv run zendev proposal check --fix
 ```

@@ -1,14 +1,16 @@
 # zendev-review
 
-`zendev-review` owns reusable pull-request title and body validation. It
-depends on `zendev-commit` so title checks reuse commit profiles instead of
-copying commit semantics.
+`zendev-review` owns reusable commit and pull-request message checks. It
+depends on `zendev-commit` so title and complete-message checks reuse commit
+profiles instead of copying commit semantics.
 
 ```shell
 uv add --dev zendev-review
-uvx --from zendev-review zendev-validate-title --help
-uvx --from zendev-review zendev-validate-body --help
+uvx --from zendev-review zendev-message check --help
 ```
+
+The complete `zendev` distribution exposes the same command as
+`zendev message check`.
 
 ## Python API
 
@@ -23,28 +25,19 @@ assert valid
 assert headings == ["Motivation", "Solution"]
 ```
 
-## Title validation
-
-The title CLI uses the same profiles and repository configuration as the
-commit hook:
+## Message check
 
 ```shell
-uvx --from zendev-review zendev-validate-title --profile gitmoji ":sparkles: Add export support"
-```
-
-See [`zendev-commit`](../zendev-commit/README.md) for profile semantics.
-
-## Body validation
-
-The body CLI reads H2 sections from the configured PR template:
-
-```shell
-uvx --from zendev-review zendev-validate-body "$PR_BODY" \
+uvx --from zendev-review zendev-message check --title --text "✨ feat: add export"
+uvx --from zendev-review zendev-message check --title --profile gitmoji --text ":sparkles: Add export"
+uvx --from zendev-review zendev-message check --body --text "$PR_BODY" \
     --template .github/pull_request_template.md \
     --require-checklist
 ```
 
-The section contract is:
+See [`zendev-commit`](../zendev-commit/README.md) for profile semantics.
+
+The body section contract is:
 
 - every template H2 is required by default
 - `<!-- pr-body:optional -->` makes the following H2 optional
