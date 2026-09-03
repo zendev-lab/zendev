@@ -15,6 +15,7 @@ from zendev.__main__ import app as module_app
 from zendev.body import app as body_app
 from zendev.cli import app as zendev_app
 from zendev.commit import commit_app, hook_app
+from zendev.message import app as message_app
 from zendev.proposal.cli import app as proposal_app
 from zendev.title import app as title_app
 
@@ -30,8 +31,8 @@ def _copy_fixture(tmp_path: Path, name: str) -> Path:
 
 @pytest.mark.parametrize(
     "app",
-    [zendev_app, commit_app, hook_app, title_app, body_app, proposal_app],
-    ids=["zendev", "commit", "commit-msg", "title", "body", "proposal"],
+    [zendev_app, commit_app, hook_app, title_app, body_app, message_app, proposal_app],
+    ids=["zendev", "commit", "commit-msg", "title", "body", "message", "proposal"],
 )
 def test_public_cli_help_is_available(app: typer.Typer) -> None:
     result = runner.invoke(app, ["--help"])
@@ -45,9 +46,10 @@ def test_unified_cli_groups_workflows_by_domain() -> None:
     result = runner.invoke(zendev_app, ["--help"])
 
     assert result.exit_code == 0
-    for command in ("commit", "review", "proposal"):
-        assert command in result.output
-    for command in ("commit-msg", "validate-title", "validate-body"):
+    commands = result.output.split("Commands:", 1)[-1]
+    for command in ("commit", "message", "proposal"):
+        assert re.search(rf"^\s+{command}\b", commands, re.MULTILINE)
+    for command in ("check", "commit-msg", "review", "validate-title", "validate-body"):
         assert command not in result.output
 
 
@@ -55,28 +57,34 @@ def test_python_module_exposes_the_unified_application() -> None:
     assert module_app is zendev_app
 
 
-def test_unified_cli_runs_review_title() -> None:
-    result = runner.invoke(zendev_app, ["review", "title", "✨ feat: add unified CLI"])
+def test_unified_cli_message_check_validates_a_title() -> None:
+    result = runner.invoke(zendev_app, ["message", "check", "--title", "--text", "✨ feat: add unified CLI"])
 
     assert result.exit_code == 0
     assert "Title format is valid." in result.output
 
 
-def test_unified_cli_commit_check_validates_a_message_file(tmp_path: Path) -> None:
+def test_unified_cli_message_check_validates_a_message_file(tmp_path: Path) -> None:
     message = tmp_path / "COMMIT_EDITMSG"
     message.write_text("✨ feat: add grouped CLI\n", encoding="utf-8")
 
-    result = runner.invoke(zendev_app, ["commit", "check", str(message)])
+    result = runner.invoke(zendev_app, ["message", "check", str(message)])
 
     assert result.exit_code == 0
 
 
-def test_unified_cli_mounts_proposal_check_without_index() -> None:
-    result = runner.invoke(zendev_app, ["proposal", "--help"])
+def test_unified_cli_message_and_proposal_expose_check() -> None:
+    message_help = runner.invoke(zendev_app, ["message", "--help"])
+    message_check_help = runner.invoke(zendev_app, ["message", "check", "--help"])
+    proposal_help = runner.invoke(zendev_app, ["proposal", "--help"])
 
-    assert result.exit_code == 0
-    assert "check" in result.output
-    commands = result.output.split("Commands:", 1)[-1]
+    assert message_help.exit_code == 0
+    assert re.search(r"^\s+check\b", message_help.output.split("Commands:", 1)[-1], re.MULTILINE)
+    assert message_check_help.exit_code == 0
+    for option in ("--text", "--title", "--body"):
+        assert option in message_check_help.output
+    assert proposal_help.exit_code == 0
+    commands = proposal_help.output.split("Commands:", 1)[-1]
     assert re.search(r"^\s+check\b", commands, re.MULTILINE)
     assert not re.search(r"^\s+index\b", commands, re.MULTILINE)
 

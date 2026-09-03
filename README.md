@@ -67,11 +67,16 @@ from zendev.log import setup_log
 | Unified command | Compatibility command | Purpose |
 | --- | --- | --- |
 | `zendev commit` | `zendev-commit` | Create and run an interactive commit. |
-| `zendev commit check` | `zendev-commit-msg` | Validate a Git commit-message file. |
-| `zendev review title` | `zendev-validate-title` | Validate a PR title. |
-| `zendev review body` | `zendev-validate-body` | Validate PR body sections and optional checklist rows. |
+| `zendev message check [FILE]` | `zendev-commit-msg` | Validate a commit or pull-request message. |
+| `zendev message check --title --text TEXT` | `zendev-validate-title` | Validate a title. |
+| `zendev message check --body --text TEXT` | `zendev-validate-body` | Validate a pull-request body. |
 | `zendev proposal check` | `zendev-proposal check` | Validate a proposal repository and its committed index. |
 | `zendev proposal check --fix` | `zendev-proposal check --fix` | Write the deterministic proposal index. |
+
+`message check` takes `FILE` or `--text`. Default scope is auto: one line
+checks the title, and a multi-line input checks the complete commit message.
+`--title` and `--body` select a single part. `--body` uses the pull-request
+template schema; a complete message does not.
 
 The complete `zendev` distribution always provides the `proposal` group. The
 standalone component command does not require `zendev`.

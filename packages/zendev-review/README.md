@@ -10,6 +10,11 @@ uvx --from zendev-review zendev-validate-title --help
 uvx --from zendev-review zendev-validate-body --help
 ```
 
+The complete `zendev` distribution exposes the same checks as
+`zendev message check --title` and `zendev message check --body`. Standalone
+scripts keep their existing names for GitHub Actions and component-only
+installs.
+
 ## Python API
 
 ```python
