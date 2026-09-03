@@ -16,4 +16,4 @@ for permissions, inputs, and copyable workflows. The
 defines title, body, template, and optional checklist behavior.
 
 Inside this repository, use `./actions/validate-title` or
-`./actions/validate-body` after checking out the source.
+`./actions/validate-body` after checking out the repository.
