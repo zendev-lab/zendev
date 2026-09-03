@@ -14,7 +14,7 @@ jobs:
     permissions:
       pull-requests: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: zendev-lab/zendev/actions/validate-title@v0.2.0
         with:
           text: ${{ github.event.pull_request.title }}
@@ -33,7 +33,7 @@ jobs:
     permissions:
       pull-requests: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: zendev-lab/zendev/actions/validate-body@v0.2.0
         with:
           body: ${{ github.event.pull_request.body }}

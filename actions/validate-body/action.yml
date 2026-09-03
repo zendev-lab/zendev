@@ -1,35 +1,34 @@
 name: Validate PR body
-description: Validate required-by-default and explicitly optional PR template H2 sections plus optional checked checklist rows via zendev.
+description: "Validate a PR body against the repository PR template."
 
 inputs:
   body:
-    description: PR body text (for example github.event.pull_request.body).
+    description: "PR body text (for example github.event.pull_request.body)."
     required: true
   template:
-    description: Path to the PR template file relative to the repo root.
+    description: "Path to the PR template file relative to the repo root."
     required: false
     default: ".github/pull_request_template.md"
   require-checklist:
-    description: When true, require checked checklist rows from the template checklist section.
+    description: "When true, require checked rows from the template checklist section."
     required: false
     default: "false"
   checklist-section:
-    description: H2 heading title (without leading ##) that contains the checklist rows.
+    description: "H2 title, without \"##\", containing the checklist rows."
     required: false
     default: "Checklist"
   fail-on-empty-checklist:
-    description: When true, exit 1 if require-checklist is true and the template defines no `- [x]` rows.
+    description: "When true, fail if require-checklist is enabled and the template has no checked rows."
     required: false
     default: "false"
 
 runs:
   using: composite
   steps:
-    - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+    - name: Set up uv
+      uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff # v6
       with:
         python-version: "3.14"
-
-    - uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff # v6
 
     - name: Validate body
       shell: bash
@@ -44,7 +43,12 @@ runs:
 
         zendev_root="$(cd "${GITHUB_ACTION_PATH}/../.." && pwd)"
         echo "Using zendev from ${zendev_root}"
-        args=(zendev message check --body --text "${INPUT_BODY}" --template "${INPUT_TEMPLATE}")
+        args=(
+          zendev message check
+          --body
+          --text "${INPUT_BODY}"
+          --template "${INPUT_TEMPLATE}"
+        )
         if [[ "${INPUT_REQUIRE_CHECKLIST}" == "true" ]]; then
           args+=(--require-checklist --checklist-section "${INPUT_CHECKLIST_SECTION}")
           if [[ "${INPUT_FAIL_ON_EMPTY_CHECKLIST}" == "true" ]]; then
