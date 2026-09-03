@@ -14,3 +14,6 @@ setup_log(verbose=True)
 ```
 
 Version 0.2.0 removes the former `from zendev import setup_log` re-export.
+
+See the official [package reference](https://zendev-lab.github.io/zendev/reference/packages/)
+for the distribution boundary.
