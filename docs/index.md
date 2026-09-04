@@ -32,6 +32,7 @@ zendev proposal check
 
 Continue with [Getting started](getting-started.md), then choose a guide:
 
+- [Assemble a recommended repository workflow](guides/repository-workflow.md)
 - [Create consistent commits](guides/commits.md)
 - [Validate commit and pull-request messages](guides/message-checks.md)
 - [Maintain repository-native proposals](guides/proposals.md)
