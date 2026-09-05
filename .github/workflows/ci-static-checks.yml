@@ -25,7 +25,49 @@ jobs:
       - name: Exercise public hooks
         run: |
           printf '%s\n' '✨ feat(hooks): validate public hooks' > .git/COMMIT_EDITMSG
-          uvx prek try-repo . zendev-proposal --all-files
-          uvx prek try-repo . zendev-proposal-index --stage manual --all-files
-          uvx prek try-repo . zendev-commit-msg --stage commit-msg --commit-msg-filename .git/COMMIT_EDITMSG
+          uvx prek try-repo . zendev-proposal-check --all-files
+          uvx prek try-repo . zendev-message-check --stage commit-msg --commit-msg-filename .git/COMMIT_EDITMSG
           git diff --exit-code
+
+  codeql:
+    name: CodeQL
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [python]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@5ba2889ada762081db2c4f32a729827dce632c7b # v3
+        with:
+          languages: ${{ matrix.language }}
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@5ba2889ada762081db2c4f32a729827dce632c7b # v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@5ba2889ada762081db2c4f32a729827dce632c7b # v3
+
+  documentation:
+    name: Documentation Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff # v6
+        with:
+          enable-cache: false
+          python-version: "3.14"
+
+      - name: Build documentation
+        run: uv run --locked --group docs zensical build --strict

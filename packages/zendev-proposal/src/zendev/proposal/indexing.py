@@ -95,7 +95,15 @@ def expected_index_text(config: ProposalConfig, state: RepositoryState) -> str:
     return json.dumps(build_index(config, state), indent=2, ensure_ascii=False) + "\n"
 
 
-def check_index(config: ProposalConfig, state: RepositoryState) -> Diagnostic | None:
+DEFAULT_FIX_INVOCATION = "zendev proposal check --fix"
+
+
+def check_index(
+    config: ProposalConfig,
+    state: RepositoryState,
+    *,
+    fix_invocation: str = DEFAULT_FIX_INVOCATION,
+) -> Diagnostic | None:
     expected = expected_index_text(config, state)
     try:
         current = config.index_path.read_text(encoding="utf-8")
@@ -115,7 +123,7 @@ def check_index(config: ProposalConfig, state: RepositoryState) -> Diagnostic | 
         code="proposal.index.drift",
         path=config.relative_path(config.index_path),
         message="committed proposal index is missing or out of date",
-        hint="Run `zendev-proposal index --write` and commit the result.",
+        hint=f"Run `{fix_invocation}` and commit the result.",
     )
 
 

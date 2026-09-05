@@ -18,12 +18,18 @@ from zendev.proposal.validation import validate_repository
 JSON_SCHEMA_VERSION = 1
 
 app = typer.Typer(
+    name="zendev-proposal",
     add_completion=False,
-    help="Validate and index a repository-native proposal process.",
+    help="Validate repository-native proposals.",
     no_args_is_help=True,
     pretty_exceptions_enable=False,
     rich_markup_mode=None,
 )
+
+
+@app.callback()
+def _proposal() -> None:
+    """Validate repository-native proposals."""
 
 
 def _summary(state: RepositoryState, *, index_state: str) -> dict[str, object]:
@@ -85,69 +91,52 @@ def _emit_tool_error(*, command: str, error: ProposalToolError, json_output: boo
     return 2
 
 
-def _check(config_path: Path, base_ref: str | None, *, json_output: bool) -> int:
+def _check(
+    config_path: Path,
+    base_ref: str | None,
+    *,
+    json_output: bool,
+    fix: bool,
+    fix_invocation: str,
+) -> int:
     try:
         config = load_config(config_path)
         result = validate_repository(config, base_ref=base_ref)
         diagnostics = list(result.diagnostics)
         index_state = "not-checked"
+        changed = False
         if not diagnostics:
-            drift = check_index(config, result.state)
-            if drift is not None:
-                diagnostics.append(drift)
-                index_state = "drifted"
+            if fix:
+                changed = write_index(config, result.state)
+                index_state = "updated" if changed else "up-to-date"
             else:
-                index_state = "up-to-date"
+                drift = check_index(config, result.state, fix_invocation=fix_invocation)
+                if drift is not None:
+                    diagnostics.append(drift)
+                    index_state = "drifted"
+                else:
+                    index_state = "up-to-date"
     except ProposalToolError as error:
         return _emit_tool_error(command="check", error=error, json_output=json_output)
 
     summary = _summary(result.state, index_state=index_state)
+    validated = (
+        f"Validated {summary['formal_proposals']} formal proposal(s), "
+        f"{summary['drafts']} draft(s), and the committed index."
+    )
     _emit(
         command="check",
         diagnostics=diagnostics,
         summary=summary,
         json_output=json_output,
-        success_message=(
-            f"Validated {summary['formal_proposals']} formal proposal(s), "
-            f"{summary['drafts']} draft(s), and the committed index."
-        ),
-    )
-    return 1 if diagnostics else 0
-
-
-def _index(config_path: Path, *, write: bool, json_output: bool) -> int:
-    try:
-        config = load_config(config_path)
-        result = validate_repository(config)
-        diagnostics = list(result.diagnostics)
-        index_state = "not-checked"
-        changed = False
-        if not diagnostics and write:
-            changed = write_index(config, result.state)
-            index_state = "updated" if changed else "up-to-date"
-        elif not diagnostics:
-            drift = check_index(config, result.state)
-            if drift is not None:
-                diagnostics.append(drift)
-                index_state = "drifted"
-            else:
-                index_state = "up-to-date"
-    except ProposalToolError as error:
-        return _emit_tool_error(command="index", error=error, json_output=json_output)
-
-    summary = _summary(result.state, index_state=index_state)
-    _emit(
-        command="index",
-        diagnostics=diagnostics,
-        summary=summary,
-        json_output=json_output,
-        success_message=("Updated proposal index." if changed else "Proposal index is already up to date."),
+        success_message="Updated the proposal index." if changed else validated,
     )
     return 1 if diagnostics else 0
 
 
 @app.command("check")
 def check_command(
+    ctx: typer.Context,
     config: Annotated[
         Path,
         typer.Option("--config", metavar="PATH", help="Proposal TOML policy."),
@@ -160,6 +149,10 @@ def check_command(
             help="Exact local Git ref used to validate lifecycle history.",
         ),
     ] = None,
+    fix: Annotated[
+        bool,
+        typer.Option("--fix", help="Write the deterministic index when proposals are valid."),
+    ] = False,
     json_output: Annotated[
         bool,
         typer.Option("--json", help="Emit stable JSON diagnostics."),
@@ -167,35 +160,14 @@ def check_command(
 ) -> None:
     """Validate proposals, history, graph, and the committed index."""
 
-    exit_code = _check(config, base_ref, json_output=json_output)
-    if exit_code:
-        raise typer.Exit(code=exit_code)
-
-
-@app.command("index")
-def index_command(
-    config: Annotated[
-        Path,
-        typer.Option("--config", metavar="PATH", help="Proposal TOML policy."),
-    ] = Path("proposal.toml"),
-    check: Annotated[
-        bool,
-        typer.Option("--check", help="Fail when the index has drifted."),
-    ] = False,
-    write: Annotated[
-        bool,
-        typer.Option("--write", help="Write the deterministic index."),
-    ] = False,
-    json_output: Annotated[
-        bool,
-        typer.Option("--json", help="Emit stable JSON diagnostics."),
-    ] = False,
-) -> None:
-    """Check or explicitly write the deterministic proposal index."""
-
-    if check == write:
-        raise typer.BadParameter("exactly one of --check or --write is required", param_hint="--check/--write")
-    exit_code = _index(config, write=write, json_output=json_output)
+    invocation = ctx.command_path.strip() or "zendev-proposal check"
+    exit_code = _check(
+        config,
+        base_ref,
+        json_output=json_output,
+        fix=fix,
+        fix_invocation=f"{invocation} --fix",
+    )
     if exit_code:
         raise typer.Exit(code=exit_code)
 

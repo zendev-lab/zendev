@@ -1,6 +1,6 @@
 [project]
 name = "zendev-review"
-description = "Pull-request title and body validation"
+description = "Commit and pull-request message validation"
 readme = "README.md"
 requires-python = ">=3.12"
 license = "MIT"
@@ -11,13 +11,13 @@ dependencies = [
 dynamic = ["version"]
 
 [project.urls]
+Documentation = "https://docs.zendev.zrr.dev/"
 Homepage = "https://github.com/zendev-lab/zendev"
 Issues = "https://github.com/zendev-lab/zendev/issues"
 Repository = "https://github.com/zendev-lab/zendev"
 
 [project.scripts]
-zendev-validate-body = "zendev.body:main"
-zendev-validate-title = "zendev.title:main"
+zendev-message = "zendev.message:main"
 
 [build-system]
 requires = ["hatch-vcs", "hatchling"]
