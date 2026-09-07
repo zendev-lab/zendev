@@ -11,19 +11,6 @@
         "Doe, Jane"
       ],
       "requires": []
-    },
-    {
-      "path": "drafts/script-mode.md",
-      "sep": null,
-      "title": "Draft SEP: Script Mode",
-      "status": "Draft",
-      "type": "Standards Track",
-      "authors": [
-        "Doe, Jane"
-      ],
-      "requires": [
-        0
-      ]
     }
   ]
 }

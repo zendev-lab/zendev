@@ -59,7 +59,7 @@ _GRAPH_KEYS = {
 }
 _HISTORY_KEYS = {"initial_status", "protect_records", "bootstrap_numbers", "transitions", "waivers"}
 _HISTORY_WAIVER_KEYS = {"path", "from_status", "to_status", "reason"}
-_INDEX_KEYS = {"version", "entries_key", "include_drafts", "fields"}
+_INDEX_KEYS = {"version", "entries_key", "fields"}
 _INDEX_FIELD_KEYS = {"name", "source", "key"}
 _DEFINES_KEYS = {"field", "anchor_prefix", "id_pattern"}
 
@@ -497,13 +497,6 @@ def _load_index(raw: object, config_path: Path) -> IndexPolicy:
     return IndexPolicy(
         version=version,
         entries_key=_string(table, "entries_key", config_path=config_path, field="index"),
-        include_drafts=_boolean(
-            table,
-            "include_drafts",
-            config_path=config_path,
-            field="index",
-            default=False,
-        ),
         fields=tuple(fields),
     )
 
@@ -686,12 +679,23 @@ def load_config(path: str | Path = "proposal.toml") -> ProposalConfig:
     history = _load_history(payload.get("history"), config_path)
     defines = _load_defines(payload.get("defines"), config_path)
     index = _load_index(payload.get("index"), config_path)
+    number_field = _string(proposal, "number_field", config_path=config_path, field="proposal")
+    projections = [field for field in index.fields if field.source == "metadata" and field.key == number_field]
+    if len(projections) != 1 or projections[0].name != number_field:
+        raise _error(
+            config_path,
+            "proposal.config.index-identity",
+            f"`index.fields` must project `{number_field}` exactly once as metadata with the same name and key",
+        )
+    for field in index.fields:
+        if field.source == "inverse" and (graph is None or field.key not in graph.fields):
+            raise _error(config_path, "proposal.config.index-key", "inverse keys must belong to `graph.fields`")
 
     return ProposalConfig(
         root=root,
         config_path=config_path,
         prefix=prefix,
-        number_field=_string(proposal, "number_field", config_path=config_path, field="proposal"),
+        number_field=number_field,
         title_field=_string(
             proposal,
             "title_field",

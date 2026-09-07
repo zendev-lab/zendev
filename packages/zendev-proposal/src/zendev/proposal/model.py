@@ -95,7 +95,6 @@ class IndexField:
 class IndexPolicy:
     version: int
     entries_key: str
-    include_drafts: bool
     fields: tuple[IndexField, ...]
 
 

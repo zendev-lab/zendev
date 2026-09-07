@@ -14,6 +14,7 @@ dependencies = [
 dynamic = ["version"]
 
 [project.urls]
+Documentation = "https://docs.zendev.zrr.dev/"
 Homepage = "https://github.com/zendev-lab/zendev"
 Issues = "https://github.com/zendev-lab/zendev/issues"
 Repository = "https://github.com/zendev-lab/zendev"
@@ -24,12 +25,16 @@ zendev = "zendev.__main__:main"
 [dependency-groups]
 dev = [
   { include-group = "check" },
+  { include-group = "docs" },
   { include-group = "test" },
 ]
 check = [
   "pyrefly==1.2.0",
   "types-PyYAML>=6.0",
   "types-jsonschema>=4.26",
+]
+docs = [
+  "zensical>=0.0.58",
 ]
 test = [
   "pytest>=8.0",

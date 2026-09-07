@@ -11,13 +11,13 @@ dependencies = [
 dynamic = ["version"]
 
 [project.urls]
+Documentation = "https://docs.zendev.zrr.dev/"
 Homepage = "https://github.com/zendev-lab/zendev"
 Issues = "https://github.com/zendev-lab/zendev/issues"
 Repository = "https://github.com/zendev-lab/zendev"
 
 [project.scripts]
 zendev-commit = "zendev.commit:main"
-zendev-commit-msg = "zendev.commit:hook_main"
 
 [build-system]
 requires = ["hatch-vcs", "hatchling"]

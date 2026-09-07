@@ -446,6 +446,39 @@ def report_invalid_commit_message(
     print(f"Received: {received_line!r}", file=file)
 
 
+def run_commit_message_check(
+    text: str,
+    *,
+    profile: CommitProfile | str | None = None,
+    start: Path | None = None,
+    comment_char: str | None = None,
+    context: Literal["hook", "ci"] = "hook",
+    output: TextIO | None = None,
+) -> None:
+    """Validate a complete commit message and exit on failure."""
+
+    try:
+        selected = resolve_commit_profile(profile, start=start)
+    except ValueError as error:
+        raise typer.BadParameter(str(error), param_hint="--profile") from error
+
+    if comment_char is None:
+        comment_char = _git_comment_char(start) if start is not None else "#"
+    normalized = normalize_commit_message(text, comment_char=comment_char)
+    result = validate_commit_message(normalized, profile=selected, comment_char=comment_char)
+    if result.valid:
+        return
+
+    report_invalid_commit_message(
+        normalized,
+        context=context,
+        file=sys.stderr if output is None else output,
+        profile=selected,
+        result=result,
+    )
+    raise typer.Exit(code=1)
+
+
 @hook_app.command()
 def commit_message(
     commit_msg_file: Annotated[
@@ -468,25 +501,13 @@ def commit_message(
 ) -> None:
     """Validate the message file supplied by Git or a hook runner."""
 
-    try:
-        selected = resolve_commit_profile(profile.value, start=commit_msg_file.parent)
-    except ValueError as error:
-        raise typer.BadParameter(str(error), param_hint="--profile") from error
-    message_text = commit_msg_file.read_text(encoding="utf-8")
-    comment_char = _git_comment_char(commit_msg_file.parent)
-    normalized = normalize_commit_message(message_text, comment_char=comment_char)
-    result = validate_commit_message(normalized, profile=selected, comment_char=comment_char)
-    if result.valid:
-        return
-
-    report_invalid_commit_message(
-        normalized,
+    run_commit_message_check(
+        commit_msg_file.read_text(encoding="utf-8"),
+        profile=profile.value,
+        start=commit_msg_file.parent,
         context="hook",
-        file=sys.stderr,
-        profile=selected,
-        result=result,
+        output=sys.stderr,
     )
-    raise typer.Exit(code=1)
 
 
 def _git_comment_char(cwd: Path) -> str:

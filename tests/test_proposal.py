@@ -188,7 +188,7 @@ pre_proposal = true
     assert len(result.state.documents) == 2
 
 
-def test_sep_frontmatter_draft_is_validated_and_indexed(tmp_path: Path) -> None:
+def test_sep_frontmatter_draft_is_validated_but_not_indexed(tmp_path: Path) -> None:
     repository = _copy_fixture(tmp_path, "sep")
     config = load_config(repository / "proposal.toml")
 
@@ -198,10 +198,10 @@ def test_sep_frontmatter_draft_is_validated_and_indexed(tmp_path: Path) -> None:
     assert len(result.state.documents) == 2
     payload = json.loads(expected_index_text(config, result.state))
     assert payload["version"] == 2
-    assert payload["documents"][1]["sep"] is None
+    assert len(payload["documents"]) == 1
+    assert payload["documents"][0]["sep"] == 0
     assert payload["documents"][0]["authors"] == ["Doe, Jane"]
     assert payload["documents"][0]["requires"] == []
-    assert payload["documents"][1]["requires"] == [0]
 
 
 def test_real_yaml_parser_preserves_quoted_commas_and_rejects_duplicate_keys() -> None:
@@ -361,6 +361,7 @@ def test_index_drift_is_read_only_until_write_is_explicit(tmp_path: Path) -> Non
     diagnostic = check_index(config, state)
     assert diagnostic is not None
     assert diagnostic.code == "proposal.index.drift"
+    assert diagnostic.hint == "Run `zendev proposal check --fix` and commit the result."
     assert config.index_path.read_text(encoding="utf-8") == "{}\n"
     assert write_index(config, state)
     assert check_index(config, state) is None
@@ -409,34 +410,57 @@ def test_check_cli_distinguishes_validation_and_tool_errors(tmp_path: Path) -> N
     assert tool_payload["diagnostics"][0]["code"] == "proposal.config.missing"
 
 
-def test_index_cli_writes_only_with_explicit_write(tmp_path: Path) -> None:
+def test_check_cli_is_read_only_without_fix(tmp_path: Path) -> None:
     repository = _copy_fixture(tmp_path, "vep")
     index = repository / "veps-index.json"
     index.write_text("{}\n", encoding="utf-8")
 
     checked = runner.invoke(
         proposal_app,
-        ["index", "--config", str(repository / "proposal.toml"), "--check"],
+        ["check", "--config", str(repository / "proposal.toml"), "--json"],
     )
+    payload = json.loads(checked.stdout)
 
     assert checked.exit_code == 1
     assert index.read_text(encoding="utf-8") == "{}\n"
+    assert payload["diagnostics"][0]["code"] == "proposal.index.drift"
+    assert payload["diagnostics"][0]["hint"] == "Run `zendev-proposal check --fix` and commit the result."
+
+
+def test_check_cli_fix_writes_the_index(tmp_path: Path) -> None:
+    repository = _copy_fixture(tmp_path, "vep")
+    index = repository / "veps-index.json"
+    index.write_text("{}\n", encoding="utf-8")
+
     written = runner.invoke(
         proposal_app,
-        ["index", "--config", str(repository / "proposal.toml"), "--write"],
+        ["check", "--config", str(repository / "proposal.toml"), "--fix"],
     )
+
     assert written.exit_code == 0
+    assert "Updated the proposal index." in written.output
     entry = json.loads(index.read_text(encoding="utf-8"))["veps"][0]
     assert entry["vep"] == 0
     assert "id" not in entry
 
 
-@pytest.mark.parametrize("operation", [[], ["--check", "--write"]])
-def test_index_cli_requires_exactly_one_operation(operation: list[str]) -> None:
-    result = runner.invoke(proposal_app, ["index", *operation])
+def test_check_cli_fix_does_not_write_when_documents_are_invalid(tmp_path: Path) -> None:
+    repository = _copy_fixture(tmp_path, "vep")
+    index = repository / "veps-index.json"
+    index.write_text("{}\n", encoding="utf-8")
+    draft = repository / "drafts" / "temporal-model.md"
+    draft.write_text(draft.read_text(encoding="utf-8") + "\nVEP-0042\n", encoding="utf-8")
 
-    assert result.exit_code == 2
-    assert "exactly one of --check or --write is required" in result.output
+    result = runner.invoke(
+        proposal_app,
+        ["check", "--config", str(repository / "proposal.toml"), "--fix", "--json"],
+    )
+    payload = json.loads(result.stdout)
+
+    assert result.exit_code == 1
+    assert index.read_text(encoding="utf-8") == "{}\n"
+    assert payload["diagnostics"][0]["code"] == "proposal.draft.concrete-id"
+    assert payload["summary"]["index"] == "not-checked"
 
 
 def test_history_rejects_invalid_transition(tmp_path: Path) -> None:

@@ -4,12 +4,12 @@ from __future__ import annotations
 
 import typer
 
-from zendev.body import validate_body_command
-from zendev.commit import commit_message, create_commit
+from zendev.commit import create_commit
+from zendev.message import app as message_app
 from zendev.proposal.cli import app as proposal_app
-from zendev.title import validate_title
 
 app = typer.Typer(
+    name="zendev",
     add_completion=False,
     help="Run Zendev development workflows.",
     no_args_is_help=True,
@@ -18,9 +18,7 @@ app = typer.Typer(
 )
 
 app.command("commit")(create_commit)
-app.command("commit-msg")(commit_message)
-app.command("validate-title")(validate_title)
-app.command("validate-body")(validate_body_command)
+app.add_typer(message_app, name="message")
 app.add_typer(proposal_app, name="proposal")
 
 

@@ -55,6 +55,14 @@ ci: format check cov
 pre-commit:
     uvx prek run --all-files
 
+# Serve documentation locally
+docs:
+    uv run --group docs zensical serve --open
+
+# Validate and build documentation
+docs-build:
+    uv run --group docs zensical build --strict
+
 # Validate the current commit message file
 commit-msg:
     uvx prek run --stage commit-msg --commit-msg-filename .git/COMMIT_EDITMSG --files .git/COMMIT_EDITMSG

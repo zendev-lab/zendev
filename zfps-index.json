@@ -38,6 +38,18 @@
       "superseded_by": []
     },
     {
+      "zfp": 3,
+      "path": "zfps/ZFP-0003-cli-surface.md",
+      "title": "规范化统一 CLI 与提案 check --fix",
+      "type": "Feature",
+      "authors": [
+        "zrr1999"
+      ],
+      "created": "2026-09-02",
+      "supersedes": [],
+      "superseded_by": []
+    },
+    {
       "zfp": 4,
       "path": "zfps/ZFP-0004-numeric-proposal-index.md",
       "title": "数值提案索引身份",

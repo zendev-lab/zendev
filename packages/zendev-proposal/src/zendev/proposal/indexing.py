@@ -58,7 +58,29 @@ def _document_sort_key(config: ProposalConfig, document: ProposalDocument) -> tu
 def build_index(config: ProposalConfig, state: RepositoryState) -> dict[str, object]:
     """Build the configured machine-readable index without writing it."""
 
-    documents = state.documents if config.index.include_drafts else state.formal_documents
+    # Validation uses reference parsing from this module; defer this import to
+    # share the graph rules without an import-time cycle.
+    from zendev.proposal.validation import _validate_graph
+
+    diagnostics = list(state.diagnostics)
+    documents = state.formal_documents
+    seen: set[int] = set()
+    for document in documents:
+        number = document.number(config)
+        if number is None or reference_number(config, number) is None or number in seen:
+            diagnostics.append(
+                Diagnostic(
+                    code="proposal.index.identity",
+                    path=document.relative_path,
+                    message="indexed proposals must have unique valid integer numbers",
+                )
+            )
+        else:
+            seen.add(number)
+    _validate_graph(config, state, diagnostics)
+    if diagnostics:
+        raise ProposalToolError(sorted(diagnostics, key=Diagnostic.sort_key)[0])
+
     inverse_relations = {
         field.key for field in config.index.fields if field.source == "inverse" and field.key is not None
     }
@@ -101,7 +123,15 @@ def expected_index_text(config: ProposalConfig, state: RepositoryState) -> str:
     return json.dumps(build_index(config, state), indent=2, ensure_ascii=False) + "\n"
 
 
-def check_index(config: ProposalConfig, state: RepositoryState) -> Diagnostic | None:
+DEFAULT_FIX_INVOCATION = "zendev proposal check --fix"
+
+
+def check_index(
+    config: ProposalConfig,
+    state: RepositoryState,
+    *,
+    fix_invocation: str = DEFAULT_FIX_INVOCATION,
+) -> Diagnostic | None:
     expected = expected_index_text(config, state)
     try:
         current = config.index_path.read_text(encoding="utf-8")
@@ -121,7 +151,7 @@ def check_index(config: ProposalConfig, state: RepositoryState) -> Diagnostic | 
         code="proposal.index.drift",
         path=config.relative_path(config.index_path),
         message="committed proposal index is missing or out of date",
-        hint="Run `zendev-proposal index --write` and commit the result.",
+        hint=f"Run `{fix_invocation}` and commit the result.",
     )
 
 

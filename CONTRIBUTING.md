@@ -17,12 +17,11 @@ uvx prek run --all-files
 uv pip check
 ```
 
-When ZFP documents, templates, or policy change, also verify the proposal set
-and its committed index:
+When ZFP documents, templates, or policy change, write a drifted index into the
+same change:
 
 ```shell
-uv run zendev proposal check
-uv run zendev proposal index --check
+uv run zendev proposal check --fix
 ```
 
 `just ci` formats and lints code, runs ty and Pyrefly, and executes the test
@@ -49,14 +48,19 @@ Documentation stays with the code or policy that owns it:
 
 | Document | Owner |
 | --- | --- |
-| [`README.md`](./README.md) | Toolkit positioning, installation, unified commands, and package navigation |
-| `packages/*/README.md` | Component installation, API, independent commands, and boundaries |
-| [`actions/README.md`](./actions/README.md) | Composite Action inputs and integration examples |
+| [`README.md`](./README.md) | GitHub and PyPI landing page, quick installation, and navigation |
+| [`docs/`](./docs/) | Official concepts, guides, integrations, reference, and development documentation |
+| `packages/*/README.md` | Distribution landing pages and links to the official documentation |
+| [`actions/README.md`](./actions/README.md) | Composite Action landing page and official documentation link |
 | [`zfps/README.md`](./zfps/README.md) | ZFP reading and submission process |
 | `CONTRIBUTING.md` | Development gates, data maintenance, documentation ownership, and PR rules |
 
-Do not recreate a general `docs/` directory or duplicate component behavior in
-the root README.
+Preview the documentation with `just docs` and validate it with
+`just docs-build`. The strict build is also the `Documentation Checks` job in
+`CI - Static Checks`. Do not move or duplicate `zfps/` under `docs/`; ZFPs remain
+the repository's design and governance source of truth. Copyable command
+examples use `shell` fences and must not start with `$ `. Mixed command-and-output
+transcripts may keep a session fence.
 
 ## Zendev Feature Proposals
 

@@ -176,6 +176,44 @@ def validate_template_checklist(
     return True
 
 
+def run_body_check(
+    body: str,
+    *,
+    template: Path = Path(".github/pull_request_template.md"),
+    require_checklist: bool = False,
+    checklist_section: str = "Checklist",
+    fail_on_empty_checklist: bool = False,
+) -> None:
+    """Validate PR body sections and optional required checklist rows."""
+
+    try:
+        sections = _load_template_sections(template)
+    except ValueError as exc:
+        print(f"::error::Invalid PR template: {exc}")
+        raise typer.Exit(code=1) from exc
+
+    print("::group::PR / body check")
+    print(f"Template headings: {[section.heading for section in sections]}")
+    print(f"Required headings: {[section.heading for section in sections if section.required]}")
+    print(f"Optional headings: {[section.heading for section in sections if not section.required]}")
+    print("::endgroup::")
+
+    is_valid, actual = validate_body(body, sections)
+    if not is_valid:
+        report_invalid_body(actual, sections, file=sys.stdout)
+        raise typer.Exit(code=1)
+
+    print("PR body headings are valid.")
+
+    if require_checklist and not validate_template_checklist(
+        body,
+        template_path=template,
+        section_heading=checklist_section,
+        fail_on_empty=fail_on_empty_checklist,
+    ):
+        raise typer.Exit(code=1)
+
+
 @app.command()
 def validate_body_command(
     body: Annotated[str, typer.Argument(help="PR body text to validate.")],
@@ -212,32 +250,13 @@ def validate_body_command(
 ) -> None:
     """Validate PR body sections and optional required checklist rows."""
 
-    try:
-        sections = _load_template_sections(template)
-    except ValueError as exc:
-        print(f"::error::Invalid PR template: {exc}")
-        raise typer.Exit(code=1) from exc
-
-    print("::group::PR / body check")
-    print(f"Template headings: {[section.heading for section in sections]}")
-    print(f"Required headings: {[section.heading for section in sections if section.required]}")
-    print(f"Optional headings: {[section.heading for section in sections if not section.required]}")
-    print("::endgroup::")
-
-    is_valid, actual = validate_body(body, sections)
-    if not is_valid:
-        report_invalid_body(actual, sections, file=sys.stdout)
-        raise typer.Exit(code=1)
-
-    print("PR body headings are valid.")
-
-    if require_checklist and not validate_template_checklist(
+    run_body_check(
         body,
-        template_path=template,
-        section_heading=checklist_section,
-        fail_on_empty=fail_on_empty_checklist,
-    ):
-        raise typer.Exit(code=1)
+        template=template,
+        require_checklist=require_checklist,
+        checklist_section=checklist_section,
+        fail_on_empty_checklist=fail_on_empty_checklist,
+    )
 
 
 def main() -> None:

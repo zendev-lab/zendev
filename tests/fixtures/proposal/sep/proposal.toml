@@ -32,7 +32,6 @@ Superseded = ["Superseded"]
 [index]
 version = 2
 entries_key = "documents"
-include_drafts = true
 fields = [
   { name = "path", source = "path" },
   "sep",
