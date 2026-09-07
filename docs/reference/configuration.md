@@ -40,22 +40,9 @@ Feature = "templates/zfp.md"
 Governance = "templates/zfp.md"
 
 [index]
-version = 1
+version = 2
 entries_key = "zfps"
-include_drafts = false
-
-[[index.fields]]
-name = "zfp"
-source = "metadata"
-key = "zfp"
-
-[[index.fields]]
-name = "id"
-source = "identifier"
-
-[[index.fields]]
-name = "path"
-source = "path"
+fields = ["zfp", { name = "path", source = "path" }, "title"]
 ```
 
 ### Proposal table
@@ -91,7 +78,8 @@ proposal number or encode lifecycle status. A lifecycle draft uses
 If no draft schema is configured, drafts use the formal proposal schema. A
 draft's H1 must match its metadata title, and a configured marker must
 immediately follow that H1. `require_summary` controls summary validation for
-drafts independently of `index.include_drafts`.
+drafts. Unnumbered drafts are validated but never indexed. Numbered formal
+proposals are indexed regardless of lifecycle status, when the repository uses one.
 
 ### Graph and history
 
@@ -170,11 +158,25 @@ configured `supersedes` closure.
 
 ### Index fields
 
-Each `index.fields` entry has a unique output `name`, a `source`, and an optional
-`key`. Version 1 accepts `metadata`, `identifier`, `path`, and `inverse` sources.
-Metadata and inverse sources require a key; identifier and path sources do not.
-Fields are emitted in configuration order. Documents sort by proposal number,
-followed by included unnumbered drafts sorted by path. JSON uses UTF-8,
+Each `index.fields` entry is a string shorthand or a table with a unique output
+`name`, a `source`, and an optional `key`. A string such as `"title"` means
+`{ name = "title", source = "metadata", key = "title" }`.
+Supported sources are `metadata`, `path`, and `inverse`. Metadata and inverse
+sources require a key; path sources do not. Inverse keys must belong to `graph.fields`.
+The configured `proposal.number_field` must be projected exactly once as metadata,
+with both name and key unchanged. Missing, renamed, or repeated identity projections
+are configuration errors; the generator does not inject fields.
+
+Graph metadata keys and inverse fields produce integer edges to existing numbered
+formal proposals. Renaming a graph output does not change normalization. Invalid
+references, missing targets, unnumbered drafts, and external references fail before
+generation or writing, including through the public Python indexing API. Ordinary
+metadata such as `authors`, `defines`, or `id` is preserved; `id` has no special meaning.
+
+Only `index.version = 2` is supported. Remove `source = "identifier"` and
+`index.include_drafts` from older configurations, then regenerate the committed
+index with `zendev proposal check --fix`. The top-level config version is unchanged.
+Fields are emitted in configuration order. Documents sort by proposal number. JSON uses UTF-8,
 two-space indentation, and one trailing newline before byte-for-byte comparison.
 
 Unknown tables, keys, source names, invalid types, missing schemas or templates,

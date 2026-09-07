@@ -16,49 +16,15 @@ Governance = "templates/zfp.md"
 fields = ["supersedes"]
 
 [index]
-version = 1
+version = 2
 entries_key = "zfps"
-include_drafts = false
-
-[[index.fields]]
-name = "zfp"
-source = "metadata"
-key = "zfp"
-
-[[index.fields]]
-name = "id"
-source = "identifier"
-
-[[index.fields]]
-name = "path"
-source = "path"
-
-[[index.fields]]
-name = "title"
-source = "metadata"
-key = "title"
-
-[[index.fields]]
-name = "type"
-source = "metadata"
-key = "type"
-
-[[index.fields]]
-name = "authors"
-source = "metadata"
-key = "authors"
-
-[[index.fields]]
-name = "created"
-source = "metadata"
-key = "created"
-
-[[index.fields]]
-name = "supersedes"
-source = "metadata"
-key = "supersedes"
-
-[[index.fields]]
-name = "superseded_by"
-source = "inverse"
-key = "supersedes"
+fields = [
+  "zfp",
+  { name = "path", source = "path" },
+  "title",
+  "type",
+  "authors",
+  "created",
+  "supersedes",
+  { name = "superseded_by", source = "inverse", key = "supersedes" },
+]

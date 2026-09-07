@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal
 
-IndexSource = Literal["metadata", "identifier", "path", "inverse"]
+IndexSource = Literal["metadata", "path", "inverse"]
 MetadataTitleMode = Literal["plain", "prefixed"]
 
 
@@ -95,7 +95,6 @@ class IndexField:
 class IndexPolicy:
     version: int
     entries_key: str
-    include_drafts: bool
     fields: tuple[IndexField, ...]
 
 
