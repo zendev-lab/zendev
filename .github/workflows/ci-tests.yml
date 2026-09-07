@@ -20,7 +20,7 @@ jobs:
         with:
           just-version: "1.58.0"
 
-      - uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff # v6
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
         with:
           python-version: "3.14"
 
@@ -35,7 +35,7 @@ jobs:
         run: uv build --all-packages --wheel
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@04b047e8bb82a0c002c8312c1c880fbc6a999d45 # v5
+        uses: codecov/codecov-action@0fb7174895f61a3b6b78fc075e0cd60383518dac # v5
         with:
           files: coverage.xml
           fail_ci_if_error: false
