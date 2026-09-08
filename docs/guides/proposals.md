@@ -19,6 +19,22 @@ proposals-index.json
 Directory names are configurable. The repository owns its schema, template
 headings, terminology, graph fields, lifecycle rules, and waivers.
 
+## Repository governance
+
+Each repository defines when a proposal is required and how authors are
+identified. Put the authoritative rules in the governing proposal, link them
+from the contribution guide, and align templates and schemas with those rules.
+For example, ZFP authors use lowercase GitHub usernames; another repository may
+choose display names or another identity format. The shared checker enforces
+the supplied schema without imposing GitHub identities or querying accounts.
+Repairs must not infer a username from a person's name.
+
+Proposal thresholds are human review decisions. Distinguish a new public
+contract or governance decision from implementation of an existing decision.
+A passing check does not establish that an implementation PR has supplied every
+required design proposal; file counts, commit labels and keywords cannot prove
+that requirement.
+
 ## Check committed state
 
 Run the read-only gate from the proposal repository root:
