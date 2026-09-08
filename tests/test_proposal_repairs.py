@@ -304,3 +304,9 @@ def test_custom_definition_pattern_with_capture_groups(repository: Path) -> None
     path.write_text(path.read_text() + '\n<a id="concept-new-name"></a>\n')
     assert check(repository, fix=True)[0] == 0
     assert '"new-name"' in path.read_text()
+
+
+def test_template_frontmatter_is_not_a_setext_section(repository: Path) -> None:
+    template = repository / "templates/technical.md"
+    template.write_text("---\ntitle: example\ntype: Technical\n---\n\n" + template.read_text())
+    assert check(repository)[0] == 0

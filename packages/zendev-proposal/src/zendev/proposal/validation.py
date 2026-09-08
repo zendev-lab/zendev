@@ -6,6 +6,7 @@ import json
 import re
 import subprocess
 from collections import Counter, defaultdict
+from contextlib import suppress
 from pathlib import Path
 from typing import Any, cast
 
@@ -429,6 +430,9 @@ def _template_headings(config: ProposalConfig) -> dict[str, tuple[str, ...]]:
                     message=f"failed to read proposal template: {error}",
                 )
             ) from error
+        # Templates may contain only Markdown, without metadata.
+        with suppress(ValueError):
+            _, text = extract_frontmatter(text, config.relative_path(path))
         headings = h2_headings(text)
         if len(headings) != len(set(headings)):
             raise ProposalToolError(
