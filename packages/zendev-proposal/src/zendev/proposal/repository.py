@@ -10,7 +10,7 @@ from yaml.constructor import ConstructorError
 from yaml.nodes import MappingNode
 from yaml.resolver import BaseResolver
 
-from zendev.proposal._markdown_scan import iter_lines_outside_fences
+from zendev.proposal._markdown_scan import scan_markdown
 from zendev.proposal.model import (
     Diagnostic,
     ProposalConfig,
@@ -174,12 +174,7 @@ def load_repository(config: ProposalConfig) -> RepositoryState:
 def h2_headings(markdown: str) -> tuple[str, ...]:
     """Return H2 headings outside fenced code blocks, preserving order."""
 
-    headings: list[str] = []
-    for line in iter_lines_outside_fences(markdown):
-        stripped = line.strip()
-        if stripped.startswith("## ") and stripped[3:].strip():
-            headings.append(stripped[3:].strip())
-    return tuple(headings)
+    return tuple(heading.text for heading in scan_markdown(markdown).headings if heading.level == 2)
 
 
 def iter_markdown_lines(paths: tuple[Path, ...]) -> Iterator[tuple[Path, int, str]]:

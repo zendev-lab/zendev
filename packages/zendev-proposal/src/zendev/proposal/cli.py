@@ -13,7 +13,8 @@ import typer
 from zendev.proposal.config import load_config
 from zendev.proposal.indexing import check_index, write_index
 from zendev.proposal.model import Diagnostic, ProposalToolError, RepositoryState
-from zendev.proposal.validation import validate_repository
+from zendev.proposal.repair import plan_repairs, write_repairs
+from zendev.proposal.validation import validate_repository, validate_state
 
 JSON_SCHEMA_VERSION = 1
 
@@ -102,6 +103,19 @@ def _check(
     try:
         config = load_config(config_path)
         result = validate_repository(config, base_ref=base_ref)
+        fixed_files: list[str] = []
+        pending_files: list[str] = []
+        if fix:
+            candidate, edits = plan_repairs(config, result.state)
+            if edits:
+                repaired = validate_state(config, candidate, base_ref=base_ref)
+                if repaired.ok:
+                    write_repairs(config, edits)
+                    fixed_files = [edit.path for edit in edits]
+                    result = repaired
+                else:
+                    pending_files = [edit.path for edit in edits]
+                    result = repaired
         diagnostics = list(result.diagnostics)
         index_state = "not-checked"
         changed = False
@@ -120,10 +134,17 @@ def _check(
         return _emit_tool_error(command="check", error=error, json_output=json_output)
 
     summary = _summary(result.state, index_state=index_state)
+    if fix:
+        summary["fixed_files"] = fixed_files
+        summary["pending_files"] = pending_files
     validated = (
         f"Validated {summary['formal_proposals']} formal proposal(s), "
         f"{summary['drafts']} draft(s), and the committed index."
     )
+    if fixed_files and not json_output:
+        print("Repaired proposal sources: " + ", ".join(fixed_files))
+    elif pending_files and not json_output:
+        print("Candidate repairs were not applied because validation still fails.", file=sys.stderr)
     _emit(
         command="check",
         diagnostics=diagnostics,
@@ -151,7 +172,7 @@ def check_command(
     ] = None,
     fix: Annotated[
         bool,
-        typer.Option("--fix", help="Write the deterministic index when proposals are valid."),
+        typer.Option("--fix", help="Repair deterministic source omissions and update the index after validation."),
     ] = False,
     json_output: Annotated[
         bool,

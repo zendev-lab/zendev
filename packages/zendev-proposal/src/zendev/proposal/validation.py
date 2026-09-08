@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import re
 import subprocess
-from collections import defaultdict
+from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any, cast
 
@@ -13,6 +13,7 @@ from jsonschema import FormatChecker
 from jsonschema.exceptions import SchemaError
 from jsonschema.validators import validator_for
 
+from zendev.proposal._markdown_scan import scan_markdown
 from zendev.proposal.indexing import edge_identifiers, normalize_reference
 from zendev.proposal.model import (
     Diagnostic,
@@ -101,6 +102,57 @@ def _formal_filename_pattern(config: ProposalConfig) -> re.Pattern[str]:
 
 def _first_nonempty_line(markdown: str) -> str:
     return next((line.strip() for line in markdown.splitlines() if line.strip()), "")
+
+
+def expected_h1(config: ProposalConfig, document: ProposalDocument) -> str | None:
+    """Derive a heading only from mechanically valid title and identity metadata."""
+    title = document.metadata.get(config.title_field)
+    if not isinstance(title, str) or not title.strip() or title != title.strip() or len(title.splitlines()) != 1:
+        return None
+    if document.is_draft:
+        return f"# {title}"
+    number = document.number(config)
+    if number is None or not 0 <= number < 10**config.number_width:
+        return None
+    identifier = config.format_identifier(number)
+    if config.metadata_title == "plain":
+        if re.match(rf"^{re.escape(config.prefix)}-\d+:", title):
+            return None
+        return f"# {identifier}: {title}"
+    if not title.startswith(f"{identifier}:") or not title[len(identifier) + 1 :].strip():
+        return None
+    return f"# {title}"
+
+
+def _validate_title(config: ProposalConfig, document: ProposalDocument, diagnostics: list[Diagnostic]) -> None:
+    title = document.metadata.get(config.title_field)
+    if not isinstance(title, str) or not title.strip() or title != title.strip() or len(title.splitlines()) != 1:
+        diagnostics.append(
+            Diagnostic(
+                code="proposal.title.invalid",
+                path=document.relative_path,
+                message=f"`{config.title_field}` must be non-empty single-line text without surrounding whitespace",
+            )
+        )
+    elif not document.is_draft and config.metadata_title == "prefixed":
+        identifier = document.identifier(config)
+        if identifier is not None and title.startswith(f"{identifier}:") and not title[len(identifier) + 1 :].strip():
+            diagnostics.append(
+                Diagnostic(
+                    code="proposal.title.invalid",
+                    path=document.relative_path,
+                    message="metadata title must contain text after the proposal identifier",
+                )
+            )
+    h1s = [heading for heading in scan_markdown(document.body).headings if heading.level == 1]
+    if len(h1s) > 1:
+        diagnostics.append(
+            Diagnostic(
+                code="proposal.h1.duplicate",
+                path=document.relative_path,
+                message=f"proposal body must contain exactly one H1; found {len(h1s)}",
+            )
+        )
 
 
 def _validate_formal_shape(config: ProposalConfig, document: ProposalDocument, diagnostics: list[Diagnostic]) -> None:
@@ -233,13 +285,14 @@ def _validate_frontmatter_draft(
             )
         )
 
-    nonempty = [line.strip() for line in document.body.splitlines() if line.strip()]
-    if drafts.marker is not None and (len(nonempty) < 2 or nonempty[1] != drafts.marker):
+    nonempty = [index for index, line in enumerate(document.body.splitlines()) if line.strip()]
+    markers = scan_markdown(document.body, drafts.marker).marker_lines
+    if drafts.marker is not None and (len(nonempty) < 2 or markers != (nonempty[1],)):
         diagnostics.append(
             Diagnostic(
                 code="proposal.draft.marker",
                 path=document.relative_path,
-                message=f"draft H1 must be followed by `{drafts.marker}`",
+                message=f"draft H1 must be followed by exactly one standalone `{drafts.marker}` marker",
             )
         )
 
@@ -305,6 +358,16 @@ def _validate_summary(config: ProposalConfig, document: ProposalDocument, diagno
     index += 1
     while index < len(lines) and not lines[index].strip():
         index += 1
+    if (
+        document.is_draft
+        and config.drafts is not None
+        and config.drafts.marker is not None
+        and index < len(lines)
+        and lines[index].strip() == config.drafts.marker
+    ):
+        index += 1
+        while index < len(lines) and not lines[index].strip():
+            index += 1
     if index >= len(lines) or not lines[index].startswith(">"):
         diagnostics.append(
             Diagnostic(
@@ -388,7 +451,17 @@ def _validate_sections(
     proposal_type = document.metadata.get(config.type_field)
     if not isinstance(proposal_type, str) or proposal_type not in templates:
         return
-    found = set(h2_headings(document.body))
+    headings = h2_headings(document.body)
+    found = set(headings)
+    repeated = [heading for heading in templates[proposal_type] if headings.count(heading) > 1]
+    if repeated:
+        diagnostics.append(
+            Diagnostic(
+                code="proposal.sections.duplicate",
+                path=document.relative_path,
+                message="duplicate required sections: " + ", ".join(repeated),
+            )
+        )
     missing = [heading for heading in templates[proposal_type] if heading not in found]
     if missing:
         diagnostics.append(
@@ -761,12 +834,12 @@ def _validate_defines(
     if policy is None:
         return
 
-    anchor_re = re.compile(rf'<a id="{re.escape(policy.anchor_prefix)}({policy.id_pattern})"></a>')
+    id_re = re.compile(policy.id_pattern)
     owners: dict[str, list[ProposalDocument]] = defaultdict(list)
 
     for document in state.documents:
         raw = document.metadata.get(policy.field)
-        if raw is not None and not isinstance(raw, list):
+        if policy.field in document.metadata and not isinstance(raw, list):
             diagnostics.append(
                 Diagnostic(
                     code="proposal.defines.invalid-field",
@@ -775,12 +848,56 @@ def _validate_defines(
                 )
             )
             continue
+        values = raw if isinstance(raw, list) else []
         declared = _defined_ids(document, policy.field)
+        invalid = [value for value in values if not isinstance(value, str) or id_re.fullmatch(value) is None]
+        if invalid:
+            diagnostics.append(
+                Diagnostic(
+                    code="proposal.defines.invalid-id",
+                    path=document.relative_path,
+                    message=f"`{policy.field}` entries must be strings matching `{policy.id_pattern}`: {invalid!r}",
+                )
+            )
         declared_set = set(declared)
-        anchors = anchor_re.findall(document.body)
-        for identifier in declared:
+        if len(declared) != len(declared_set):
+            diagnostics.append(
+                Diagnostic(
+                    code="proposal.defines.duplicate-id",
+                    path=document.relative_path,
+                    message=f"`{policy.field}` must not contain duplicate concept IDs",
+                )
+            )
+        anchors: list[str] = []
+        for anchor_fact in scan_markdown(document.body).anchors:
+            if not anchor_fact.identifier.startswith(policy.anchor_prefix):
+                continue
+            concept = anchor_fact.identifier.removeprefix(policy.anchor_prefix)
+            if id_re.fullmatch(concept) is None or not anchor_fact.canonical:
+                diagnostics.append(
+                    Diagnostic(
+                        code="proposal.defines.invalid-anchor",
+                        path=document.relative_path,
+                        message=(
+                            f"definition anchor `{anchor_fact.identifier}` "
+                            "must use a valid ID and canonical empty <a> tag"
+                        ),
+                    )
+                )
+            anchors.append(concept)
+        counts = Counter(anchors)
+        for concept, count in counts.items():
+            if count > 1:
+                diagnostics.append(
+                    Diagnostic(
+                        code="proposal.defines.duplicate-anchor",
+                        path=document.relative_path,
+                        message=f"definition anchor `{policy.anchor_prefix}{concept}` occurs {count} times",
+                    )
+                )
+        for identifier in sorted(declared_set):
             anchor = f'<a id="{policy.anchor_prefix}{identifier}"></a>'
-            count = document.body.count(anchor)
+            count = counts[identifier]
             if count != 1:
                 diagnostics.append(
                     Diagnostic(
@@ -841,13 +958,18 @@ def _validate_defines(
 def validate_repository(config: ProposalConfig, *, base_ref: str | None = None) -> ValidationResult:
     """Validate repository mechanics while leaving project terminology local."""
 
-    state = load_repository(config)
+    return validate_state(config, load_repository(config), base_ref=base_ref)
+
+
+def validate_state(config: ProposalConfig, state: RepositoryState, *, base_ref: str | None = None) -> ValidationResult:
+    """Validate a parsed snapshot, including a proposed repair before any writes."""
     diagnostics = list(state.diagnostics)
     _validate_schema(config, state, diagnostics)
     _validate_unique_numbers(config, state, diagnostics)
     templates = _template_headings(config)
 
     for document in state.documents:
+        _validate_title(config, document, diagnostics)
         if document.is_draft:
             _validate_frontmatter_draft(config, document, diagnostics)
             if config.drafts is not None and config.drafts.require_summary:

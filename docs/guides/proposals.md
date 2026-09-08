@@ -29,7 +29,16 @@ zendev proposal check
 
 The command validates configuration, frontmatter, JSON Schema, filenames,
 headings, summaries, optional drafts, optional relationships and history, and
-the committed deterministic index.
+the committed deterministic index. Titles must be non-empty single-line text;
+extra H1 headings and repeated required H2 sections are errors. The configured
+draft marker must occur exactly once directly after the H1. When a draft also
+requires a summary, the summary follows the marker.
+
+With `[defines]` enabled, concept IDs must match the configured pattern and be
+unique within the declaration list. Definition anchors must use the canonical
+empty HTML tag, occur once, be declared, and satisfy ownership rules. Markdown
+code examples and HTML comments do not count as anchors or markers. Other
+metadata, such as tag enums or date formats, remains governed by your JSON Schema.
 
 When proposal content changes, validate it and update the index in one command:
 
@@ -37,8 +46,37 @@ When proposal content changes, validate it and update the index in one command:
 zendev proposal check --fix
 ```
 
-`--fix` writes only after proposal validation succeeds. It reports whether the
-index changed or was already current.
+`--fix` plans deterministic source repairs before updating the index:
+
+| Problem | Source of the repair |
+| --- | --- |
+| Missing or mismatched opening H1 | Valid title and proposal number metadata |
+| Missing draft marker | Exact text in `drafts.marker` |
+| One standalone marker in the wrong position | Move that marker below the H1 |
+| Undeclared definition anchor | Append its ID to the configured `defines.field` |
+| Declared concept without an anchor | Insert the anchor before the only H2-H6 whose text exactly equals the ID |
+
+For example, if `drafts.marker` is configured as follows, fixing a draft that
+omits it inserts this line below its title:
+
+```markdown
+> Pre-VEP design draft. Non-normative.
+```
+
+A different blockquote immediately after the title is left for review, except
+for an explicitly configured summary. Duplicate markers, duplicate ownership,
+invalid metadata, and ambiguous definition locations are not guessed away.
+YAML aliases and unsupported layouts are left unchanged. Local edits retain
+comments, unrelated formatting, and existing line endings.
+
+The candidate repository must pass all checks, including requested history
+checks, before source files or the index are written. If validation still fails,
+no repairs are applied; diagnostics describe the remaining candidate errors.
+Human output explains that repairs were withheld. With `--json --fix`, summary
+fields `fixed_files` and `pending_files` list applied and withheld source edits,
+respectively. Inspect the diff after fixing. Running the same fix again makes no
+changes. File-system failures are reported as tool errors; multi-file writes are
+not a filesystem transaction.
 
 ## Validate history
 
