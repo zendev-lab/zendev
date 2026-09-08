@@ -14,3 +14,5 @@ by distribution name:
 
 Use the [CLI reference](../reference/cli.md) when you already know the workflow
 and need the exact command surface.
+
+- [Project evolution](evolution.md): retain initial intent and read or write dated changes in direction.

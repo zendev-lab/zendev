@@ -6,6 +6,7 @@ requires-python = ">=3.12"
 members = [
     "zendev",
     "zendev-commit",
+    "zendev-evolution",
     "zendev-log",
     "zendev-proposal",
     "zendev-review",
@@ -854,6 +855,7 @@ source = { editable = "." }
 dependencies = [
     { name = "typer" },
     { name = "zendev-commit" },
+    { name = "zendev-evolution" },
     { name = "zendev-log" },
     { name = "zendev-proposal" },
     { name = "zendev-review" },
@@ -885,6 +887,7 @@ test = [
 requires-dist = [
     { name = "typer", specifier = ">=0.27" },
     { name = "zendev-commit", editable = "packages/zendev-commit" },
+    { name = "zendev-evolution", editable = "packages/zendev-evolution" },
     { name = "zendev-log", editable = "packages/zendev-log" },
     { name = "zendev-proposal", editable = "packages/zendev-proposal" },
     { name = "zendev-review", editable = "packages/zendev-review" },
@@ -923,6 +926,16 @@ requires-dist = [
     { name = "questionary", specifier = ">=2.1" },
     { name = "typer", specifier = ">=0.27" },
 ]
+
+[[package]]
+name = "zendev-evolution"
+source = { editable = "packages/zendev-evolution" }
+dependencies = [
+    { name = "typer" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "typer", specifier = ">=0.27" }]
 
 [[package]]
 name = "zendev-log"
