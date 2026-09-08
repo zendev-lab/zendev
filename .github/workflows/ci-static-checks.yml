@@ -28,13 +28,12 @@ jobs:
       - name: Exercise public hooks
         env:
           UV_FIND_LINKS: ${{ github.workspace }}/dist
-          UV_PRERELEASE: allow
         run: |
           printf '%s\n' '✨ feat(hooks): validate public hooks' > .git/COMMIT_EDITMSG
-          uvx prek try-repo . zendev-proposal-check --all-files
-          uvx prek try-repo . zendev-message-check --stage commit-msg --commit-msg-filename .git/COMMIT_EDITMSG
-          uv run zendev evolution init --from tests/fixtures/evolution/origin.txt
-          uvx prek try-repo . zendev-evolution-check --all-files
+          UV_PRERELEASE=allow uvx prek try-repo . zendev-proposal-check --all-files
+          UV_PRERELEASE=allow uvx prek try-repo . zendev-message-check --stage commit-msg --commit-msg-filename .git/COMMIT_EDITMSG
+          uv run --locked zendev evolution init --from tests/fixtures/evolution/origin.txt
+          UV_PRERELEASE=allow uvx prek try-repo . zendev-evolution-check --all-files
           rm EVOLUTION.md
           git diff --exit-code
 
