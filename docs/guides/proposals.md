@@ -37,7 +37,9 @@ requires a summary, the summary follows the marker.
 With `[defines]` enabled, concept IDs must match the configured pattern and be
 unique within the declaration list. Definition anchors must use the canonical
 empty HTML tag, occur once, be declared, and satisfy ownership rules. Markdown
-code examples and HTML comments do not count as anchors or markers. Other
+code examples do not count as anchors, markers, status declarations or concrete
+proposal references. HTML comments do not define anchors; an exact comment
+explicitly configured as the draft marker is supported. Other
 metadata, such as tag enums or date formats, remains governed by your JSON Schema.
 
 When proposal content changes, validate it and update the index in one command:
@@ -50,6 +52,12 @@ zendev proposal check --fix
 
 | Problem | Source of the repair |
 | --- | --- |
+| Missing number or title | Unique canonical filename or matching opening H1 |
+| Redundant title prefix or surrounding whitespace | Configured title mode |
+| Duplicate declaration or relationship entries | Equivalent values, retaining first occurrence |
+| Missing required empty defines list | Schema requirement and absence of definition anchors |
+| Missing required sections | Template headings only; content checks remain active |
+| Value aliases or reference representation | Explicit `fix` policy |
 | Missing or mismatched opening H1 | Valid title and proposal number metadata |
 | Missing draft marker | Exact text in `drafts.marker` |
 | One standalone marker in the wrong position | Move that marker below the H1 |
@@ -69,14 +77,40 @@ invalid metadata, and ambiguous definition locations are not guessed away.
 YAML aliases and unsupported layouts are left unchanged. Local edits retain
 comments, unrelated formatting, and existing line endings.
 
-The candidate repository must pass all checks, including requested history
-checks, before source files or the index are written. If validation still fails,
-no repairs are applied; diagnostics describe the remaining candidate errors.
-Human output explains that repairs were withheld. With `--json --fix`, summary
-fields `fixed_files` and `pending_files` list applied and withheld source edits,
-respectively. Inspect the diff after fixing. Running the same fix again makes no
-changes. File-system failures are reported as tool errors; multi-file writes are
-not a filesystem transaction.
+By default, the candidate repository must pass all checks, including requested
+history checks, before any source or index is written. Diagnostics always describe
+the actual files. `summary.candidate_diagnostics` separately reports candidate
+errors; `fixed_files`, `pending_files`, and `repairs` identify applied or proposed
+source edits, their rules and evidence. Diagnostics include `fixable` and locations.
+
+Preview without writing, or select repair rules:
+
+```shell
+zendev proposal check --diff
+zendev proposal check --fix --select number,title,h1,marker,defines
+```
+
+Available rules are `number`, `title`, `h1`, `marker`, `defines`, `deduplicate`,
+`references`, `aliases`, and `sections`. `--diff` takes precedence over `--fix` and
+includes the patch in JSON output. It retains the actual repository's exit status.
+
+For independent safe source fixes despite unrelated errors, explicitly use:
+
+```shell
+zendev proposal check --fix --partial --select marker,sections
+```
+
+Partial mode rejects edits introducing identity, schema, graph, ownership or
+history failures. Remaining errors still produce exit code 1, and the index is
+updated only when the resulting repository is valid. Empty section scaffolds do
+not invent prose or bypass a configured nonempty requirement.
+
+Before replacement, all source and index contents are prepared in temporary
+files, and the input snapshot is checked again. An ordinary write failure rolls
+back applied replacements where possible; the error reports `written_files`,
+`rolled_back_files`, and recovery backups if rollback fails. This is not a
+cross-file crash transaction. Inspect the diff after fixing; a second successful
+fix makes no changes.
 
 ## Validate history
 
@@ -112,6 +146,7 @@ The JSON envelope is versioned independently of human wording:
     {
       "code": "proposal.index.drift",
       "hint": "Run `zendev-proposal check --fix` and commit the result.",
+      "fixable": true,
       "line": null,
       "message": "committed proposal index is missing or out of date",
       "path": "proposals-index.json"

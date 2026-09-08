@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -81,6 +82,10 @@ def parse_frontmatter(raw: str, path: str) -> dict[str, object]:
         raise ValueError(f"{path}: invalid YAML frontmatter: {error}") from error
     if not isinstance(value, dict) or not all(isinstance(key, str) for key in value):
         raise ValueError(f"{path}: YAML frontmatter must be a mapping with string keys")
+    try:
+        json.dumps(value, allow_nan=False)
+    except (TypeError, ValueError, RecursionError) as error:
+        raise ValueError(f"{path}: frontmatter must contain finite JSON-compatible values: {error}") from error
     return value
 
 
@@ -96,6 +101,12 @@ def _read_document(
     config: ProposalConfig, path: Path, *, is_draft: bool
 ) -> tuple[ProposalDocument | None, Diagnostic | None]:
     relative = config.relative_path(path)
+    if path.is_symlink() or not path.resolve().is_relative_to(config.root):
+        return None, Diagnostic(
+            code="proposal.document.path",
+            path=relative,
+            message="proposal documents must be regular repository-local files",
+        )
     try:
         text = path.read_text(encoding="utf-8")
     except (OSError, UnicodeError) as error:
@@ -138,6 +149,16 @@ def load_repository(config: ProposalConfig) -> RepositoryState:
 
     diagnostics: list[Diagnostic] = []
     formal: list[ProposalDocument] = []
+    for directory in [config.documents_dir, *([config.drafts.directory] if config.drafts else [])]:
+        for path in sorted(directory.rglob("*")):
+            if path.suffix.lower() == ".md" and (path.parent != directory or path.suffix != ".md"):
+                diagnostics.append(
+                    Diagnostic(
+                        code="proposal.document.layout",
+                        path=config.relative_path(path),
+                        message="Markdown proposals must use .md and reside directly in the configured directory",
+                    )
+                )
     formal_paths = tuple(sorted(path for path in config.documents_dir.glob("*.md") if path.name != "README.md"))
     if not formal_paths:
         diagnostics.append(

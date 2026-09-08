@@ -103,7 +103,7 @@ proposal. The optional roles add stronger checks:
   transitively requiring a non-accepted proposal.
 - `amends_field` requires amendment targets to remain accepted.
 - `supersedes_field` validates coordinated supersession and exactly one
-  accepted forward superseder.
+  accepted current superseder along the replacement chain.
 
 The optional `history` table configures `initial_status`, record protection,
 bootstrap numbers, and allowed transitions:
@@ -181,3 +181,49 @@ two-space indentation, and one trailing newline before byte-for-byte comparison.
 
 Unknown tables, keys, source names, invalid types, missing schemas or templates,
 and unsafe paths are configuration errors rather than silently ignored policy.
+
+### Additional proposal checks and repairs
+
+```toml
+[sections]
+nonempty = true
+ordered = true
+no_skip_levels = true
+placeholders = ["TBD", "TODO"]
+
+[links]
+check = true
+heading_ids = "explicit"
+
+[fix]
+reference_style = "preserve"
+
+[fix.aliases.status]
+accepted = "Accepted"
+```
+
+Section constraints default to disabled. Placeholders match complete standalone
+prose lines, not words embedded in sentences or code examples. Required sections
+come from the configured template. Local link checking defaults to enabled and
+checks files and explicit HTML fragments. `heading_ids = "github"` additionally
+uses the vendored [github-slugger character tables](https://pypi.org/project/github-slugger/0.0.3/)
+for generated heading IDs, including duplicate suffixes and Unicode headings.
+Select this only for repositories rendered with that convention; `check = false`
+disables local link checking. External links are not fetched.
+
+`graph.acyclic_fields` can name any configured graph fields without requiring
+lifecycle roles. Requires and supersedes roles are always acyclic. Drafts receive
+integrity checks for relationships they actually declare.
+
+`fix.reference_style` accepts `preserve`, `number`, or `identifier`; the result
+must still satisfy the repository schema. Alias mappings are explicit strings
+and must target schema-declared fields and enum values. Chains are rejected.
+
+Schemas and their file references are resolved offline inside the repository.
+Unknown formats, unresolved references, non-finite or non-JSON YAML values, output
+paths aliasing inputs, conflicting field roles and invalid history states are
+reported as errors. Optional index properties declared by a schema can remain
+null when absent; unknown projections cannot silently become null. Noncanonical
+Markdown extensions and nested proposal layouts are reported, not skipped.
+History paths work when the policy is in a Git subdirectory, and waivers must
+match the requested base transition when history checking is enabled.

@@ -208,7 +208,8 @@ def test_unresolved_error_prevents_all_candidate_writes(repository: Path) -> Non
     before = snapshot(repository)
     code, payload = check(repository, fix=True)
     assert code == 1
-    assert "proposal.defines.duplicate-owner" in {d["code"] for d in payload["diagnostics"]}
+    assert "proposal.defines.duplicate-owner" in {d["code"] for d in payload["summary"]["candidate_diagnostics"]}
+    assert "proposal.draft.marker" in {d["code"] for d in payload["diagnostics"]}
     assert payload["summary"]["fixed_files"] == []
     assert snapshot(repository) == before
 
