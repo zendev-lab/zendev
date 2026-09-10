@@ -51,3 +51,10 @@ exit non-zero when validation or the delegated Git operation fails.
 | `zendev-proposal check` | Unified `zendev proposal check`. |
 
 Use `<command> --help` for the exact options installed on the current machine.
+
+## Project evolution
+
+`zendev evolution` exposes `init`, `list`, `read`, `write`, and `check`.
+The standalone `zendev-evolution` command exposes the same surface. All commands
+accept `--file PATH`; see the [Evolution guide](../guides/evolution.md) for
+inputs, output selection, replacement rules, and exit codes.

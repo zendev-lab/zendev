@@ -1,7 +1,7 @@
 # zendev
 
 Zendev is a repository-native development workflow toolkit for commit
-conventions, pull-request message checks, and durable proposal repositories.
+conventions, pull-request message checks, durable proposal repositories, and project evolution.
 
 Git and committed repository files remain the source of truth. Zendev provides
 typed Python mechanisms and thin hook or GitHub Action adapters; consuming
@@ -32,6 +32,8 @@ tree as `zendev`.
 zendev commit
 zendev message check --title --text "✨ feat: add export"
 zendev proposal check
+# For repositories with an initialized EVOLUTION.md:
+zendev evolution read
 ```
 
 Read the [official documentation](https://docs.zendev.zrr.dev/) for
@@ -45,6 +47,7 @@ concepts, guides, integrations, and the public reference.
 | `zendev-commit` | Commit profiles, validation, and interactive commits |
 | `zendev-review` | Commit and pull-request message validation |
 | `zendev-proposal` | Proposal validation and deterministic indexes |
+| `zendev-evolution` | Initial intent and dated evolution records |
 | `zendev-log` | Loguru setup helper |
 
 The component distributions remain independently installable for narrower use.

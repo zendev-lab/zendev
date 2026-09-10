@@ -7,6 +7,7 @@ license = "MIT"
 dependencies = [
   "typer>=0.27",
   "zendev-commit",
+  "zendev-evolution",
   "zendev-log",
   "zendev-proposal",
   "zendev-review",
@@ -129,6 +130,7 @@ default-groups = ["check", "test"]
 
 [tool.uv.sources]
 zendev-commit = { workspace = true }
+zendev-evolution = { workspace = true }
 zendev-log = { workspace = true }
 zendev-proposal = { workspace = true }
 zendev-review = { workspace = true }

@@ -6,8 +6,9 @@ The public manifest exposes these preferred hook IDs:
 | --- | --- | --- |
 | `zendev-message-check` | `commit-msg` | Runs `zendev message check` on Git's message file. |
 | `zendev-proposal-check` | `pre-commit` | Runs `zendev proposal check` and always evaluates repository state. |
+| `zendev-evolution-check` | `pre-commit` | Opt-in check for an initialized `EVOLUTION.md`; runs `zendev evolution check` without changed filenames. |
 
-Both hooks install the complete `zendev` distribution from the pinned repository
+All hooks install the complete `zendev` distribution from the pinned repository
 revision and forward configured `args`. Version `0.3.0` removed the legacy
 `zendev-commit-msg` and `zendev-proposal` IDs.
 
