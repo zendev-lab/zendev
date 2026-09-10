@@ -70,6 +70,19 @@ machine metadata and technical identifiers remain English. See
 [`zfps/README.md`](./zfps/README.md) and the governing
 [`ZFP-0000`](./zfps/ZFP-0000-governance.md).
 
+Keep the ZFP and its implementation in separate Draft PRs, even when both are
+prepared in the same task. The proposal PR contains the ZFP, its generated index,
+and directly related proposal or contribution guidance. Implementation code,
+tests, package changes, CI, and feature usage documentation belong in the
+implementation PR, which links the ZFP and its proposal PR.
+
+When the implementation depends on an unmerged proposal, use a PR stack:
+`main <- proposal <- implementation`. Set the implementation PR's base to the
+proposal branch and verify each PR's diff against its own base: the proposal
+diff must contain no implementation, and the implementation diff must not
+repeat the proposal. The two PRs can be prepared and reviewed together without
+waiting for the proposal to merge.
+
 ## Pull requests
 
 Use a valid Gitmoji-style title. ZFP pull requests use `docs(zfp)` and one of
