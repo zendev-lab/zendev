@@ -6,7 +6,9 @@ requires-python = ">=3.12"
 license = "MIT"
 dependencies = [
   "jsonschema[format-nongpl]>=4.23",
+  "markdown-it-py>=4.0",
   "pyyaml>=6.0",
+  "referencing>=0.35",
   "typer>=0.27",
 ]
 dynamic = ["version"]
