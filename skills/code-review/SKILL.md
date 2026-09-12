@@ -91,7 +91,6 @@ new abstractions merely to satisfy an abstract design principle.
 Separate confidence from severity. Report evidence-backed findings; leave unresolved
 hypotheses as specific open questions or coverage gaps, not confident accusations.
 Avoid arbitrary numeric confidence scores and quotas for how many issues to find.
-Use [examples](references/examples.md) when calibrating a borderline finding.
 
 ## Deliver the review
 
@@ -118,5 +117,3 @@ marked unresolved. If access, time, or tools prevent completion, report the unco
 scope as an incomplete review. Do not silently narrow the task or repair code as a
 substitute for reporting it. For re-review, inspect the new revision and relevant
 regressions; do not repeat resolved findings.
-
-Maintainers changing this skill can consult [design sources](references/sources.md).

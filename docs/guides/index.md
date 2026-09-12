@@ -5,7 +5,6 @@ by distribution name:
 
 - [Recommended repository workflow](repository-workflow.md): combine repository
   policy, local gates, commits, pull requests, CI, proposals, and Agent guidance.
-- [Code review skill](code-review.md): review implementation changes with evidence.
 - [Commits](commits.md): select a profile, create an interactive commit, and
   validate messages.
 - [Message checks](message-checks.md): check titles, full commit messages, and
