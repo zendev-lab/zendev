@@ -37,6 +37,10 @@ zendev proposal check
 Read the [official documentation](https://docs.zendev.zrr.dev/) for
 concepts, guides, integrations, and the public reference.
 
+The optional [code-review skill](./skills/code-review/SKILL.md) guides Agent reviews
+of implementation changes. See the [usage guide](https://docs.zendev.zrr.dev/guides/code-review/)
+for installation and review boundaries.
+
 ## Packages
 
 | Distribution | Purpose |

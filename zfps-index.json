@@ -60,18 +60,6 @@
       "created": "2026-09-02",
       "supersedes": [],
       "superseded_by": []
-    },
-    {
-      "zfp": 7,
-      "path": "zfps/ZFP-0007-code-review-skill.md",
-      "title": "可复用的代码审查 Skill",
-      "type": "Feature",
-      "authors": [
-        "zrr1999"
-      ],
-      "created": "2026-09-12",
-      "supersedes": [],
-      "superseded_by": []
     }
   ]
 }
