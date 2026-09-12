@@ -94,6 +94,11 @@ Avoid arbitrary numeric confidence scores and quotas for how many issues to find
 
 ## Deliver the review
 
+Write the report in Simplified Chinese by default, including finding titles,
+explanations, and the scope and verification summary. Follow an explicit user
+request for another language. Preserve code identifiers, file paths, commands,
+and technical names in their original form.
+
 Use the user's required format if supplied. Otherwise lead with findings ordered
 by impact, then give a short scope and verification summary. Each finding includes:
 
@@ -109,7 +114,8 @@ by impact, then give a short scope and verification summary. Each finding includ
 
 End with what was inspected, which checks actually ran and their results, and
 material limitations or unresolved decisions. If there are no findings, say
-"No actionable findings in the reviewed scope" and state verification limits.
+"在本次审查范围内未发现可操作的问题" (or its equivalent in the requested language)
+and state verification limits.
 Do not claim exhaustive safety, approval, or merge readiness from absence of findings.
 
 Finish when the selected scope has been covered and candidates validated or clearly
