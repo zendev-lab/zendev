@@ -11,15 +11,18 @@ from zendev.proposal.model import (
     DefinesPolicy,
     Diagnostic,
     DraftPolicy,
+    FixPolicy,
     GraphPolicy,
     HistoryPolicy,
     HistoryWaiver,
     IndexField,
     IndexPolicy,
     IndexSource,
+    LinkPolicy,
     MetadataTitleMode,
     ProposalConfig,
     ProposalToolError,
+    SectionPolicy,
     SummaryPolicy,
 )
 
@@ -33,6 +36,9 @@ _TOP_LEVEL_KEYS = {
     "history",
     "defines",
     "index",
+    "sections",
+    "links",
+    "fix",
 }
 _PROPOSAL_KEYS = {
     "prefix",
@@ -56,6 +62,7 @@ _GRAPH_KEYS = {
     "supersedes_field",
     "accepted_status",
     "superseded_status",
+    "acyclic_fields",
 }
 _HISTORY_KEYS = {"initial_status", "protect_records", "bootstrap_numbers", "transitions", "waivers"}
 _HISTORY_WAIVER_KEYS = {"path", "from_status", "to_status", "reason"}
@@ -300,7 +307,16 @@ def _load_graph(raw: object, config_path: Path) -> GraphPolicy | None:
                 f"`graph.{name}` must name an entry in `graph.fields`",
             )
 
+    acyclic = _string_list(table.get("acyclic_fields", []), config_path=config_path, field="graph.acyclic_fields")
+    if any(name not in fields for name in acyclic) or len(acyclic) != len(set(acyclic)):
+        raise _error(config_path, "proposal.config.graph-role", "acyclic_fields must be unique graph fields")
+    assigned = [name for name in roles.values() if name is not None]
+    if len(assigned) != len(set(assigned)):
+        raise _error(config_path, "proposal.config.graph-role", "graph roles must use distinct fields")
+    if table.get("accepted_status", "Accepted") == table.get("superseded_status", "Superseded"):
+        raise _error(config_path, "proposal.config.graph-role", "accepted and superseded statuses must differ")
     return GraphPolicy(
+        acyclic_fields=acyclic,
         fields=fields,
         requires_field=roles["requires_field"],
         amends_field=roles["amends_field"],
@@ -547,7 +563,7 @@ def load_config(path: str | Path = "proposal.toml") -> ProposalConfig:
             "proposal configuration does not exist",
             hint="Pass `--config PATH` or add proposal.toml at the repository root.",
         ) from error
-    except OSError as error:
+    except (OSError, UnicodeError) as error:
         raise _error(config_path, "proposal.config.read", f"failed to read proposal configuration: {error}") from error
     except tomllib.TOMLDecodeError as error:
         raise _error(config_path, "proposal.config.toml", f"invalid TOML: {error}") from error
@@ -559,7 +575,7 @@ def load_config(path: str | Path = "proposal.toml") -> ProposalConfig:
             "proposal.config.unknown-key",
             "unknown top-level keys: " + ", ".join(unknown_top),
         )
-    if payload.get("version") != 1:
+    if type(payload.get("version")) is not int or payload.get("version") != 1:
         raise _error(config_path, "proposal.config.version", "`version` must be 1")
 
     root = config_path.parent.resolve()
@@ -691,7 +707,7 @@ def load_config(path: str | Path = "proposal.toml") -> ProposalConfig:
         if field.source == "inverse" and (graph is None or field.key not in graph.fields):
             raise _error(config_path, "proposal.config.index-key", "inverse keys must belong to `graph.fields`")
 
-    return ProposalConfig(
+    config = ProposalConfig(
         root=root,
         config_path=config_path,
         prefix=prefix,
@@ -730,4 +746,106 @@ def load_config(path: str | Path = "proposal.toml") -> ProposalConfig:
         history=history,
         defines=defines,
         index=index,
+    )
+
+    roles = [config.number_field, config.title_field, config.type_field, config.status_field]
+    if len(set(roles)) != len(roles) or (defines is not None and defines.field in roles):
+        raise _error(config_path, "proposal.config.field-role", "metadata roles must name distinct fields")
+    if graph is not None and any(name in roles or (defines and name == defines.field) for name in graph.fields):
+        raise _error(config_path, "proposal.config.field-role", "graph fields must not overlap metadata roles")
+    inputs = {config_path, schema_path, *templates.values()}
+    if drafts is not None:
+        inputs.add(drafts.schema_path)
+        if drafts.directory == documents_dir:
+            raise _error(config_path, "proposal.config.path", "formal and draft directories must differ")
+        if drafts.marker is not None:
+            from zendev.proposal._markdown_scan import scan_markdown
+
+            marker = drafts.marker
+            if (
+                marker != marker.strip()
+                or len(marker.splitlines()) != 1
+                or not scan_markdown(marker, marker).marker_lines
+            ):
+                raise _error(
+                    config_path, "proposal.config.marker", "marker must be a standalone single-line Markdown block"
+                )
+    if (
+        index_path in inputs
+        or index_path.is_dir()
+        or any(
+            index_path.is_relative_to(directory)
+            for directory in [documents_dir, *([drafts.directory] if drafts else [])]
+        )
+    ):
+        raise _error(config_path, "proposal.config.output-conflict", "index output must not overlap proposal inputs")
+    if index_path.exists() and any(path.exists() and index_path.samefile(path) for path in inputs):
+        raise _error(config_path, "proposal.config.output-conflict", "index output aliases an input file")
+    sections = _mapping(payload.get("sections"), config_path=config_path, field="sections", required=False)
+    _reject_unknown(
+        sections, {"nonempty", "ordered", "no_skip_levels", "placeholders"}, config_path=config_path, field="sections"
+    )
+    links = _mapping(payload.get("links"), config_path=config_path, field="links", required=False)
+    _reject_unknown(links, {"check", "heading_ids"}, config_path=config_path, field="links")
+    heading_ids = _string(links, "heading_ids", config_path=config_path, field="links", default="explicit")
+    if heading_ids not in {"explicit", "github"}:
+        raise _error(config_path, "proposal.config.type", "links.heading_ids must be explicit or github")
+    fix = _mapping(payload.get("fix"), config_path=config_path, field="fix", required=False)
+    _reject_unknown(fix, {"reference_style", "aliases"}, config_path=config_path, field="fix")
+    style = _string(fix, "reference_style", config_path=config_path, field="fix", default="preserve")
+    if style not in {"preserve", "number", "identifier"}:
+        raise _error(config_path, "proposal.config.type", "unsupported fix.reference_style")
+    aliases_raw = _mapping(fix.get("aliases"), config_path=config_path, field="fix.aliases", required=False)
+    aliases: dict[str, dict[str, str]] = {}
+    for name, mapping in aliases_raw.items():
+        values = _mapping(mapping, config_path=config_path, field=f"fix.aliases.{name}")
+        aliases[name] = {
+            key: _string(values, key, config_path=config_path, field=f"fix.aliases.{name}") for key in values
+        }
+        if any(value in values for value in aliases[name].values()):
+            raise _error(
+                config_path, "proposal.config.alias", "aliases must map directly to final values without chains"
+            )
+    if history is not None:
+        statuses = set(history.transitions)
+        if history.initial_status not in statuses or any(
+            target not in statuses for targets in history.transitions.values() for target in targets
+        ):
+            raise _error(config_path, "proposal.config.history", "history statuses must be declared transition states")
+        seen_waivers: set[tuple[str, str, str]] = set()
+        for waiver in history.waivers:
+            key = (waiver.path, waiver.from_status, waiver.to_status)
+            target = _repo_path(root, waiver.path, config_path=config_path, field="history.waivers.path")
+            if (
+                key in seen_waivers
+                or not target.is_file()
+                or waiver.from_status not in statuses
+                or waiver.to_status not in statuses
+                or not waiver.reason.strip()
+            ):
+                raise _error(
+                    config_path,
+                    "proposal.config.waiver",
+                    "waivers need an existing path, valid states, unique transition and reason",
+                )
+            seen_waivers.add(key)
+    from dataclasses import replace
+
+    return replace(
+        config,
+        sections=SectionPolicy(
+            nonempty=_boolean(sections, "nonempty", config_path=config_path, field="sections", default=False),
+            ordered=_boolean(sections, "ordered", config_path=config_path, field="sections", default=False),
+            no_skip_levels=_boolean(
+                sections, "no_skip_levels", config_path=config_path, field="sections", default=False
+            ),
+            placeholders=_string_list(
+                sections.get("placeholders", []), config_path=config_path, field="sections.placeholders"
+            ),
+        ),
+        links=LinkPolicy(
+            check=_boolean(links, "check", config_path=config_path, field="links", default=True),
+            heading_ids=heading_ids,
+        ),
+        fix=FixPolicy(reference_style=style, aliases=aliases),
     )

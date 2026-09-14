@@ -64,7 +64,19 @@ transcripts may keep a session fence.
 
 ## Zendev Feature Proposals
 
-Public feature and governance changes begin with a ZFP. ZFP prose defaults to
+New public contracts and governance decisions begin with a ZFP. Implementing
+an existing ZFP, restoring its intended behavior, and maintenance that preserves
+public semantics can use a direct PR. Link the existing proposal when it covers
+the work; explain new decisions or uncertainty in the existing motivation or
+solution section. Compatible new interfaces still introduce public contracts.
+Use the [decision criteria and examples](./zfps/ZFP-0000-governance.md#何时需要提案),
+not change size or commit labels, to determine the route. This is a review
+decision, not a check inferred automatically from the diff.
+
+ZFP authors use lowercase GitHub usernames without `@`; see the
+[authorship policy](./zfps/ZFP-0000-governance.md#作者身份).
+
+ZFP prose defaults to
 Chinese, but another language is allowed when it makes the proposal clearer;
 machine metadata and technical identifiers remain English. See
 [`zfps/README.md`](./zfps/README.md) and the governing

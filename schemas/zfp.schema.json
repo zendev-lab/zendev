@@ -25,7 +25,10 @@
     },
     "type": {
       "type": "string",
-      "enum": ["Feature", "Governance"]
+      "enum": [
+        "Feature",
+        "Governance"
+      ]
     },
     "authors": {
       "type": "array",
@@ -33,12 +36,16 @@
       "uniqueItems": true,
       "items": {
         "type": "string",
-        "minLength": 1
+        "minLength": 1,
+        "maxLength": 39,
+        "pattern": "^[a-z0-9]+(-[a-z0-9]+)*(?![\\s\\S])",
+        "description": "Lowercase GitHub username without @, display name, email or URL; account existence is not checked."
       }
     },
     "created": {
       "type": "string",
-      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+      "format": "date"
     },
     "supersedes": {
       "type": "array",

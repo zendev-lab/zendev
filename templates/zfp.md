@@ -3,12 +3,14 @@ zfp: 0
 title: "标题"
 type: Feature
 authors:
-  - "GitHub 用户名"
+  - "your-github-username"
 created: 2026-08-26
 supersedes: []
 ---
 
 # ZFP-0000: 标题
+
+<!-- authors 填写实际负责提案内容的作者的小写 GitHub 用户名，不带 @；不要保留示例账号。 -->
 
 ## 摘要
 
@@ -16,7 +18,8 @@ supersedes: []
 
 ## 动机
 
-说明具体问题，以及为什么它需要一份持久的决策记录。
+说明具体问题、引入的公共契约或治理决定，以及已有 ZFP 为什么尚未覆盖它。
+只实现已有决定时直接提交关联该提案的 PR。
 
 ## 设计
 
