@@ -36,7 +36,7 @@ source of truth and is linked from the site without being moved or duplicated.
 
 ## Evolution boundary
 
-The evolution package owns the fixed single-file Markdown format, source slices,
-structural checks, and atomic date writes. It has no dependency on proposal
-configuration or indexes. Git records corrections to the original intent; dated
-entries explain subsequent changes in direction.
+The evolution package validates the fixed single-file Markdown format. It has
+no dependency on proposal configuration, indexes, or private implementation.
+Editors own document changes; Git records revisions. Dated entries explain
+subsequent changes in direction.

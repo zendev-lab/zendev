@@ -57,7 +57,7 @@ Use `<command> --help` for the exact options installed on the current machine.
 
 ## Project evolution
 
-`zendev evolution` exposes `init`, `list`, `read`, `write`, and `check`.
-The standalone `zendev-evolution` command exposes the same surface. All commands
+`zendev evolution check` validates a document without modifying it.
+The standalone `zendev-evolution` command exposes the same check. Both commands
 accept `--file PATH`; see the [Evolution guide](../guides/evolution.md) for
-inputs, output selection, replacement rules, and exit codes.
+the document format, template, diagnostics, and exit codes.

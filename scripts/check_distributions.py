@@ -10,28 +10,25 @@ from pathlib import Path
 from zipfile import ZipFile
 
 
-def run(*args: str, cwd: Path, body: str | None = None, expected: int = 0) -> str:
-    result = subprocess.run(
-        args, cwd=cwd, input=body, text=True, encoding="utf-8", capture_output=True, check=False, timeout=120
-    )
+def run(*args: str, cwd: Path, expected: int = 0) -> str:
+    result = subprocess.run(args, cwd=cwd, text=True, encoding="utf-8", capture_output=True, check=False, timeout=120)
     if result.returncode != expected:
         raise RuntimeError(f"{args}: exit {result.returncode}, expected {expected}\n{result.stdout}\n{result.stderr}")
     return result.stdout
 
 
 def check_commands(prefix: list[str], cwd: Path) -> None:
-    body = "### 触发\nNew needs.\n\n### 变化\nNew direction.\n\n### 理由\nEvidence.\n"
-    run(*prefix, "init", "--from", "-", cwd=cwd, body="Original intent.")
-    run(*prefix, "write", "2026-09-08", "--from", "-", cwd=cwd, body=body)
-    run(*prefix, "check", cwd=cwd)
-    assert run(*prefix, "read", "--origin", cwd=cwd) == "## 初始意图\n\nOriginal intent.\n\n"
-    assert run(*prefix, "read", "2026-09-08", cwd=cwd) == f"## 2026-09-08\n\n{body}"
-    assert "EVOLUTION.md:3: 初始意图" in run(*prefix, "list", cwd=cwd)
-    before = (cwd / "EVOLUTION.md").read_bytes()
-    run(*prefix, "write", "2026-09-08", "--from", "-", cwd=cwd, body=body, expected=2)
-    assert (cwd / "EVOLUTION.md").read_bytes() == before
-    run(*prefix, "write", "2026-09-08", "--replace", "--from", "-", cwd=cwd, body=body.replace("Evidence", "Reasons"))
-    assert "Reasons" in run(*prefix, "read", cwd=cwd)
+    path = cwd / "EVOLUTION.md"
+    run(*prefix, "check", cwd=cwd, expected=2)
+    template = Path(__file__).resolve().parents[1] / "templates" / "evolution.md"
+    original = template.read_bytes()
+    path.write_bytes(original)
+    assert run(*prefix, "check", cwd=cwd) == "Validated EVOLUTION.md.\n"
+    assert path.read_bytes() == original
+    path.write_text("# Missing origin\n", encoding="utf-8")
+    run(*prefix, "check", cwd=cwd, expected=1)
+    assert path.read_text() == "# Missing origin\n"
+    path.write_bytes(original)
 
 
 def main() -> None:
@@ -72,11 +69,11 @@ def main() -> None:
                     cwd=working,
                 )
             else:
-                module = run(str(python), "-m", "zendev", "evolution", "read", "--origin", cwd=working)
-                assert "Original intent." in module
+                module = run(str(python), "-m", "zendev", "evolution", "check", cwd=working)
+                assert module == "Validated EVOLUTION.md.\n"
                 unified = binaries / ("zendev.exe" if os.name == "nt" else "zendev")
                 run(str(unified), "evolution", "check", cwd=working)
-    print("Verified six non-overlapping wheels and standalone/complete evolution workflows.")
+    print("Verified six non-overlapping wheels and standalone/complete evolution checks.")
 
 
 if __name__ == "__main__":

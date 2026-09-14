@@ -32,7 +32,7 @@ jobs:
           printf '%s\n' '✨ feat(hooks): validate public hooks' > .git/COMMIT_EDITMSG
           UV_PRERELEASE=allow uvx prek try-repo . zendev-proposal-check --all-files
           UV_PRERELEASE=allow uvx prek try-repo . zendev-message-check --stage commit-msg --commit-msg-filename .git/COMMIT_EDITMSG
-          uv run --locked zendev evolution init --from tests/fixtures/evolution/origin.txt
+          cp templates/evolution.md EVOLUTION.md
           UV_PRERELEASE=allow uvx prek try-repo . zendev-evolution-check --all-files
           rm EVOLUTION.md
           git diff --exit-code

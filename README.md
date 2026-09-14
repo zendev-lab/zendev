@@ -32,8 +32,8 @@ tree as `zendev`.
 zendev commit
 zendev message check --title --text "✨ feat: add export"
 zendev proposal check
-# For repositories with an initialized EVOLUTION.md:
-zendev evolution read
+# For repositories with an EVOLUTION.md:
+zendev evolution check
 ```
 
 Read the [official documentation](https://docs.zendev.zrr.dev/) for

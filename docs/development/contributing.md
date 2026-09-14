@@ -41,7 +41,7 @@ or a shared documentation preset without a demonstrated product requirement.
 
 ## Distribution checks
 
-Build all workspace wheels and exercise the evolution workflow in isolated
+Build all workspace wheels and exercise the evolution check in isolated
 standalone and complete-toolkit installations:
 
 ```shell
