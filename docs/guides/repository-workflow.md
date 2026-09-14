@@ -210,7 +210,7 @@ An Agent working in a Zendev repository should follow this sequence:
 2. Read the selected templates and schemas instead of inventing policy.
 3. Run a read-only check to establish the current state.
 4. Use Zendev commands instead of reproducing their validation logic.
-5. Use `--fix` only for deterministic generated state, then inspect the diff.
+5. Use `--fix` for deterministic proposal repairs and index updates, then inspect the diff.
 6. Prefer structured diagnostics when automation needs stable data.
 7. Run the repository's normal local gate before reporting completion.
 

@@ -163,8 +163,10 @@ def write_index(config: ProposalConfig, state: RepositoryState) -> bool:
         current = config.index_path.read_text(encoding="utf-8") if config.index_path.exists() else None
         if current == expected:
             return False
-        config.index_path.parent.mkdir(parents=True, exist_ok=True)
-        config.index_path.write_text(expected, encoding="utf-8", newline="\n")
+        from zendev.proposal.transaction import commit_files, snapshot_inputs
+
+        before = snapshot_inputs(config)
+        commit_files(config, {config.index_path: expected.encode("utf-8")}, before)
     except (OSError, UnicodeError) as error:
         raise ProposalToolError(
             Diagnostic(

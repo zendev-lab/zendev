@@ -19,6 +19,7 @@ class Diagnostic:
     path: str | None = None
     line: int | None = None
     hint: str | None = None
+    fixable: bool = False
 
     def as_dict(self) -> dict[str, object]:
         return {
@@ -27,6 +28,7 @@ class Diagnostic:
             "line": self.line,
             "message": self.message,
             "hint": self.hint,
+            "fixable": self.fixable,
         }
 
     def sort_key(self) -> tuple[str, int, str, str]:
@@ -36,9 +38,10 @@ class Diagnostic:
 class ProposalToolError(Exception):
     """A configuration or environment error, distinct from invalid proposals."""
 
-    def __init__(self, diagnostic: Diagnostic) -> None:
+    def __init__(self, diagnostic: Diagnostic, *, summary: dict[str, object] | None = None) -> None:
         super().__init__(diagnostic.message)
         self.diagnostic = diagnostic
+        self.summary = summary
 
 
 @dataclass(frozen=True, slots=True)
@@ -65,6 +68,7 @@ class GraphPolicy:
     supersedes_field: str | None = None
     accepted_status: str = "Accepted"
     superseded_status: str = "Superseded"
+    acyclic_fields: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -106,6 +110,26 @@ class DefinesPolicy:
 
 
 @dataclass(frozen=True, slots=True)
+class SectionPolicy:
+    nonempty: bool = False
+    ordered: bool = False
+    no_skip_levels: bool = False
+    placeholders: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class LinkPolicy:
+    check: bool = True
+    heading_ids: str = "explicit"
+
+
+@dataclass(frozen=True, slots=True)
+class FixPolicy:
+    reference_style: str = "preserve"
+    aliases: dict[str, dict[str, str]] = field(default_factory=dict)
+
+
+@dataclass(frozen=True, slots=True)
 class ProposalConfig:
     root: Path
     config_path: Path
@@ -127,6 +151,9 @@ class ProposalConfig:
     history: HistoryPolicy | None
     defines: DefinesPolicy | None
     index: IndexPolicy
+    sections: SectionPolicy = field(default_factory=SectionPolicy)
+    links: LinkPolicy = field(default_factory=LinkPolicy)
+    fix: FixPolicy = field(default_factory=FixPolicy)
 
     def format_identifier(self, number: int) -> str:
         return f"{self.prefix}-{number:0{self.number_width}d}"
