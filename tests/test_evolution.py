@@ -1,7 +1,8 @@
-"""Observable document and read-only CLI contracts for project evolution."""
+"""Observable document, initialization, and navigation contracts."""
 
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -142,9 +143,111 @@ def test_cli_paths_diagnostics_and_exit_codes(tmp_path: Path) -> None:
     assert sorted(p.name for p in tmp_path.iterdir()) == ["child", "history.md"]
 
 
-@pytest.mark.parametrize("command", ["init", "list", "read", "write"])
+@pytest.mark.parametrize("command", ["read", "write"])
 def test_cli_has_no_document_management_commands(tmp_path: Path, command: str) -> None:
     result = cli(tmp_path, command)
     assert result.returncode == 2
     assert "No such command" in result.stderr
     assert not list(tmp_path.iterdir())
+
+
+def test_init_and_list_workflow(tmp_path: Path) -> None:
+    source = tmp_path / "origin.md"
+    source.write_text("最初为开发者简化工作流。", encoding="utf-8")
+    result = cli(tmp_path, "init", "--from", "origin.md")
+    assert result.returncode == 0, result.stderr
+    path = tmp_path / "EVOLUTION.md"
+    assert path.read_text(encoding="utf-8") == ORIGIN
+    assert cli(tmp_path, "list").stdout == "EVOLUTION.md:3: 初始意图\n"
+    assert cli(tmp_path, "check").returncode == 0
+    assert cli(tmp_path, "init", "--from", "origin.md").returncode == 2
+    assert path.read_text(encoding="utf-8") == ORIGIN
+
+    assert cli(tmp_path, "init", "--from", "origin.md", "--file", "history.md").returncode == 0
+    custom = tmp_path / "history.md"
+    document = ORIGIN + "\n" + entry("2026-09-08") + "\n" + entry("2026-09-09")
+    original = document.replace("\n", "\r\n").encode("utf-8")
+    custom.write_bytes(original)
+    result = cli(tmp_path, "list", "--file", "history.md")
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.splitlines() == [
+        "history.md:3: 初始意图",
+        "history.md:7: 2026-09-08",
+        "history.md:18: 2026-09-09",
+    ]
+    assert custom.read_bytes() == original
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["EVOLUTION.md", "history.md", "origin.md"]
+
+
+@pytest.mark.parametrize(
+    ("body", "exit_code"),
+    [(b"", 1), (b"<!-- TODO -->", 1), (("Origin\n\n" + entry("2026-09-08")).encode(), 1), (b"\xff", 2)],
+)
+def test_init_invalid_input_creates_no_document(tmp_path: Path, body: bytes, exit_code: int) -> None:
+    source = tmp_path / "origin.md"
+    source.write_bytes(body)
+    result = cli(tmp_path, "init", "--from", "origin.md")
+    assert result.returncode == exit_code
+    assert "origin.md:" in result.stderr
+    assert "Traceback" not in result.stderr
+    assert [p.name for p in tmp_path.iterdir()] == ["origin.md"]
+
+
+@pytest.mark.parametrize("kind", ["directory", "symlink", "broken_symlink"])
+def test_init_refuses_existing_nonfiles(tmp_path: Path, kind: str) -> None:
+    source = tmp_path / "origin.md"
+    source.write_text("Origin.", encoding="utf-8")
+    target = tmp_path / "EVOLUTION.md"
+    if kind == "directory":
+        target.mkdir()
+    else:
+        target.symlink_to(source if kind == "symlink" else tmp_path / "absent.md")
+    assert cli(tmp_path, "init", "--from", "origin.md").returncode == 2
+    assert target.is_dir() if kind == "directory" else target.is_symlink()
+    assert source.read_text() == "Origin."
+    assert not (tmp_path / "absent.md").exists()
+
+
+def test_init_stdin_decodes_utf8_independently_of_host_encoding(tmp_path: Path) -> None:
+    result = subprocess.run(
+        [sys.executable, "-m", "zendev", "evolution", "init", "--from", "-"],
+        cwd=tmp_path,
+        env={**os.environ, "PYTHONIOENCODING": "cp1252"},
+        input="中文".encode(),
+        capture_output=True,
+        timeout=15,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert (tmp_path / "EVOLUTION.md").read_text(encoding="utf-8") == "# 项目演进\n\n## 初始意图\n\n中文\n"
+
+
+def test_concurrent_initializers_do_not_overwrite(tmp_path: Path) -> None:
+    source = tmp_path / "origin.md"
+    source.write_text("Origin.", encoding="utf-8")
+    command = [sys.executable, "-m", "zendev", "evolution", "init", "--from", "origin.md"]
+    with (
+        subprocess.Popen(command, cwd=tmp_path, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as first,
+        subprocess.Popen(command, cwd=tmp_path, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as second,
+    ):
+        first.communicate(timeout=15)
+        second.communicate(timeout=15)
+    assert sorted([first.returncode, second.returncode]) == [0, 2]
+    assert (tmp_path / "EVOLUTION.md").read_text(encoding="utf-8") == "# 项目演进\n\n## 初始意图\n\nOrigin.\n"
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["EVOLUTION.md", "origin.md"]
+
+
+def test_list_ignores_examples_and_emits_no_partial_invalid_directory(tmp_path: Path) -> None:
+    path = tmp_path / "EVOLUTION.md"
+    assert cli(tmp_path, "list").returncode == 2
+    path.write_text(ORIGIN + "\n<!--\n" + entry("2026-09-08") + "-->\n", encoding="utf-8")
+    result = cli(tmp_path, "list")
+    assert result.returncode == 0, result.stderr
+    assert result.stdout == "EVOLUTION.md:3: 初始意图\n"
+    invalid = ORIGIN + "\n" + entry("2026-02-30")
+    path.write_text(invalid, encoding="utf-8")
+    result = cli(tmp_path, "list")
+    assert result.returncode == 1
+    assert result.stdout == ""
+    assert "EVOLUTION.md:7:" in result.stderr
+    assert path.read_text(encoding="utf-8") == invalid

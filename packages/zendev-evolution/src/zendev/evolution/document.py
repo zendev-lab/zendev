@@ -17,6 +17,7 @@ class EvolutionError(ValueError):
 
     def __init__(self, message: str, *, path: str, line: int = 1) -> None:
         super().__init__(f"{path}:{line}: {message}")
+        self.message = message
         self.path = path
         self.line = line
 
@@ -63,6 +64,10 @@ def _has_content(text: str) -> bool:
 def validate_document(text: str, *, path: str = "EVOLUTION.md") -> None:
     """Check initial intent, chronological dates, and nonempty required sections."""
 
+    _validated_sections(text, path=path)
+
+
+def _validated_sections(text: str, *, path: str) -> list[_Heading]:
     def fail(message: str, line: int = 1) -> None:
         raise EvolutionError(message, path=path, line=line)
 
@@ -127,3 +132,4 @@ def validate_document(text: str, *, path: str = "EVOLUTION.md") -> None:
             child_end = children[child_index + 1].start if child_index + 1 < len(children) else end
             if not _has_content("\n".join(lines[child.end : child_end])):
                 fail(f"'{child.title}' body must not be empty.", child.start + 1)
+    return sections

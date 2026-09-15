@@ -57,7 +57,9 @@ Use `<command> --help` for the exact options installed on the current machine.
 
 ## Project evolution
 
-`zendev evolution check` validates a document without modifying it.
-The standalone `zendev-evolution` command exposes the same check. Both commands
+`zendev evolution` exposes `init --from PATH`, `list`, and `check` for creating
+a document, locating its dates, and validating it. Initialization refuses to
+overwrite existing paths; listing and checking are read-only.
+The standalone `zendev-evolution` command exposes the same surface. All commands
 accept `--file PATH`; see the [Evolution guide](../guides/evolution.md) for
 the document format, template, diagnostics, and exit codes.

@@ -20,10 +20,19 @@ def run(*args: str, cwd: Path, expected: int = 0) -> str:
 def check_commands(prefix: list[str], cwd: Path) -> None:
     path = cwd / "EVOLUTION.md"
     run(*prefix, "check", cwd=cwd, expected=2)
+    source = cwd / "origin.md"
+    source.write_text("Original intent.\n", encoding="utf-8")
+    run(*prefix, "init", "--from", str(source), cwd=cwd)
+    initial = path.read_bytes()
+    assert initial.decode("utf-8") == "# 项目演进\n\n## 初始意图\n\nOriginal intent.\n"
+    assert run(*prefix, "list", cwd=cwd) == "EVOLUTION.md:3: 初始意图\n"
+    run(*prefix, "init", "--from", str(source), cwd=cwd, expected=2)
+    assert path.read_bytes() == initial
     template = Path(__file__).resolve().parents[1] / "templates" / "evolution.md"
     original = template.read_bytes()
     path.write_bytes(original)
     assert run(*prefix, "check", cwd=cwd) == "Validated EVOLUTION.md.\n"
+    assert run(*prefix, "list", cwd=cwd).splitlines() == ["EVOLUTION.md:3: 初始意图", "EVOLUTION.md:8: 2026-09-08"]
     assert path.read_bytes() == original
     path.write_text("# Missing origin\n", encoding="utf-8")
     run(*prefix, "check", cwd=cwd, expected=1)
@@ -73,7 +82,9 @@ def main() -> None:
                 assert module == "Validated EVOLUTION.md.\n"
                 unified = binaries / ("zendev.exe" if os.name == "nt" else "zendev")
                 run(str(unified), "evolution", "check", cwd=working)
-    print("Verified six non-overlapping wheels and standalone/complete evolution checks.")
+                assert "2026-09-08" in run(str(unified), "evolution", "list", cwd=working)
+                run(str(unified), "evolution", "init", "--from", "origin.md", "--file", "other.md", cwd=working)
+    print("Verified six non-overlapping wheels and standalone/complete evolution workflows.")
 
 
 if __name__ == "__main__":
