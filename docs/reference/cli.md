@@ -54,3 +54,12 @@ exit non-zero when validation or the delegated Git operation fails.
 | `zendev-proposal check` | Unified `zendev proposal check`. |
 
 Use `<command> --help` for the exact options installed on the current machine.
+
+## Project evolution
+
+`zendev evolution` exposes `init --from PATH`, `list`, and `check` for creating
+a document, locating its dates, and validating it. Initialization refuses to
+overwrite existing paths; listing and checking are read-only.
+The standalone `zendev-evolution` command exposes the same surface. All commands
+accept `--file PATH`; see the [Evolution guide](../guides/evolution.md) for
+the document format, template, diagnostics, and exit codes.

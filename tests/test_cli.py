@@ -14,6 +14,7 @@ from typer.testing import CliRunner
 from zendev.__main__ import app as module_app
 from zendev.cli import app as zendev_app
 from zendev.commit import commit_app
+from zendev.evolution.cli import app as evolution_app
 from zendev.message import app as message_app
 from zendev.proposal.cli import app as proposal_app
 
@@ -29,8 +30,8 @@ def _copy_fixture(tmp_path: Path, name: str) -> Path:
 
 @pytest.mark.parametrize(
     "app",
-    [zendev_app, commit_app, message_app, proposal_app],
-    ids=["zendev", "commit", "message", "proposal"],
+    [zendev_app, commit_app, message_app, proposal_app, evolution_app],
+    ids=["zendev", "commit", "message", "proposal", "evolution"],
 )
 def test_public_cli_help_is_available(app: typer.Typer) -> None:
     result = runner.invoke(app, ["--help"])
@@ -45,7 +46,7 @@ def test_unified_cli_groups_workflows_by_domain() -> None:
 
     assert result.exit_code == 0
     commands = result.output.split("Commands:", 1)[-1]
-    for command in ("commit", "message", "proposal"):
+    for command in ("commit", "message", "proposal", "evolution"):
         assert re.search(rf"^\s+{command}\b", commands, re.MULTILINE)
     for command in ("check", "commit-msg", "review", "validate-title", "validate-body"):
         assert command not in result.output
@@ -107,6 +108,8 @@ def test_public_hooks_use_check_ids() -> None:
 
     assert "id: zendev-message-check" in text
     assert "id: zendev-proposal-check" in text
+    assert "id: zendev-evolution-check" in text
+    assert "entry: zendev evolution check" in text
     assert "entry: zendev message check" in text
     assert "entry: zendev proposal check" in text
     for removed in ("zendev-commit-msg", "zendev-proposal-index", "zendev-validate-title", "zendev-validate-body"):

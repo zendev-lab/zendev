@@ -5,6 +5,7 @@ from __future__ import annotations
 import typer
 
 from zendev.commit import create_commit
+from zendev.evolution.cli import app as evolution_app
 from zendev.message import app as message_app
 from zendev.proposal.cli import app as proposal_app
 
@@ -20,6 +21,7 @@ app = typer.Typer(
 app.command("commit")(create_commit)
 app.add_typer(message_app, name="message")
 app.add_typer(proposal_app, name="proposal")
+app.add_typer(evolution_app, name="evolution")
 
 
 def main() -> None:

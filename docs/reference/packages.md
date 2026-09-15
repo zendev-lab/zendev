@@ -1,6 +1,6 @@
 # Package reference
 
-The repository publishes five distributions from one uv workspace and release
+The repository builds six distributions from one uv workspace and release
 tag. They contribute independent portions of the PEP 420 `zendev` namespace.
 
 | Distribution | Ownership | Primary interfaces |
@@ -9,6 +9,7 @@ tag. They contribute independent portions of the PEP 420 `zendev` namespace.
 | `zendev-commit` | Commit profiles, validation, interactive commits, vendored Gitmoji data | `zendev.commit`, `zendev.conventional`, `zendev.gitmoji`, `zendev-commit` |
 | `zendev-review` | Title, body, checklist, and complete-message validation | `zendev.title`, `zendev.body`, `zendev.message`, `zendev-message` |
 | `zendev-proposal` | Proposal configuration, validation, history, graph, and indexes | `zendev.proposal`, `zendev-proposal` |
+| `zendev-evolution` | Initial intent and dated evolution records | `zendev.evolution`, `zendev-evolution` |
 | `zendev-log` | Idempotent Loguru setup | `zendev.log.setup_log` |
 
 The root `zendev` distribution requires every component. There is no optional
