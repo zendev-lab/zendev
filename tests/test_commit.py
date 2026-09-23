@@ -6,6 +6,7 @@ import io
 import re
 from pathlib import Path
 
+import pytest
 from typer.testing import CliRunner
 
 from zendev.commit import (
@@ -270,6 +271,51 @@ class TestEmojiEnforcement:
         result = runner.invoke(hook_app, [str(commit_file)])
 
         assert result.exit_code == 1
+
+
+class TestDependencyAlias:
+    @pytest.mark.parametrize("token", ["⬆️", "⬆", ":arrow_up:"])
+    @pytest.mark.parametrize(
+        "suffix", [": update dependencies", "(npm)!: update dependencies\n\nBREAKING CHANGE: new API"]
+    )
+    def test_alias_is_valid_for_parser_and_schema(self, token: str, suffix: str) -> None:
+        text = f"{token} deps{suffix}"
+
+        assert validate_commit_message(text, profile="zendev").valid
+        assert re.fullmatch(schema_pattern(), text)
+
+    @pytest.mark.parametrize("token", ["⬇️", "\u2795", "\u2796", "📌", "🔧", ":arrow_down:"])
+    def test_alias_rejects_other_intentions(self, token: str) -> None:
+        text = f"{token} deps: update dependencies"
+
+        result = validate_commit_message(text, profile="zendev")
+
+        assert not result.valid
+        assert result.issue is not None
+        assert result.issue.code == "emoji-type-mismatch"
+        assert re.fullmatch(schema_pattern(), text) is None
+
+    def test_missing_emoji_is_required_but_can_be_suggested(self) -> None:
+        text = "deps(npm): update dependencies"
+
+        assert not is_valid_commit_message(text, profile="zendev")
+        assert re.fullmatch(schema_pattern(), text) is None
+        assert re.fullmatch(schema_pattern(require_emoji=False), text)
+        assert suggest_commit_message(text) == f"⬆️ {text}"
+
+    def test_message_preserves_alias_and_adds_emoji(self) -> None:
+        text = message(_answers(prefix="deps", scope="npm", subject="update dependencies"))
+
+        assert text == "⬆️ deps(npm): update dependencies"
+        assert is_valid_commit_message(text, profile="zendev")
+
+    def test_hook_accepts_alias(self, tmp_path: Path) -> None:
+        commit_file = tmp_path / "COMMIT_EDITMSG"
+        commit_file.write_text("⬆️ deps: update dependencies\n\nRefresh the lockfile.\n", encoding="utf-8")
+
+        result = runner.invoke(hook_app, ["--profile", "zendev", str(commit_file)])
+
+        assert result.exit_code == 0
 
 
 class TestSharedCommitHelp:
