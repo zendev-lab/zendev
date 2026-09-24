@@ -16,6 +16,5 @@ This boundary prevents a shared package release from silently redefining a
 repository's governance. It also makes policy changes reviewable alongside the
 repository content they affect.
 
-Configure commit behavior in `pyproject.toml`. Configure proposal behavior in a
-repository-local TOML file, normally `proposal.toml`. See
-[Configuration](../reference/configuration.md) for both interfaces.
+Configure both domains in `zendev.toml` or `[tool.zendev]` in `pyproject.toml`.
+Choose one source per directory. See [Configuration](../reference/configuration.md).

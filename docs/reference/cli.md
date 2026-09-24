@@ -17,33 +17,35 @@ zendev proposal check [OPTIONS]
 | `FILE` | Read message text from a file; mutually exclusive with `--text`. |
 | `--text TEXT` | Validate literal text; mutually exclusive with `FILE`. |
 | `--title` | Check exactly one title line. |
+| `--commit` | Explicit Git commit context, including single-line generated messages. |
+| `--config PATH` | Select one ZenDev configuration source. |
+| `--format human\|json\|github` | Select shared diagnostic output; defaults to human. |
 | `--body` | Check a PR body against a template. |
-| `--profile auto\|zendev\|conventional\|gitmoji` | Select the title or complete-message profile. |
+| `--profile zendev\|conventional\|gitmoji` | Select the title or complete-message profile. |
 | `--template PATH` | Select the PR template for `--body`. |
 | `--require-checklist` | Require checked template rows with `--body`. |
 | `--checklist-section TITLE` | Select the checklist H2; defaults to `Checklist`. |
 | `--fail-on-empty-checklist` | Fail if checklist enforcement finds no checked template rows. |
 
-Without `--title` or `--body`, a single line selects title validation and a
+Without `--title`, `--body`, or `--commit`, a single line selects title validation and a
 multi-line input selects complete commit-message validation.
 
 ## Proposal check
 
 | Option | Meaning |
 | --- | --- |
-| `--config PATH` | Proposal policy; defaults to `proposal.toml`. |
+| `--config PATH` | Explicit configuration source; otherwise use nearest-source discovery. |
 | `--base-ref REF` | Exact local Git ref for lifecycle history validation. |
 | `--diff` | Preview source/index repairs without writing. |
 | `--select RULES` | Comma-separated repair rules. |
 | `--partial` | Explicitly apply independent safe repairs; retain errors and withhold an invalid index. |
 | `--fix` | Repair deterministic source omissions and update the index after successful validation. |
-| `--json` | Emit stable JSON diagnostics. |
+| `--format human\|json\|github` | Shared human, JSON envelope, or GitHub annotations. |
 
 `PROPOSAL_BASE_REF` supplies `--base-ref` when the option is absent.
 
-The proposal command exits `0` for valid state, `1` for invalid proposal or
-index content, and `2` for configuration or environment errors. Other commands
-exit non-zero when validation or the delegated Git operation fails.
+Message and proposal checks exit `0` for valid state, `1` for invalid proposal or
+index content, and `2` for configuration or environment errors. The interactive commit command propagates the delegated Git exit code.
 
 ## Component entry points
 

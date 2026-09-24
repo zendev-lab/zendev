@@ -5,10 +5,12 @@ from __future__ import annotations
 import os
 import stat
 import tempfile
+from collections.abc import Mapping
 from contextlib import suppress
 from pathlib import Path
 
-from zendev.proposal.model import Diagnostic, ProposalConfig, ProposalToolError
+from zendev.core.diagnostics import ToolError
+from zendev.proposal.model import Diagnostic, ProposalConfig
 
 
 def snapshot_inputs(config: ProposalConfig) -> dict[Path, bytes]:
@@ -30,13 +32,16 @@ def snapshot_inputs(config: ProposalConfig) -> dict[Path, bytes]:
     # Include linked files used by the offline fragment validator.
     from urllib.parse import unquote, urlsplit
 
-    from zendev.proposal._markdown_scan import scan_markdown
+    from zendev.core.markdown import scan_markdown
 
     for path in tuple(paths):
         if path.suffix.lower() != ".md":
             continue
         for _, url in scan_markdown(path.read_text(encoding="utf-8")).links:
-            parsed = urlsplit(url)
+            try:
+                parsed = urlsplit(url)
+            except ValueError:
+                continue  # The content validator reports malformed links when link checking is enabled.
             if not parsed.scheme and not parsed.netloc and parsed.path:
                 relative = unquote(parsed.path)
                 target = (
@@ -45,7 +50,7 @@ def snapshot_inputs(config: ProposalConfig) -> dict[Path, bytes]:
                 if target != config.index_path and target.is_relative_to(config.root) and target.is_file():
                     paths.add(target)
     if config.index_path in paths or any(config.index_path.is_relative_to(directory) for directory in directories):
-        raise ProposalToolError(
+        raise ToolError(
             Diagnostic(
                 code="proposal.config.output-conflict",
                 path=config.relative_path(config.index_path),
@@ -54,7 +59,7 @@ def snapshot_inputs(config: ProposalConfig) -> dict[Path, bytes]:
         )
     if config.index_path.exists():
         if not config.index_path.is_file() or any(config.index_path.samefile(path) for path in paths):
-            raise ProposalToolError(
+            raise ToolError(
                 Diagnostic(
                     code="proposal.config.output-conflict", message="index must be a distinct regular output file"
                 )
@@ -63,13 +68,27 @@ def snapshot_inputs(config: ProposalConfig) -> dict[Path, bytes]:
     try:
         return {path: path.read_bytes() for path in sorted(paths)}
     except (OSError, UnicodeError) as error:
-        raise ProposalToolError(
+        raise ToolError(
             Diagnostic(code="proposal.fix.read", message=f"cannot snapshot repair inputs: {error}")
         ) from error
 
 
-def commit_files(config: ProposalConfig, updates: dict[Path, bytes], before: dict[Path, bytes]) -> None:
+def commit_files(config: ProposalConfig, updates: dict[Path, bytes], before: Mapping[Path, bytes | None]) -> None:
     """Prepare every replacement and backup before changing any destination."""
+
+    def unchanged() -> bool:
+        current = snapshot_inputs(config)
+        if set(current) - set(before):
+            return False
+        for path, expected in before.items():
+            try:
+                actual = path.read_bytes()
+            except FileNotFoundError:
+                actual = None
+            if actual != expected:
+                return False
+        return True
+
     prepared: dict[Path, Path] = {}
     backups: dict[Path, Path] = {}
     applied: list[Path] = []
@@ -92,15 +111,15 @@ def commit_files(config: ProposalConfig, updates: dict[Path, bytes], before: dic
             raise
 
     try:
-        if snapshot_inputs(config) != before:
-            raise ProposalToolError(
+        if not unchanged():
+            raise ToolError(
                 Diagnostic(
                     code="proposal.fix.changed", message="repair inputs changed after validation; no files written"
                 )
             )
         for path, content in updates.items():
             if path.is_symlink() or not path.resolve().is_relative_to(config.root):
-                raise ProposalToolError(
+                raise ToolError(
                     Diagnostic(
                         code="proposal.fix.path",
                         path=config.relative_path(path),
@@ -108,10 +127,11 @@ def commit_files(config: ProposalConfig, updates: dict[Path, bytes], before: dic
                     )
                 )
             prepared[path] = temporary(path, content)
-            if path in before:
-                backups[path] = temporary(path, before[path])
-        if snapshot_inputs(config) != before:
-            raise ProposalToolError(
+            previous = before.get(path)
+            if previous is not None:
+                backups[path] = temporary(path, previous)
+        if not unchanged():
+            raise ToolError(
                 Diagnostic(
                     code="proposal.fix.changed",
                     message="repair inputs changed while preparing writes; no files written",
@@ -139,7 +159,7 @@ def commit_files(config: ProposalConfig, updates: dict[Path, bytes], before: dic
                 config.relative_path(path) for path in applied if config.relative_path(path) not in remaining
             ],
         }
-        raise ProposalToolError(
+        raise ToolError(
             Diagnostic(code="proposal.fix.write", message=f"repair write failed: {error}"), summary=summary
         ) from error
     finally:

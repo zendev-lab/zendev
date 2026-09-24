@@ -6,9 +6,9 @@ inputs:
     description: "Text to validate (for example github.event.pull_request.title)."
     required: true
   profile:
-    description: "Commit profile (auto, zendev, conventional, or gitmoji)."
+    description: "Optional profile override (zendev, conventional, or gitmoji)."
     required: false
-    default: "auto"
+    default: ""
 
 runs:
   using: composite
@@ -28,8 +28,9 @@ runs:
 
         zendev_root="$(cd "${GITHUB_ACTION_PATH}/../.." && pwd)"
         echo "Using zendev from ${zendev_root}"
-        uvx --from "${zendev_root}" \
-          zendev message check \
-          --title \
-          --profile "${INPUT_PROFILE}" \
-          --text "${INPUT_TEXT}"
+        args=(zendev-message check --title --format github --text "${INPUT_TEXT}")
+        if [[ -n "${INPUT_PROFILE}" ]]; then
+          args+=(--profile "${INPUT_PROFILE}")
+        fi
+        uvx --from "${zendev_root}/packages/zendev-message" \
+          --with "${zendev_root}/packages/zendev-core" "${args[@]}"

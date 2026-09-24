@@ -32,7 +32,7 @@ jobs:
           uv run pytest --cov=zendev --cov-report=xml -v
 
       - name: Build distributions
-        run: uv build --all-packages --wheel
+        run: just packages
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7

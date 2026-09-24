@@ -1,34 +1,55 @@
 # Architecture
 
-The root distribution assembles focused packages behind one command tree:
-
-```text
-zendev CLI
-├── zendev-commit
-├── zendev-review
-├── zendev-proposal
-└── zendev-log
+```mermaid
+graph TD
+  CLI["zendev: CLI composition"] --> Message["zendev-message"]
+  CLI --> Proposal["zendev-proposal"]
+  CLI --> Log["zendev-log"]
+  CLI --> Core["zendev-core"]
+  Message --> Core
+  Proposal --> Core
 ```
 
-The component packages remain independently installable, but the complete
-toolkit has hard dependencies on all of them. This makes the unified CLI stable:
-an installed `zendev` always exposes `commit`, `message`, and `proposal`.
+Core owns configuration discovery, diagnostic rendering, operation-scoped source
+snapshots and shared Markdown facts. It knows neither domain policy nor CLI/Git.
+Domain loaders interpret their own tables from one discovered source.
 
-## Adapter boundary
+Message exposes pure `parse_message`, `check_message`, `check_git_message`,
+`render_message` and `check_body` functions. Parsing supplies structure; the
+ZenDev policy checks type/intention pairs. Interactive, CLI, hook and Action
+adapters read inputs and display the same diagnostics.
 
-Public prek hooks and composite GitHub Actions are adapters. They translate host
-inputs into the same Python commands; they do not implement a second copy of
-validation semantics.
+Proposal separates repository parsing, document shape, content, relationships,
+history and index projection. Indexing depends on relationship validation;
+validation does not import indexing. `application.py` owns the workflow:
 
-## Proposal boundary
+```text
+source snapshot → parse → validate → candidate repairs → validate → ChangePlan
+                                                                     ↓
+                                                    apply_plan → transaction
+```
 
-The proposal package owns safe loading, typed policy, structural validation,
-history comparison, graph checks, deterministic indexing, and diagnostics.
-Repository-local TOML, JSON Schema, templates, and Markdown own the actual
-proposal process.
+A plan records configuration, schemas (including discovered local references),
+templates, proposals and observed linked files. Reads and Markdown facts are
+cached only for that operation. Applying a plan verifies its input bytes and
+absence observations again, prepares replacements and backups, then writes
+through one rollback-capable boundary. A changed input aborts the write. A
+requested history ref resolves to a commit before planning. Repair diagnostics
+come from source positions rather than parsing human-readable error messages.
 
-## Documentation boundary
+`--partial` permits only the existing independently safe repair contract; it
+retains remaining diagnostics and withholds an invalid index. `--diff` never
+writes. Repository configuration, JSON schemas and templates still own policy.
 
-`README.md` and package READMEs are landing pages for GitHub and PyPI. `docs/`
-owns task-oriented user documentation. `zfps/` remains the design and governance
-source of truth and is linked from the site without being moved or duplicated.
+`just check` and `just ci` do not format source files; `just format` is explicit.
+`just packages` builds wheels, checks version pins and namespace ownership, and
+exercises five isolated installations outside the checkout.
+
+[Hatch metadata hooks](https://hatch.pypa.io/latest/plugins/metadata-hook/reference/)
+resolve sibling pins from the VCS version. Component hook symlinks share the
+root implementation. Release ordering is core/log, then message/proposal, then
+the CLI distribution. New PyPI projects and trusted publishers must be configured
+before the first release; changing CI does not create those hosted resources.
+
+`README.md` and package READMEs are landing pages. `docs/` owns usage guides;
+`zfps/` owns public design and governance decisions.

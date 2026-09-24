@@ -13,12 +13,14 @@ import yaml
 from yaml.nodes import MappingNode, SequenceNode
 from yaml.tokens import AliasToken, AnchorToken
 
-from zendev.proposal._markdown_scan import scan_markdown
-from zendev.proposal.indexing import normalize_reference, reference_number
-from zendev.proposal.model import Diagnostic, ProposalConfig, ProposalToolError, RepositoryState
-from zendev.proposal.repository import FrontmatterLoader, parse_frontmatter
+from zendev.core.diagnostics import ToolError
+from zendev.core.markdown import scan_markdown
+from zendev.core.source import read_bytes
+from zendev.proposal.model import Diagnostic, ProposalConfig, RepositoryState
+from zendev.proposal.references import normalize_reference, reference_number
+from zendev.proposal.repository import FrontmatterLoader, frontmatter_lines, parse_frontmatter
 from zendev.proposal.schema import load_schema
-from zendev.proposal.validation import _formal_filename_pattern, _template_headings, expected_h1
+from zendev.proposal.shape import expected_h1, formal_filename_pattern, template_headings
 
 
 @dataclass(frozen=True)
@@ -146,12 +148,12 @@ def plan_repairs(
     """Return a candidate snapshot and byte-preserving edits; do not write files."""
     documents = []
     edits: list[SourceEdit] = []
-    templates = _template_headings(config) if "sections" in selected else {}
+    templates = template_headings(config) if "sections" in selected else {}
     numbers = Counter(document.number(config) for document in state.formal_documents)
     filenames = Counter(
         int(match.group(1))
         for doc in state.formal_documents
-        if (match := _formal_filename_pattern(config).fullmatch(doc.path.name))
+        if (match := formal_filename_pattern(config).fullmatch(doc.path.name))
     )
     for document in state.documents:
         original_document = next(doc for doc in (baseline or state).documents if doc.path == document.path)
@@ -170,7 +172,7 @@ def plan_repairs(
                 applied.append(rule)
 
         if "number" in selected and not document.is_draft and config.number_field not in metadata:
-            match = _formal_filename_pattern(config).fullmatch(document.path.name)
+            match = formal_filename_pattern(config).fullmatch(document.path.name)
             if match and filenames[int(match.group(1))] == 1 and numbers[int(match.group(1))] == 0:
                 put(config.number_field, int(match.group(1)), "number")
         if "title" in selected:
@@ -239,7 +241,7 @@ def plan_repairs(
                 value = metadata.get(field)
                 if isinstance(value, str) and value in mapping:
                     put(field, mapping[value], "aliases")
-        document = replace(document, metadata=metadata, raw_frontmatter=raw)
+        document = replace(document, metadata=metadata, raw_frontmatter=raw, field_lines=frontmatter_lines(raw))
         body_config = (
             config
             if "marker" in selected
@@ -340,16 +342,20 @@ def plan_repairs(
                         body = body.rstrip() + f"\n\n## {heading}\n"
                     applied.append("sections")
         candidate = replace(
-            document, raw_frontmatter=raw, body=body, metadata=parse_frontmatter(raw, document.relative_path)
+            document,
+            raw_frontmatter=raw,
+            body=body,
+            metadata=parse_frontmatter(raw, document.relative_path),
+            field_lines=frontmatter_lines(raw),
         )
         documents.append(candidate)
         if raw == original_document.raw_frontmatter and body == original_document.body:
             continue
         try:
-            before = document.path.read_bytes()
+            before = read_bytes(document.path)
             original = before.decode("utf-8")
         except (OSError, UnicodeError) as error:
-            raise ProposalToolError(
+            raise ToolError(
                 Diagnostic(
                     code="proposal.document.read",
                     path=document.relative_path,
@@ -359,7 +365,7 @@ def plan_repairs(
         normalized = original.replace("\r\n", "\n").replace("\r", "\n")
         expected = "---\n" + original_document.raw_frontmatter + "---\n" + original_document.body
         if normalized != expected:
-            raise ProposalToolError(
+            raise ToolError(
                 Diagnostic(
                     code="proposal.fix.changed",
                     path=document.relative_path,
@@ -384,13 +390,3 @@ def plan_repairs(
     return replace(
         state, documents=tuple(documents), formal_documents=tuple(doc for doc in documents if not doc.is_draft)
     ), tuple(edits)
-
-
-def write_repairs(config: ProposalConfig, edits: tuple[SourceEdit, ...]) -> None:
-    """Apply source-only plans through the shared snapshot and rollback boundary."""
-    from zendev.proposal.transaction import commit_files, snapshot_inputs
-
-    before = snapshot_inputs(config)
-    if any(before.get(config.root / edit.path) != edit.before for edit in edits):
-        raise ProposalToolError(Diagnostic(code="proposal.fix.changed", message="source changed since planning"))
-    commit_files(config, {config.root / edit.path: edit.after for edit in edits}, before)

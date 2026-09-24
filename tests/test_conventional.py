@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from zendev.conventional import parse_conventional_commit
+from zendev.message.conventional import parse_conventional_commit
 
 
 @pytest.mark.parametrize(

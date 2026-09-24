@@ -10,9 +10,10 @@ from pathlib import Path
 import pytest
 from typer.testing import CliRunner
 
+from zendev.core.diagnostics import ToolError
 from zendev.proposal.cli import app
 from zendev.proposal.config import load_config
-from zendev.proposal.model import GraphPolicy, ProposalToolError
+from zendev.proposal.model import GraphPolicy
 from zendev.proposal.transaction import commit_files, snapshot_inputs
 from zendev.proposal.validation import validate_repository, validate_state
 
@@ -28,7 +29,7 @@ def change(repo: Path, path: str, old: str, new: str) -> None:
 
 
 def invoke(repo: Path, *args: str):
-    result = CliRunner().invoke(app, ["check", "--config", str(repo / "proposal.toml"), "--json", *args])
+    result = CliRunner().invoke(app, ["check", "--config", str(repo / "zendev.toml"), "--format", "json", *args])
     assert result.stdout, repr(result.exception)
     return result.exit_code, json.loads(result.stdout)
 
@@ -42,10 +43,10 @@ def snapshot(repo: Path):
 
 
 @pytest.mark.parametrize(
-    "output", ["schemas/vep.schema.json", "proposal.toml", "templates/technical.md", "veps/new.json", "schemas"]
+    "output", ["schemas/vep.schema.json", "zendev.toml", "templates/technical.md", "veps/new.json", "schemas"]
 )
 def test_output_cannot_overwrite_inputs(repo: Path, output: str) -> None:
-    change(repo, "proposal.toml", 'index = "veps-index.json"', f'index = "{output}"')
+    change(repo, "zendev.toml", 'path = "veps-index.json"', f'path = "{output}"')
     before = snapshot(repo)
     code, payload = invoke(repo, "--fix")
     assert code == 2 and "proposal.config.output-conflict" in codes(payload)
@@ -65,9 +66,9 @@ def test_output_hardlink_is_rejected(repo: Path) -> None:
 def test_errors_always_emit_structured_diagnostics(repo: Path, mutation: str) -> None:
     match mutation:
         case "boolean":
-            change(repo, "proposal.toml", "version = 1", "version = true")
+            change(repo, "zendev.toml", "version = 1", "version = true")
         case "utf8":
-            (repo / "proposal.toml").write_bytes(b"\xff")
+            (repo / "zendev.toml").write_bytes(b"\xff")
         case "reference":
             (repo / "schemas/draft.schema.json").write_text('{"$ref":"#/$defs/nope"}')
         case "format":
@@ -75,11 +76,11 @@ def test_errors_always_emit_structured_diagnostics(repo: Path, mutation: str) ->
         case "yaml":
             change(repo, "drafts/temporal-model.md", "defines: []", "defines: !!set {a: null}")
         case "roles":
-            change(repo, "proposal.toml", 'number_field = "vep"', 'number_field = "title"')
+            change(repo, "zendev.toml", 'number_field = "vep"', 'number_field = "title"')
         case "states":
-            change(repo, "proposal.toml", 'Draft = ["Draft", "Review", "Withdrawn"]', 'Draft = ["Drfat"]')
+            change(repo, "zendev.toml", 'Draft = ["Draft", "Review", "Withdrawn"]', 'Draft = ["Drfat"]')
         case "marker":
-            change(repo, "proposal.toml", 'marker = "> Pre-VEP design draft. Non-normative."', 'marker = "   "')
+            change(repo, "zendev.toml", 'marker = "> Pre-VEP design draft. Non-normative."', 'marker = "   "')
     code, payload = invoke(repo)
     assert code in {1, 2} and payload["ok"] is False and payload["diagnostics"]
 
@@ -105,7 +106,7 @@ def test_indented_h1_is_not_a_heading(repo: Path) -> None:
 
 
 def test_html_comment_marker_is_supported(repo: Path) -> None:
-    for path in ["proposal.toml", "drafts/temporal-model.md"]:
+    for path in ["zendev.toml", "drafts/temporal-model.md"]:
         change(repo, path, "> Pre-VEP design draft. Non-normative.", "<!-- draft -->")
     assert invoke(repo)[0] == 0
     change(repo, "drafts/temporal-model.md", "<!-- draft -->", "")
@@ -130,7 +131,7 @@ def test_draft_relationship_targets_are_checked(repo: Path) -> None:
 
 
 def test_generic_relation_can_be_acyclic_without_status_role(repo: Path) -> None:
-    config = load_config(repo / "proposal.toml")
+    config = load_config(repo / "zendev.toml")
     state = validate_repository(config).state
     a, b = state.formal_documents
     docs = (replace(a, metadata={**a.metadata, "requires": ["VEP-0001"]}), b)
@@ -140,7 +141,7 @@ def test_generic_relation_can_be_acyclic_without_status_role(repo: Path) -> None
 
 
 def test_supersession_chain_reaches_current_owner(repo: Path) -> None:
-    config = load_config(repo / "proposal.toml")
+    config = load_config(repo / "zendev.toml")
     state = validate_repository(config).state
     a, b = state.formal_documents
     (repo / "schemas/vep.schema.json").write_text("{}")
@@ -182,7 +183,7 @@ def test_history_resolves_config_subdirectory(repo: Path) -> None:
 
 
 def test_unknown_index_key_does_not_turn_into_null(repo: Path) -> None:
-    change(repo, "proposal.toml", '  "title",', '  "titlle",')
+    change(repo, "zendev.toml", '  "title",', '  "titlle",')
     before = snapshot(repo)
     code, payload = invoke(repo, "--fix")
     assert code == 1 and "proposal.index.unknown-field" in codes(payload)
@@ -207,8 +208,8 @@ def test_github_heading_fragments_are_explicitly_selected(repo: Path) -> None:
     path = repo / "drafts/temporal-model.md"
     path.write_text(path.read_text() + "\n## 中文 `name`\n\n## 中文 `name`\n\n[ok](#中文-name-1)\n")
     assert "proposal.link.missing-fragment" in codes(invoke(repo)[1])
-    policy = repo / "proposal.toml"
-    policy.write_text(policy.read_text() + '\n[links]\nheading_ids = "github"\n')
+    policy = repo / "zendev.toml"
+    policy.write_text(policy.read_text() + '\n[proposal.links]\nheading_ids = "github"\n')
     assert invoke(repo)[0] == 0
 
 
@@ -222,8 +223,8 @@ def test_github_heading_fragments_are_explicitly_selected(repo: Path) -> None:
     ],
 )
 def test_section_rules_are_repository_owned(repo: Path, setting: str, mutation: str, code: str) -> None:
-    policy = repo / "proposal.toml"
-    policy.write_text(policy.read_text() + "\n[sections]\n" + setting + "\n")
+    policy = repo / "zendev.toml"
+    policy.write_text(policy.read_text() + "\n[proposal.sections]\n" + setting + "\n")
     path = repo / "veps/VEP-0000-foundation.md"
     text = path.read_text()
     if mutation == "empty":
@@ -258,9 +259,10 @@ def test_title_format_and_duplicate_relations_are_repaired(repo: Path) -> None:
 
 
 def test_aliases_and_reference_style_are_explicit(repo: Path) -> None:
-    policy = repo / "proposal.toml"
+    policy = repo / "zendev.toml"
     policy.write_text(
-        policy.read_text() + '\n[fix]\nreference_style="number"\n[fix.aliases.status]\naccepted="Accepted"\n'
+        policy.read_text()
+        + '\n[proposal.fix]\nreference_style="number"\n[proposal.fix.aliases.status]\naccepted="Accepted"\n'
     )
     change(repo, "schemas/vep.schema.json", '{"type": "string", "pattern": "^VEP-[0-9]{4}$"}', '{"type": "integer"}')
     change(repo, "veps/VEP-0000-foundation.md", "status: Accepted", "status: accepted")
@@ -283,8 +285,8 @@ def test_diff_select_and_partial_do_not_claim_false_completion(repo: Path) -> No
 
 
 def test_section_skeleton_does_not_invent_content(repo: Path) -> None:
-    policy = repo / "proposal.toml"
-    policy.write_text(policy.read_text() + "\n[sections]\nnonempty=true\n")
+    policy = repo / "zendev.toml"
+    policy.write_text(policy.read_text() + "\n[proposal.sections]\nnonempty=true\n")
     change(repo, "veps/VEP-0000-foundation.md", "## Motivation\n\nGive later proposals a stable dependency.", "")
     code, payload = invoke(repo, "--fix", "--partial", "--select", "sections")
     assert code == 1 and "proposal.sections.empty" in codes(payload)
@@ -292,7 +294,7 @@ def test_section_skeleton_does_not_invent_content(repo: Path) -> None:
 
 
 def test_transaction_rolls_back_replace_failure(repo: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    config = load_config(repo / "proposal.toml")
+    config = load_config(repo / "zendev.toml")
     before = snapshot_inputs(config)
     original = os.replace
     paths = [repo / "drafts/temporal-model.md", repo / "veps-index.json"]
@@ -306,7 +308,7 @@ def test_transaction_rolls_back_replace_failure(repo: Path, monkeypatch: pytest.
         original(source, dest)
 
     monkeypatch.setattr(os, "replace", fail_once)
-    with pytest.raises(ProposalToolError) as error:
+    with pytest.raises(ToolError) as error:
         commit_files(config, dict.fromkeys(paths, b"changed"), before)
     assert error.value.summary is not None
     assert error.value.summary["written_files"] == []
@@ -317,7 +319,7 @@ def test_transaction_rolls_back_replace_failure(repo: Path, monkeypatch: pytest.
 def test_preparation_failure_does_not_write_sources(repo: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     import zendev.proposal.transaction as transaction
 
-    config = load_config(repo / "proposal.toml")
+    config = load_config(repo / "zendev.toml")
     before = snapshot_inputs(config)
     mkstemp = transaction.tempfile.mkstemp
 
@@ -327,7 +329,7 @@ def test_preparation_failure_does_not_write_sources(repo: Path, monkeypatch: pyt
         return mkstemp(*args, **kwargs)
 
     monkeypatch.setattr(transaction.tempfile, "mkstemp", fail_index)
-    with pytest.raises(ProposalToolError):
+    with pytest.raises(ToolError):
         commit_files(
             config, {repo / "drafts/temporal-model.md": b"changed", repo / "veps-index.json": b"index"}, before
         )
@@ -335,11 +337,11 @@ def test_preparation_failure_does_not_write_sources(repo: Path, monkeypatch: pyt
 
 
 def test_unedited_input_changes_invalidate_the_plan(repo: Path) -> None:
-    config = load_config(repo / "proposal.toml")
+    config = load_config(repo / "zendev.toml")
     before = snapshot_inputs(config)
     other = repo / "templates/technical.md"
     other.write_text(other.read_text() + "\n## New policy\n")
-    with pytest.raises(ProposalToolError) as error:
+    with pytest.raises(ToolError) as error:
         commit_files(config, {repo / "drafts/temporal-model.md": b"changed"}, before)
     assert error.value.diagnostic.code == "proposal.fix.changed"
     assert (repo / "drafts/temporal-model.md").read_bytes() == before[repo / "drafts/temporal-model.md"]
@@ -363,8 +365,8 @@ def test_fragment_validation_uses_repaired_snapshot(repo: Path) -> None:
 
 
 def test_empty_code_block_does_not_fill_a_required_section(repo: Path) -> None:
-    policy = repo / "proposal.toml"
-    policy.write_text(policy.read_text() + "\n[sections]\nnonempty=true\n")
+    policy = repo / "zendev.toml"
+    policy.write_text(policy.read_text() + "\n[proposal.sections]\nnonempty=true\n")
     change(repo, "veps/VEP-0000-foundation.md", "Define the base proposal model.", "```\n```")
     assert "proposal.sections.empty" in codes(invoke(repo)[1])
 
@@ -380,7 +382,7 @@ def test_schema_example_data_is_not_interpreted_as_schema(repo: Path) -> None:
 def test_failed_rollback_keeps_recovery_copy_and_reports_changed_file(
     repo: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    config = load_config(repo / "proposal.toml")
+    config = load_config(repo / "zendev.toml")
     before = snapshot_inputs(config)
     document = repo / "drafts/temporal-model.md"
     index = repo / "veps-index.json"
@@ -395,7 +397,7 @@ def test_failed_rollback_keeps_recovery_copy_and_reports_changed_file(
         applied = True
 
     monkeypatch.setattr(os, "replace", fail_write_and_rollback)
-    with pytest.raises(ProposalToolError) as error:
+    with pytest.raises(ToolError) as error:
         commit_files(config, {document: b"changed", index: b"index"}, before)
     receipt = error.value.summary
     assert receipt is not None

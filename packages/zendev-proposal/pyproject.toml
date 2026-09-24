@@ -4,14 +4,7 @@ description = "Repository-native proposal validation and indexing"
 readme = "README.md"
 requires-python = ">=3.12"
 license = "MIT"
-dependencies = [
-  "jsonschema[format-nongpl]>=4.23",
-  "markdown-it-py>=4.0",
-  "pyyaml>=6.0",
-  "referencing>=0.35",
-  "typer>=0.27",
-]
-dynamic = ["version"]
+dynamic = ["dependencies", "version"]
 
 [project.urls]
 Documentation = "https://docs.zendev.zrr.dev/"
@@ -35,3 +28,16 @@ source = "vcs"
 [tool.hatch.version.raw-options]
 root = "../.."
 fallback_version = "0.0.0"
+
+[tool.hatch.metadata.hooks.custom]
+path = "hatch_build.py"
+dependencies = [
+  "jsonschema[format-nongpl]>=4.23",
+  "zendev-core=={version}",
+  "pyyaml>=6.0",
+  "referencing>=0.35",
+  "typer>=0.27",
+]
+
+[tool.uv.sources]
+zendev-core = { workspace = true }
