@@ -44,6 +44,12 @@ supersedes: []
   `PATH:LINE: TITLE`。不输出正文，不创建额外索引。
 - `check`：验证全文，诊断带文件路径与行号。
 
+三个命令支持 `--format human|json|github`，使用
+[ZFP-0007](./ZFP-0007-domain-architecture.md) 的统一诊断模型与 JSON envelope。
+默认 human 保持上述输出；JSON 的 `summary.sections` 包含已通过完整校验的
+`title` 与一基行号 `line`，无效文档不返回部分目录。`init` 的失败诊断定位到
+输入正文，成功目录定位到创建后的文件。
+
 ```shell
 zendev evolution init --from origin.md
 zendev evolution list
@@ -58,14 +64,23 @@ zendev evolution check
 退出码：成功为 `0`，文档结构校验失败为 `1`，
 用法、缺失目标、初始化目标已存在、I/O 或 UTF-8 解码失败为 `2`。
 可选的 `zendev-evolution-check` prek hook 调用同一校验入口。
+该 hook 每次运行都会校验目标；先初始化文档，再启用 hook。
 独立组件 `zendev-evolution` 提供等价的 `init/list/check` 命令；完整工具包
-硬依赖该组件。不依赖 proposal 的配置、关系图或私有实现。
+硬依赖该组件。组件依赖同版本 `zendev-core`，复用 Markdown 事实与诊断渲染，
+不依赖 proposal 的配置、关系图或私有实现，也不向 core 放入演进文档规则。
+
+公开纯函数 `check_document(text, path=...)` 返回不可变的 `EvolutionCheck`，
+包含 `sections`、`diagnostics` 和 `ok`；每个 `EvolutionSection` 提供 `title`、
+`line`。校验失败返回带 `evolution.*` 稳定代码的诊断，且 `sections` 为空。
+文件读取、独占创建、退出码和输出格式由 CLI 适配层负责；不需要 CLI 或文件系统
+即可使用文档校验。该领域扩展遵循 ZFP-0007 的依赖方向，作为第六个 distribution
+加入同一构建、独立安装和 hook 验证流程。
 
 ## 兼容性
 
 这是新增功能，不批量改写已有 `SPARK.md`。迁移时只根据可确认的材料恢复起点与
 转向，不把当前目标当作初始意图，不虚构缺失日期。首版不提供编号、frontmatter、
-主题、额外索引、专用配置、自动摘要或 JSON 输出。
+主题、额外索引、专用配置或自动摘要。
 不提供 `read`、`write` 或 `--replace`；标准输入只用于初始化。
 提案与实现仍可通过普通链接作为演进记录的依据。
 
@@ -79,3 +94,5 @@ zendev evolution check
 以及代码块、HTML 注释和嵌套结构中的伪标题。验证指南示例可通过校验，
 失败时原文保持不变且不生成辅助文件。
 安装独立组件及完整工具包的 wheel 后验证入口，按仓库规范完成静态检查与文档构建。
+验证三种诊断输出、纯 API 的源码位置与无效文档无部分目录，以及独立安装只引入
+evolution 与 core，不通过 workspace source 隐式补齐组件。

@@ -8,19 +8,19 @@ inputs:
   template:
     description: "Path to the PR template file relative to the repo root."
     required: false
-    default: ".github/pull_request_template.md"
+    default: ""
   require-checklist:
     description: "When true, require checked rows from the template checklist section."
     required: false
-    default: "false"
+    default: ""
   checklist-section:
     description: "H2 title, without \"##\", containing the checklist rows."
     required: false
-    default: "Checklist"
+    default: ""
   fail-on-empty-checklist:
     description: "When true, fail if require-checklist is enabled and the template has no checked rows."
     required: false
-    default: "false"
+    default: ""
 
 runs:
   using: composite
@@ -43,16 +43,24 @@ runs:
 
         zendev_root="$(cd "${GITHUB_ACTION_PATH}/../.." && pwd)"
         echo "Using zendev from ${zendev_root}"
-        args=(
-          zendev message check
-          --body
-          --text "${INPUT_BODY}"
-          --template "${INPUT_TEMPLATE}"
-        )
-        if [[ "${INPUT_REQUIRE_CHECKLIST}" == "true" ]]; then
-          args+=(--require-checklist --checklist-section "${INPUT_CHECKLIST_SECTION}")
-          if [[ "${INPUT_FAIL_ON_EMPTY_CHECKLIST}" == "true" ]]; then
-            args+=(--fail-on-empty-checklist)
-          fi
+        args=(zendev-message check --body --format github --text "${INPUT_BODY}")
+        if [[ -n "${INPUT_TEMPLATE}" ]]; then
+          args+=(--template "${INPUT_TEMPLATE}")
         fi
-        uvx --from "${zendev_root}" "${args[@]}"
+        if [[ -n "${INPUT_CHECKLIST_SECTION}" ]]; then
+          args+=(--checklist-section "${INPUT_CHECKLIST_SECTION}")
+        fi
+        case "${INPUT_REQUIRE_CHECKLIST}" in
+          true) args+=(--require-checklist) ;;
+          false) args+=(--no-require-checklist) ;;
+          "") ;;
+          *) echo "require-checklist must be true or false" >&2; exit 2 ;;
+        esac
+        case "${INPUT_FAIL_ON_EMPTY_CHECKLIST}" in
+          true) args+=(--fail-on-empty-checklist) ;;
+          false) args+=(--allow-empty-checklist) ;;
+          "") ;;
+          *) echo "fail-on-empty-checklist must be true or false" >&2; exit 2 ;;
+        esac
+        uvx --from "${zendev_root}/packages/zendev-message" \
+          --with "${zendev_root}/packages/zendev-core" "${args[@]}"

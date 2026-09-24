@@ -1,0 +1,33 @@
+version = 1
+
+[message]
+profile = "zendev"
+
+[proposal]
+prefix = "ZFP"
+number_field = "zfp"
+documents_dir = "zfps"
+schema = "schemas/zfp.schema.json"
+metadata_title = "plain"
+
+[proposal.templates]
+Feature = "templates/zfp.md"
+Governance = "templates/zfp.md"
+
+[proposal.graph]
+fields = ["supersedes"]
+
+[proposal.index]
+version = 2
+path = "zfps-index.json"
+entries_key = "zfps"
+fields = [
+  "zfp",
+  { name = "path", source = "path" },
+  "title",
+  "type",
+  "authors",
+  "created",
+  "supersedes",
+  { name = "superseded_by", source = "inverse", key = "supersedes" },
+]

@@ -1,0 +1,39 @@
+[project]
+name = "zendev-core"
+description = "Configuration, diagnostics, and Markdown source facts"
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"
+dependencies = [
+  "markdown-it-py>=4.0",
+]
+dynamic = ["version"]
+
+[project.urls]
+Documentation = "https://docs.zendev.zrr.dev/"
+Homepage = "https://github.com/zendev-lab/zendev"
+Issues = "https://github.com/zendev-lab/zendev/issues"
+Repository = "https://github.com/zendev-lab/zendev"
+
+[build-system]
+requires = ["hatch-vcs", "hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/zendev"]
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.version.raw-options]
+root = "../.."
+fallback_version = "0.0.0"
+
+[tool.uv]
+cache-keys = [
+  { file = "../../pyproject.toml" },
+  { file = "../../packages/*/pyproject.toml" },
+  { file = "../../hatch_build.py" },
+  { git = { commit = true, tags = true } },
+  { env = "SETUPTOOLS_SCM_PRETEND_VERSION" },
+]

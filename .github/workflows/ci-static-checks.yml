@@ -17,17 +17,13 @@ jobs:
         with:
           persist-credentials: false
       - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
-      - uses: j178/prek-action@0bb87d7f00b0c99306c8bcb8b8beba1eb581c037 # v1
+      - uses: j178/prek-action@4e14d07f9231acabce116ccfca13b13dd9755ece # v3.0.0
 
       - name: Validate public hook manifest
         run: uvx prek validate-manifest .pre-commit-hooks.yaml
 
       - name: Exercise public hooks
-        run: |
-          printf '%s\n' '✨ feat(hooks): validate public hooks' > .git/COMMIT_EDITMSG
-          uvx prek try-repo . zendev-proposal-check --all-files
-          uvx prek try-repo . zendev-message-check --stage commit-msg --commit-msg-filename .git/COMMIT_EDITMSG
-          git diff --exit-code
+        run: uv run python scripts/verify_hooks.py
 
   codeql:
     name: CodeQL
@@ -46,15 +42,15 @@ jobs:
           persist-credentials: false
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4
+        uses: github/codeql-action/init@1c5b675653bb5c22dbe9b12b556ec555138e09fd # v4
         with:
           languages: ${{ matrix.language }}
 
       - name: Autobuild
-        uses: github/codeql-action/autobuild@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4
+        uses: github/codeql-action/autobuild@1c5b675653bb5c22dbe9b12b556ec555138e09fd # v4
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4
+        uses: github/codeql-action/analyze@1c5b675653bb5c22dbe9b12b556ec555138e09fd # v4
 
   documentation:
     name: Documentation Checks

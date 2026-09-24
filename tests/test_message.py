@@ -8,7 +8,7 @@ import pytest
 from typer.testing import CliRunner
 
 from zendev.cli import app as zendev_app
-from zendev.message import MessageScope, input_is_single_line, resolve_message_scope
+from zendev.message.cli import MessageScope, input_is_single_line, resolve_message_scope
 
 runner = CliRunner()
 
@@ -36,10 +36,10 @@ def test_input_is_single_line(text: str, expected: bool) -> None:
     ("scope", "text", "expected"),
     [
         (MessageScope.AUTO, "✨ feat: add foo\n", MessageScope.TITLE),
-        (MessageScope.AUTO, COMMIT_WITH_BODY, MessageScope.FULL),
+        (MessageScope.AUTO, COMMIT_WITH_BODY, MessageScope.COMMIT),
         (MessageScope.TITLE, COMMIT_WITH_BODY, MessageScope.TITLE),
         (MessageScope.BODY, "✨ feat: add foo\n", MessageScope.BODY),
-        (MessageScope.FULL, "✨ feat: add foo\n", MessageScope.FULL),
+        (MessageScope.COMMIT, "✨ feat: add foo\n", MessageScope.COMMIT),
     ],
 )
 def test_resolve_message_scope(scope: MessageScope, text: str, expected: MessageScope) -> None:
@@ -50,7 +50,23 @@ def test_auto_single_line_checks_title() -> None:
     result = runner.invoke(zendev_app, ["message", "check", "--text", "✨ feat: add foo"])
 
     assert result.exit_code == 0
-    assert "Title format is valid." in result.output
+    assert "Check passed." in result.output
+
+
+@pytest.mark.parametrize(
+    ("text", "exit_code"),
+    [
+        ("⬆️ deps: Update dependencies (non-major)", 0),
+        ("⬆️ deps-up: Update dependencies (non-major)", 1),
+        (":arrow_up: deps(npm): update dependencies", 0),
+        ("⬇️ deps: downgrade dependencies", 0),
+        ("deps: update dependencies", 1),
+    ],
+)
+def test_title_scope_checks_dependency_intentions(text: str, exit_code: int) -> None:
+    result = runner.invoke(zendev_app, ["message", "check", "--title", "--profile", "zendev", "--text", text])
+
+    assert result.exit_code == exit_code
 
 
 def test_auto_multiline_uses_commit_body_not_pr_template() -> None:
@@ -58,14 +74,13 @@ def test_auto_multiline_uses_commit_body_not_pr_template() -> None:
 
     assert result.exit_code == 0
     assert "PR body" not in result.output
-    assert "Title format is valid." not in result.output
 
 
 def test_auto_multiline_rejects_invalid_commit_header() -> None:
     result = runner.invoke(zendev_app, ["message", "check", "--text", "ship it\n\nwhy\n"])
 
     assert result.exit_code == 1
-    assert "Invalid commit message." in result.stderr
+    assert "message.missing-emoji" in result.stderr
     assert "PR body" not in result.output
 
 
@@ -93,9 +108,9 @@ def test_body_scope_uses_pr_template(tmp_path: Path) -> None:
     )
 
     assert valid.exit_code == 0
-    assert "PR body headings are valid." in valid.output
+    assert "Check passed." in valid.output
     assert commit_body.exit_code == 1
-    assert "PR body headings do not match" in commit_body.output
+    assert "message.body.missing-section" in commit_body.output
 
 
 def test_body_scope_reads_file(tmp_path: Path) -> None:
@@ -132,7 +147,7 @@ def test_file_and_text_are_mutually_exclusive(tmp_path: Path) -> None:
     )
 
     assert result.exit_code == 2
-    assert "FILE or --text" in result.output
+    assert "FILE and --text" in result.output
 
 
 def test_title_and_body_are_mutually_exclusive() -> None:
@@ -142,14 +157,14 @@ def test_title_and_body_are_mutually_exclusive() -> None:
     )
 
     assert result.exit_code == 2
-    assert "--title and --body are mutually exclusive" in result.output
+    assert "--title, --body, and --commit are mutually exclusive" in result.output
 
 
 def test_missing_input_is_rejected() -> None:
     result = runner.invoke(zendev_app, ["message", "check"])
 
     assert result.exit_code == 2
-    assert "FILE or --text" in result.output
+    assert "FILE and --text" in result.output
 
 
 def test_require_checklist_requires_body() -> None:
@@ -159,4 +174,4 @@ def test_require_checklist_requires_body() -> None:
     )
 
     assert result.exit_code == 2
-    assert "--require-checklist requires --body" in result.output
+    assert "options require --body" in result.output

@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-import re
 from collections import Counter
 from dataclasses import replace
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
-from zendev.proposal._markdown_scan import scan_markdown
+from zendev.core.markdown import scan_markdown
+from zendev.core.source import exists, read_text
 from zendev.proposal._slug import GithubSlugger
 from zendev.proposal.model import Diagnostic, ProposalConfig, ProposalDocument, RepositoryState
 
@@ -70,7 +70,11 @@ def validate_content(
     if not config.links.check:
         return
     for line, url in facts.links:
-        parsed = urlsplit(url)
+        try:
+            parsed = urlsplit(url)
+        except ValueError as failure:
+            error("proposal.link.invalid", f"invalid link `{url}`: {failure}", line)
+            continue
         if parsed.scheme or parsed.netloc:
             continue
         raw_path = unquote(parsed.path)
@@ -81,15 +85,13 @@ def validate_content(
             if raw_path
             else document.path
         )
-        if not target.is_relative_to(config.root) or not target.exists():
+        if not target.is_relative_to(config.root) or not exists(target):
             error("proposal.link.missing-target", f"local link target does not exist in the repository: `{url}`", line)
             continue
         if not parsed.fragment or not target.is_file() or target.suffix.lower() not in {".md", ".html"}:
             continue
         try:
-            target_body = (
-                bodies[target] if bodies is not None and target in bodies else _body(target.read_text(encoding="utf-8"))
-            )
+            target_body = bodies[target] if bodies is not None and target in bodies else _body(read_text(target))
         except (OSError, UnicodeError) as failure:
             error("proposal.link.read", f"cannot read `{url}`: {failure}", line)
             continue
@@ -115,20 +117,11 @@ def locate_diagnostics(
     for diagnostic in diagnostics:
         document = documents.get(diagnostic.path or "")
         if diagnostic.line is None and document is not None:
-            field = re.search(r"frontmatter\.([\w-]+)|`([\w-]+)`", diagnostic.message)
-            name = next((group for group in field.groups() if group), "") if field else ""
-            line = (
-                next(
-                    (
-                        index + 2
-                        for index, raw in enumerate(document.raw_frontmatter.splitlines())
-                        if re.match(rf"['\"]?{re.escape(name)}['\"]?\s*:", raw)
-                    ),
-                    None,
-                )
-                if name
-                else None
-            )
+            fields = {"proposal.title.": config.title_field, "proposal.number.": config.number_field}
+            if config.defines is not None:
+                fields["proposal.defines."] = config.defines.field
+            name = next((field for prefix, field in fields.items() if diagnostic.code.startswith(prefix)), "")
+            line = document.field_lines.get(name)
             if line is None:
                 line = 1 if "frontmatter" in diagnostic.code else len(document.raw_frontmatter.splitlines()) + 3
             diagnostic = replace(diagnostic, line=line)
