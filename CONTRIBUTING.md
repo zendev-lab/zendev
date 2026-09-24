@@ -102,3 +102,6 @@ The pull-request body must retain the Chinese H2 structure in
 `解决方案` are required, while `说明` and `后续工作` are optional. Do not add a
 checklist merely to satisfy process; record material validation in the solution
 or notes.
+
+PR titles are validated for every author, including bots. Renovate is exempt
+only from the PR body template requirement.
