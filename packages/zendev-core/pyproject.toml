@@ -28,3 +28,12 @@ source = "vcs"
 [tool.hatch.version.raw-options]
 root = "../.."
 fallback_version = "0.0.0"
+
+[tool.uv]
+cache-keys = [
+  { file = "../../pyproject.toml" },
+  { file = "../../packages/*/pyproject.toml" },
+  { file = "../../hatch_build.py" },
+  { git = { commit = true, tags = true } },
+  { env = "SETUPTOOLS_SCM_PRETEND_VERSION" },
+]

@@ -48,7 +48,11 @@ exercises five isolated installations outside the checkout.
 [Hatch metadata hooks](https://hatch.pypa.io/latest/plugins/metadata-hook/reference/)
 resolve sibling pins from the VCS version. Component builds reference the same root hook file from the complete repository
 checkout. Releases publish independently installable wheels. Release ordering is core/log, then message/proposal, then
-the CLI distribution. New PyPI projects and trusted publishers must be configured
+the CLI distribution. uv cache keys include the Git commit/tags and all workspace build metadata, so
+editable installs rebuild together after a commit or metadata edit.
+See [uv dynamic metadata caching](https://docs.astral.sh/uv/concepts/cache/#dynamic-metadata).
+
+New PyPI projects and trusted publishers must be configured
 before the first release; changing CI does not create those hosted resources.
 
 `README.md` and package READMEs are landing pages. `docs/` owns usage guides;

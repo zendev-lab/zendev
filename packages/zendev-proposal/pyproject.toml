@@ -39,5 +39,14 @@ dependencies = [
   "typer>=0.27",
 ]
 
+[tool.uv]
+cache-keys = [
+  { file = "../../pyproject.toml" },
+  { file = "../../packages/*/pyproject.toml" },
+  { file = "../../hatch_build.py" },
+  { git = { commit = true, tags = true } },
+  { env = "SETUPTOOLS_SCM_PRETEND_VERSION" },
+]
+
 [tool.uv.sources]
 zendev-core = { workspace = true }
