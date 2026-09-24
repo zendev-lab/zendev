@@ -6,42 +6,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal
 
+from zendev.core.diagnostics import Diagnostic
+
 IndexSource = Literal["metadata", "path", "inverse"]
 MetadataTitleMode = Literal["plain", "prefixed"]
-
-
-@dataclass(frozen=True, slots=True)
-class Diagnostic:
-    """One stable, machine-readable proposal diagnostic."""
-
-    code: str
-    message: str
-    path: str | None = None
-    line: int | None = None
-    hint: str | None = None
-    fixable: bool = False
-
-    def as_dict(self) -> dict[str, object]:
-        return {
-            "code": self.code,
-            "path": self.path,
-            "line": self.line,
-            "message": self.message,
-            "hint": self.hint,
-            "fixable": self.fixable,
-        }
-
-    def sort_key(self) -> tuple[str, int, str, str]:
-        return (self.path or "", self.line or 0, self.code, self.message)
-
-
-class ProposalToolError(Exception):
-    """A configuration or environment error, distinct from invalid proposals."""
-
-    def __init__(self, diagnostic: Diagnostic, *, summary: dict[str, object] | None = None) -> None:
-        super().__init__(diagnostic.message)
-        self.diagnostic = diagnostic
-        self.summary = summary
 
 
 @dataclass(frozen=True, slots=True)
@@ -173,6 +141,7 @@ class ProposalDocument:
     metadata: dict[str, object]
     body: str
     is_draft: bool = False
+    field_lines: dict[str, int] = field(default_factory=dict)
 
     def number(self, config: ProposalConfig) -> int | None:
         value = self.metadata.get(config.number_field)

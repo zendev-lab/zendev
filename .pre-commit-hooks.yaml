@@ -1,7 +1,7 @@
 - id: zendev-message-check
   name: zendev message check
   description: Validate a commit or pull-request message.
-  entry: zendev message check
+  entry: zendev message check --commit
   language: python
   stages: [commit-msg]
 - id: zendev-proposal-check

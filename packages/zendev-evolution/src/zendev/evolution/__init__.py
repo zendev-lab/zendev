@@ -1,5 +1,5 @@
-"""Project origins and dated evolution records."""
+"""Project evolution document contracts."""
 
-from zendev.evolution.document import EvolutionError, validate_document
+from zendev.evolution.document import EvolutionCheck, EvolutionSection, check_document
 
-__all__ = ["EvolutionError", "validate_document"]
+__all__ = ["EvolutionCheck", "EvolutionSection", "check_document"]

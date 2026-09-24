@@ -14,13 +14,15 @@ from referencing import Registry, Resource
 from referencing.exceptions import NoSuchResource, Unresolvable
 from referencing.jsonschema import DRAFT202012
 
-from zendev.proposal.model import Diagnostic, ProposalConfig, ProposalToolError
+from zendev.core.diagnostics import ToolError
+from zendev.core.source import read_text
+from zendev.proposal.model import Diagnostic, ProposalConfig
 
 
 def load_schema(config: ProposalConfig, path: Path):
     def read(path: Path) -> Any:
         try:
-            value = json.loads(path.read_text(encoding="utf-8"))
+            value = json.loads(read_text(path))
             validator_for(value).check_schema(value)
 
             if isinstance(value, dict) and "$schema" in value and cast(Any, validator_for)(value, default=None) is None:
@@ -60,7 +62,7 @@ def load_schema(config: ProposalConfig, path: Path):
             formats(value)
             return value
         except (OSError, UnicodeError, ValueError, SchemaError, TypeError, AttributeError) as error:
-            raise ProposalToolError(
+            raise ToolError(
                 Diagnostic(
                     code="proposal.schema.invalid",
                     path=config.relative_path(path),
@@ -110,7 +112,7 @@ def schema_properties(config: ProposalConfig, path: Path) -> dict[str, Any]:
     try:
         visit(schema, registry.resolver(path.as_uri()))
     except (Unresolvable, RecursionError) as error:
-        raise ProposalToolError(
+        raise ToolError(
             Diagnostic(code="proposal.schema.reference", path=config.relative_path(path), message=str(error))
         ) from error
     return found

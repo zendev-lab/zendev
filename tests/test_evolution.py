@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import subprocess
 import sys
@@ -9,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from zendev.evolution import EvolutionError, validate_document
+from zendev.evolution import EvolutionSection, check_document
 
 ORIGIN = "# 项目演进\n\n## 初始意图\n\n最初为开发者简化工作流。\n"
 BODY = "### 触发\n出现新的需求。\n\n### 变化\n走向独立产品。\n\n### 理由\n需要拥有生命周期。\n"
@@ -57,16 +58,21 @@ def cli(directory: Path, *args: str) -> subprocess.CompletedProcess[str]:
     ],
 )
 def test_invalid_documents_report_source(text: str, message: str, line: int) -> None:
-    with pytest.raises(EvolutionError, match=message) as caught:
-        validate_document(text, path="history.md")
-    assert caught.value.line == line
-    assert caught.value.path == "history.md"
+    result = check_document(text, path="history.md")
+    assert not result.ok
+    assert result.sections == ()
+    (diagnostic,) = result.diagnostics
+    assert message in diagnostic.message
+    assert diagnostic.code.startswith("evolution.")
+    assert diagnostic.line == line
+    assert diagnostic.path == "history.md"
 
 
 @pytest.mark.parametrize("second", ["2026-09-07", "2026-09-08"])
 def test_dates_are_unique_and_ascending(second: str) -> None:
-    with pytest.raises(EvolutionError, match="unique and in ascending"):
-        validate_document(ORIGIN + "\n" + entry("2026-09-08") + "\n" + entry(second))
+    result = check_document(ORIGIN + "\n" + entry("2026-09-08") + "\n" + entry(second))
+    assert not result.ok
+    assert result.diagnostics[0].code == "evolution.date.order"
 
 
 @pytest.mark.parametrize(
@@ -83,28 +89,28 @@ def test_dates_are_unique_and_ascending(second: str) -> None:
 )
 def test_examples_do_not_become_structural_headings(example: str) -> None:
     # The hidden 09-09 entry would put the following real 09-08 entry out of order.
-    validate_document(ORIGIN + "\n" + example + "\n" + entry("2026-09-08"))
+    assert check_document(ORIGIN + "\n" + example + "\n" + entry("2026-09-08")).ok
 
 
 def test_prose_can_contain_subsections_lists_and_code() -> None:
-    validate_document(
+    assert check_document(
         ORIGIN + "\n### 假设\n- 宿主提供执行环境。\n\n" + entry("2026-09-08", BODY + "\n#### 依据\n正文\n")
-    )
-    validate_document(f"# 项目演进\n\n## 初始意图\n\n{FENCE}text\nOriginal intent.\n{FENCE}\n")
+    ).ok
+    assert check_document(f"# 项目演进\n\n## 初始意图\n\n{FENCE}text\nOriginal intent.\n{FENCE}\n").ok
 
 
 def test_html_prose_counts_as_section_content() -> None:
     origin = "# 项目演进\n\n## 初始意图\n\n<p>最初为开发者简化工作流。</p>\n"
-    validate_document(origin + "\n" + entry("2026-09-08", BODY.replace("走向独立产品。", "<p>真正的变化。</p>")))
+    assert check_document(origin + "\n" + entry("2026-09-08", BODY.replace("走向独立产品。", "<p>真正的变化。</p>"))).ok
 
 
 @pytest.mark.parametrize("separator", ["\n", "\r\n", "\r"])
 def test_source_lines_match_markdown_newlines(separator: str) -> None:
     text = ORIGIN.replace("最初为开发者简化工作流。", "第一行\u2028第二行") + "\n"
-    validate_document((text + entry("2026-09-08")).replace("\n", separator))
-    with pytest.raises(EvolutionError) as caught:
-        validate_document((text + entry("2026-02-30")).replace("\n", separator))
-    assert caught.value.line == 7
+    assert check_document((text + entry("2026-09-08")).replace("\n", separator)).ok
+    result = check_document((text + entry("2026-02-30")).replace("\n", separator))
+    assert not result.ok
+    assert result.diagnostics[0].line == 7
 
 
 @pytest.mark.parametrize("text", [ORIGIN, TEMPLATE.read_text(encoding="utf-8")])
@@ -251,3 +257,83 @@ def test_list_ignores_examples_and_emits_no_partial_invalid_directory(tmp_path: 
     assert result.stdout == ""
     assert "EVOLUTION.md:7:" in result.stderr
     assert path.read_text(encoding="utf-8") == invalid
+
+
+def test_public_result_contains_only_validated_sections() -> None:
+    text = ORIGIN + "\n" + entry("2026-09-08")
+    result = check_document(text)
+    assert result.ok
+    assert result.sections == (EvolutionSection("初始意图", 3), EvolutionSection("2026-09-08", 7))
+    assert result.diagnostics == ()
+    assert check_document(text + "\n" + entry("2026-02-30")).sections == ()
+
+
+@pytest.mark.parametrize("command", ["check", "list"])
+def test_json_navigation_and_content_errors(tmp_path: Path, command: str) -> None:
+    path = tmp_path / "EVOLUTION.md"
+    path.write_text(ORIGIN + "\n" + entry("2026-09-08"), encoding="utf-8")
+    result = cli(tmp_path, command, "--format", "json")
+    payload = json.loads(result.stdout)
+    assert result.returncode == 0 and result.stderr == ""
+    assert payload["schema_version"] == 1
+    assert payload["command"] == f"evolution {command}"
+    assert payload["ok"] and payload["diagnostics"] == []
+    assert payload["summary"] == {
+        "path": "EVOLUTION.md",
+        "sections": [{"title": "初始意图", "line": 3}, {"title": "2026-09-08", "line": 7}],
+    }
+    path.write_text(ORIGIN + "\n" + entry("2026-02-30"), encoding="utf-8")
+    result = cli(tmp_path, command, "--format", "json")
+    payload = json.loads(result.stdout)
+    assert result.returncode == 1 and result.stderr == ""
+    assert not payload["ok"] and payload["summary"]["sections"] == []
+    assert payload["diagnostics"][0]["code"] == "evolution.date"
+    assert payload["diagnostics"][0]["line"] == 7
+
+
+@pytest.mark.parametrize("content", [None, b"\xff"])
+def test_json_input_failure_is_an_environment_error(tmp_path: Path, content: bytes | None) -> None:
+    if content is not None:
+        (tmp_path / "EVOLUTION.md").write_bytes(content)
+    result = cli(tmp_path, "check", "--format", "json")
+    payload = json.loads(result.stdout)
+    assert result.returncode == 2 and result.stderr == ""
+    assert not payload["ok"] and payload["summary"]["sections"] == []
+    assert payload["diagnostics"][0]["code"] == "evolution.input.read"
+    assert payload["diagnostics"][0]["path"] == "EVOLUTION.md"
+
+
+def test_init_json_locations_distinguish_source_and_output(tmp_path: Path) -> None:
+    source = tmp_path / "origin.md"
+    source.write_text("Original intent.\n\n" + entry("2026-09-08"), encoding="utf-8")
+    args = ("init", "--from", "origin.md", "--file", "history.md", "--format", "json")
+    result = cli(tmp_path, *args)
+    payload = json.loads(result.stdout)
+    assert result.returncode == 1 and not (tmp_path / "history.md").exists()
+    assert payload["diagnostics"][0]["code"] == "evolution.init.entries"
+    assert payload["diagnostics"][0]["path"] == "origin.md"
+    assert payload["diagnostics"][0]["line"] == 3
+    assert payload["summary"]["sections"] == []
+    source.write_text("## 2026-02-30\nBad date.\n", encoding="utf-8")
+    payload = json.loads(cli(tmp_path, *args).stdout)
+    assert payload["diagnostics"][0]["path"] == "origin.md"
+    assert payload["diagnostics"][0]["line"] == 1
+    source.write_text("Original intent.\n", encoding="utf-8")
+    result = cli(tmp_path, *args)
+    payload = json.loads(result.stdout)
+    assert result.returncode == 0
+    assert payload["summary"] == {"path": "history.md", "sections": [{"title": "初始意图", "line": 3}]}
+    result = cli(tmp_path, *args)
+    payload = json.loads(result.stdout)
+    assert result.returncode == 2
+    assert payload["diagnostics"][0]["code"] == "evolution.output.create"
+    assert payload["diagnostics"][0]["path"] == "history.md"
+    assert payload["summary"]["sections"] == []
+
+
+def test_github_diagnostics_escape_paths(tmp_path: Path) -> None:
+    name = "a,b%.md"
+    (tmp_path / name).write_text(ORIGIN + "\n" + entry("2026-02-30"), encoding="utf-8")
+    result = cli(tmp_path, "check", "--file", name, "--format", "github")
+    assert result.returncode == 1 and result.stderr == ""
+    assert result.stdout.startswith("::error file=a%2Cb%25.md,line=7::evolution.date:")

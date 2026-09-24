@@ -39,18 +39,19 @@ Start with the files needed by the workflows the repository actually adopts:
 │   └── skills/
 │       └── zendev/
 │           └── SKILL.md          # optional, and intentionally small
-├── proposals/                    # names are selected in proposal.toml
+├── proposals/                    # names are selected in zendev.toml
 ├── schemas/
 ├── templates/
 ├── proposals-index.json          # generated, reviewed, and committed
 ├── prek.toml
-├── proposal.toml
+├── zendev.toml
 └── pyproject.toml
 ```
 
 The directory and index names are examples. A proposal repository defines its
-own shape in `proposal.toml`; do not rename existing policy files just to match
-this tree.
+own shape in `zendev.toml`; do not rename existing policy files just to match
+this tree. The alternative `[tool.zendev]` source uses the same tables; do not
+configure both sources in the same directory.
 
 ## Minimal setup
 
@@ -60,10 +61,12 @@ Add the complete toolkit to the development environment:
 uv add --dev zendev
 ```
 
-Select the repository's commit profile in `pyproject.toml`:
+Select the repository's commit profile in `zendev.toml`:
 
 ```toml
-[tool.zendev.commit]
+version = 1
+
+[message]
 profile = "zendev"
 ```
 
@@ -72,7 +75,7 @@ Install released validation hooks through `prek.toml`:
 ```toml
 [[repos]]
 repo = "https://github.com/zendev-lab/zendev"
-rev = "v0.3.0"
+rev = "<release-or-commit>"
 hooks = [
   { id = "zendev-message-check" },
   { id = "zendev-proposal-check" },
@@ -116,7 +119,7 @@ Before changing policy-driven content, inspect the files that own it:
 
 - `pyproject.toml` for the commit profile;
 - `.github/pull_request_template.md` for the PR body contract;
-- `proposal.toml`, its schemas, and its templates for proposal policy;
+- `zendev.toml`, its schemas, and its templates for proposal policy;
 - `prek.toml` and repository tasks for the normal local gate.
 
 Run read-only validation before mutation. When proposals are in scope:
@@ -218,7 +221,7 @@ For proposal automation, consume the versioned JSON envelope and diagnostic
 codes:
 
 ```shell
-uv run zendev proposal check --json
+uv run zendev proposal check --format json
 ```
 
 Human-readable messages may improve over time. Agents should depend on command
@@ -234,9 +237,9 @@ second manual.
 | Avoid | Prefer |
 | --- | --- |
 | Reimplementing PR-title rules with a CI regular expression. | Call `zendev message check` or the published Action. |
-| Parsing human-readable diagnostics in automation. | Use `--json`, exit codes, and diagnostic codes. |
+| Parsing human-readable diagnostics in automation. | Use `--format json`, exit codes, and diagnostic codes. |
 | Editing a generated proposal index by hand. | Run the read-only check, use `--fix`, and review the diff. |
-| Replacing an existing schema with a presumed Zendev default. | Read `proposal.toml` and preserve repository-owned policy. |
+| Replacing an existing schema with a presumed Zendev default. | Read `zendev.toml` and preserve repository-owned policy. |
 | Running a mutating command before understanding current failures. | Establish state with a read-only check first. |
 | Maintaining different local and CI rules. | Run the same repository contract in both places. |
 
@@ -249,7 +252,7 @@ repository provides a concrete, CI-validated example:
   selects the commit profile and development dependencies.
 - [`prek.toml`](https://github.com/zendev-lab/zendev/blob/main/prek.toml) defines
   the local gate.
-- [`proposal.toml`](https://github.com/zendev-lab/zendev/blob/main/proposal.toml),
+- [`zendev.toml`](https://github.com/zendev-lab/zendev/blob/main/zendev.toml),
   [`schemas/zfp.schema.json`](https://github.com/zendev-lab/zendev/blob/main/schemas/zfp.schema.json),
   and [`templates/zfp.md`](https://github.com/zendev-lab/zendev/blob/main/templates/zfp.md)
   own proposal policy.

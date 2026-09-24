@@ -13,9 +13,9 @@ from typer.testing import CliRunner
 
 from zendev.__main__ import app as module_app
 from zendev.cli import app as zendev_app
-from zendev.commit import commit_app
 from zendev.evolution.cli import app as evolution_app
-from zendev.message import app as message_app
+from zendev.message.cli import app as message_app
+from zendev.message.interactive import app as commit_app
 from zendev.proposal.cli import app as proposal_app
 
 runner = CliRunner()
@@ -60,7 +60,7 @@ def test_unified_cli_message_check_validates_a_title() -> None:
     result = runner.invoke(zendev_app, ["message", "check", "--title", "--text", "✨ feat: add unified CLI"])
 
     assert result.exit_code == 0
-    assert "Title format is valid." in result.output
+    assert "Check passed." in result.output
 
 
 def test_unified_cli_message_check_validates_a_message_file(tmp_path: Path) -> None:
@@ -94,7 +94,7 @@ def test_unified_cli_drift_hint_uses_zendev_proposal_check(tmp_path: Path) -> No
 
     result = runner.invoke(
         zendev_app,
-        ["proposal", "check", "--config", str(repository / "proposal.toml"), "--json"],
+        ["proposal", "check", "--config", str(repository / "zendev.toml"), "--format", "json"],
     )
     payload = json.loads(result.stdout)
 

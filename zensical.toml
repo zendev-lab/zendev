@@ -19,6 +19,7 @@ nav = [
     "guides/index.md",
     { "Recommended repository workflow" = "guides/repository-workflow.md" },
     { "Commits" = "guides/commits.md" },
+    { "Migration" = "guides/migration.md" },
     { "Message checks" = "guides/message-checks.md" },
     { "Proposals" = "guides/proposals.md" },
     { "Project evolution" = "guides/evolution.md" },

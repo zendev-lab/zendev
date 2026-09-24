@@ -24,7 +24,7 @@ def draft(repository: Path) -> Path:
 
 
 def check(repository: Path, *, fix: bool = False):
-    args = ["check", "--config", str(repository / "proposal.toml"), "--json"]
+    args = ["check", "--config", str(repository / "zendev.toml"), "--format", "json"]
     if fix:
         args.append("--fix")
     result = runner.invoke(app, args)
@@ -41,7 +41,7 @@ def test_titles_must_be_nonempty_single_line(repository: Path, title: str) -> No
     path = draft(repository)
     path.write_text(path.read_text().replace('"Temporal model"', title))
     assert "proposal.title.invalid" in {
-        d.code for d in validate_repository(load_config(repository / "proposal.toml")).diagnostics
+        d.code for d in validate_repository(load_config(repository / "zendev.toml")).diagnostics
     }
 
 
@@ -74,7 +74,7 @@ def test_defines_policy_validates_ids_even_with_permissive_schema(repository: Pa
     schema.write_text("{}")
     path = draft(repository)
     path.write_text(path.read_text().replace("defines: []", f"defines: {value}") + '\n<a id="term-tempo"></a>\n')
-    result = validate_repository(load_config(repository / "proposal.toml"))
+    result = validate_repository(load_config(repository / "zendev.toml"))
     assert f"proposal.defines.{code}" in {d.code for d in result.diagnostics}
 
 
@@ -218,7 +218,7 @@ def test_required_sections_cannot_be_repeated(repository: Path) -> None:
     path = repository / "veps/VEP-0000-foundation.md"
     path.write_text(path.read_text() + "\n## Summary\n")
     assert "proposal.sections.duplicate" in {
-        d.code for d in validate_repository(load_config(repository / "proposal.toml")).diagnostics
+        d.code for d in validate_repository(load_config(repository / "zendev.toml")).diagnostics
     }
 
 
@@ -234,7 +234,7 @@ def test_flow_sequence_trailing_comma_is_preserved(repository: Path, value: str)
 
 
 def test_draft_marker_and_required_summary_can_coexist(repository: Path) -> None:
-    policy = repository / "proposal.toml"
+    policy = repository / "zendev.toml"
     policy.write_text(policy.read_text().replace("pre_proposal = true", "pre_proposal = true\nrequire_summary = true"))
     path = draft(repository)
     path.write_text(
@@ -259,7 +259,17 @@ def test_missing_base_ref_prevents_source_repairs(repository: Path) -> None:
     path.write_text(path.read_text().replace("> Pre-VEP design draft. Non-normative.", ""))
     before = snapshot(repository)
     result = runner.invoke(
-        app, ["check", "--config", str(repository / "proposal.toml"), "--fix", "--json", "--base-ref", "does-not-exist"]
+        app,
+        [
+            "check",
+            "--config",
+            str(repository / "zendev.toml"),
+            "--fix",
+            "--format",
+            "json",
+            "--base-ref",
+            "does-not-exist",
+        ],
     )
     assert result.exit_code == 2
     assert json.loads(result.stdout)["ok"] is False
@@ -270,12 +280,12 @@ def test_example_headings_do_not_satisfy_required_sections(repository: Path) -> 
     path = repository / "veps/VEP-0000-foundation.md"
     path.write_text(path.read_text().replace("## Summary", "~~~\n## Summary\n~~~"))
     assert "proposal.sections.missing" in {
-        d.code for d in validate_repository(load_config(repository / "proposal.toml")).diagnostics
+        d.code for d in validate_repository(load_config(repository / "zendev.toml")).diagnostics
     }
 
 
 def test_plain_text_marker_policy_remains_supported(repository: Path) -> None:
-    policy = repository / "proposal.toml"
+    policy = repository / "zendev.toml"
     policy.write_text(policy.read_text().replace("> Pre-VEP", "Pre-VEP"))
     path = draft(repository)
     path.write_text(path.read_text().replace("> Pre-VEP", "Pre-VEP"))
@@ -293,7 +303,7 @@ def test_unrelated_mixed_line_endings_are_preserved(repository: Path) -> None:
 
 
 def test_custom_definition_pattern_with_capture_groups(repository: Path) -> None:
-    policy = repository / "proposal.toml"
+    policy = repository / "zendev.toml"
     policy.write_text(
         policy.read_text().replace(
             'anchor_prefix = "term-"', 'anchor_prefix = "concept-"\nid_pattern = "([a-z]+)(-[a-z]+)*"'

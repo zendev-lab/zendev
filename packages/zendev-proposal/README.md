@@ -20,7 +20,7 @@ uvx zendev proposal check
 ```python
 from zendev.proposal import load_config, validate_repository
 
-config = load_config("proposal.toml")
+config = load_config("zendev.toml")
 result = validate_repository(config)
 ```
 

@@ -9,7 +9,7 @@ Markdown. The complete toolkit exposes the same application as
 A proposal repository supplies its own policy and content:
 
 ```text
-proposal.toml
+zendev.toml
 schemas/
 templates/
 proposals/
@@ -144,10 +144,10 @@ skipping history checks.
 ## Consume diagnostics
 
 Human diagnostics include a stable code, path, and line when available. Use
-`--json` for a stable envelope suitable for other tools:
+`--format json` for a stable envelope suitable for other tools:
 
 ```shell
-zendev proposal check --json
+zendev proposal check --format json
 ```
 
 Exit codes distinguish valid state (`0`), invalid repository content (`1`),

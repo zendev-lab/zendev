@@ -1,12 +1,13 @@
-"""Load and fail-closed validate ``proposal.toml``."""
+"""Load and fail-closed validate ``ZenDev proposal configuration``."""
 
 from __future__ import annotations
 
 import re
-import tomllib
 from collections.abc import Mapping
 from pathlib import Path
 
+from zendev.core.config import load_project_config
+from zendev.core.diagnostics import ToolError
 from zendev.proposal.model import (
     DefinesPolicy,
     Diagnostic,
@@ -21,7 +22,6 @@ from zendev.proposal.model import (
     LinkPolicy,
     MetadataTitleMode,
     ProposalConfig,
-    ProposalToolError,
     SectionPolicy,
     SummaryPolicy,
 )
@@ -66,7 +66,7 @@ _GRAPH_KEYS = {
 }
 _HISTORY_KEYS = {"initial_status", "protect_records", "bootstrap_numbers", "transitions", "waivers"}
 _HISTORY_WAIVER_KEYS = {"path", "from_status", "to_status", "reason"}
-_INDEX_KEYS = {"version", "entries_key", "fields"}
+_INDEX_KEYS = {"version", "entries_key", "fields", "path"}
 _INDEX_FIELD_KEYS = {"name", "source", "key"}
 _DEFINES_KEYS = {"field", "anchor_prefix", "id_pattern"}
 
@@ -87,8 +87,8 @@ def _metadata_title_mode(value: str) -> MetadataTitleMode:
     return "prefixed" if value == "prefixed" else "plain"
 
 
-def _error(config_path: Path, code: str, message: str, *, hint: str | None = None) -> ProposalToolError:
-    return ProposalToolError(Diagnostic(code=code, path=config_path.as_posix(), message=message, hint=hint))
+def _error(config_path: Path, code: str, message: str, *, hint: str | None = None) -> ToolError:
+    return ToolError(Diagnostic(code=code, path=config_path.as_posix(), message=message, hint=hint))
 
 
 def _reject_unknown(
@@ -550,43 +550,17 @@ def _load_defines(raw: object, config_path: Path) -> DefinesPolicy | None:
     )
 
 
-def load_config(path: str | Path = "proposal.toml") -> ProposalConfig:
-    """Load a proposal repository's single executable policy file."""
-
-    config_path = Path(path).resolve()
-    try:
-        payload = tomllib.loads(config_path.read_text(encoding="utf-8"))
-    except FileNotFoundError as error:
-        raise _error(
-            config_path,
-            "proposal.config.missing",
-            "proposal configuration does not exist",
-            hint="Pass `--config PATH` or add proposal.toml at the repository root.",
-        ) from error
-    except (OSError, UnicodeError) as error:
-        raise _error(config_path, "proposal.config.read", f"failed to read proposal configuration: {error}") from error
-    except tomllib.TOMLDecodeError as error:
-        raise _error(config_path, "proposal.config.toml", f"invalid TOML: {error}") from error
-
-    unknown_top = sorted(set(payload) - _TOP_LEVEL_KEYS)
-    if unknown_top:
-        raise _error(
-            config_path,
-            "proposal.config.unknown-key",
-            "unknown top-level keys: " + ", ".join(unknown_top),
-        )
-    if type(payload.get("version")) is not int or payload.get("version") != 1:
-        raise _error(config_path, "proposal.config.version", "`version` must be 1")
-
-    root = config_path.parent.resolve()
-    proposal = _mapping(payload.get("proposal"), config_path=config_path, field="proposal")
-    unknown_proposal = sorted(set(proposal) - _PROPOSAL_KEYS)
-    if unknown_proposal:
-        raise _error(
-            config_path,
-            "proposal.config.unknown-key",
-            "unknown `proposal` keys: " + ", ".join(unknown_proposal),
-        )
+def load_config(path: str | Path | None = None, *, start: Path | None = None) -> ProposalConfig:
+    """Decode the proposal section of the selected project configuration."""
+    source = load_project_config(path, start=start)
+    config_path = source.path or source.root / "zendev.toml"
+    payload = source.section("proposal")
+    if not payload:
+        raise _error(config_path, "proposal.config.missing", "A [proposal] configuration is required")
+    allowed = (_TOP_LEVEL_KEYS - {"version", "proposal"}) | (_PROPOSAL_KEYS - {"index"})
+    _reject_unknown(payload, allowed, config_path=config_path, field="proposal")
+    root = source.root
+    proposal = payload
 
     prefix = _string(proposal, "prefix", config_path=config_path, field="proposal")
     if re.fullmatch(r"[A-Z][A-Z0-9]*", prefix) is None:
@@ -643,9 +617,14 @@ def load_config(path: str | Path = "proposal.toml") -> ProposalConfig:
     )
     index_path = _repo_path(
         root,
-        _string(proposal, "index", config_path=config_path, field="proposal"),
+        _string(
+            _mapping(payload.get("index"), config_path=config_path, field="proposal.index"),
+            "path",
+            config_path=config_path,
+            field="proposal.index",
+        ),
         config_path=config_path,
-        field="proposal.index",
+        field="proposal.index.path",
     )
     if not documents_dir.is_dir():
         raise _error(
@@ -759,7 +738,7 @@ def load_config(path: str | Path = "proposal.toml") -> ProposalConfig:
         if drafts.directory == documents_dir:
             raise _error(config_path, "proposal.config.path", "formal and draft directories must differ")
         if drafts.marker is not None:
-            from zendev.proposal._markdown_scan import scan_markdown
+            from zendev.core.markdown import scan_markdown
 
             marker = drafts.marker
             if (

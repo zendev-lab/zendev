@@ -41,16 +41,17 @@ or a shared documentation preset without a demonstrated product requirement.
 
 ## Distribution checks
 
-Build all workspace wheels and exercise the evolution check in isolated
-standalone and complete-toolkit installations:
+Build all six workspace wheels and exercise each isolated installation, including
+evolution initialization, listing, and checking:
 
 ```shell
-uv build --all-packages --wheel
-uv run python scripts/check_distributions.py
+just packages
 ```
 
-Use a clean `dist/` containing one wheel per package. The check also rejects
-namespace file overlap. CI runs it after building wheels.
+The check builds into a temporary directory and verifies same-version dependencies,
+namespace ownership, pure APIs, and actual CLI commands outside the checkout.
+CI uses this same entry point. Public hook tests use `scripts/verify_hooks.py`
+with local wheels and `UV_NO_SOURCES=true`.
 
 Before the first release containing `zendev-evolution`, configure the PyPI
 Trusted Publisher for `zendev-lab/zendev`, workflow `cd-release.yml`, environment

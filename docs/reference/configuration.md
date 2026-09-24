@@ -1,21 +1,35 @@
 # Configuration reference
 
-## Commit profiles
+## Source discovery
 
-The nearest `pyproject.toml` may select the default profile:
+Use `zendev.toml` or `[tool.zendev]` in `pyproject.toml`. Discovery starts at the
+working directory and walks toward the Git root, selecting the nearest source.
+Unrelated pyprojects are skipped. Configuring both sources in the same directory
+is an error. `--config PATH` selects one explicit source without merging.
+Paths resolve relative to the selected file. Configuration version is 1.
 
 ```toml
-[tool.zendev.commit]
+version = 1
+
+[message]
 profile = "zendev"
+
+[message.body]
+template = ".github/pull_request_template.md"
+require_checklist = false
+checklist_section = "Checklist"
+fail_on_empty_checklist = false
 ```
 
-Accepted values are `zendev`, `conventional`, and `gitmoji`. The CLI's `auto`
-selection reads this value and falls back to `zendev`. Unknown values and
-non-string values fail closed.
+For `pyproject.toml`, place `version = 1` inside `[tool.zendev]` and prefix every
+table with `tool.zendev`, including `[tool.zendev.message.body]`.
+Profiles are `zendev`, `conventional`, and `gitmoji`; an explicit `--profile`
+overrides a valid configured value. Invalid configuration always fails closed.
+A missing body template is an error, even without checklist enforcement.
 
 ## Proposal policy
 
-`proposal.toml` is versioned, rejects unknown keys, and resolves all configured
+`zendev.toml` is versioned, rejects unknown keys, and resolves all configured
 paths relative to its repository root. Paths may not escape that root.
 
 A minimal stateless policy looks like:
@@ -30,16 +44,16 @@ title_field = "title"
 type_field = "type"
 documents_dir = "zfps"
 schema = "schemas/zfp.schema.json"
-index = "zfps-index.json"
 number_width = 4
 metadata_title = "plain"
 filename_slug_pattern = "[a-z0-9]+(?:-[a-z0-9]+)*"
 
-[templates]
+[proposal.templates]
 Feature = "templates/zfp.md"
 Governance = "templates/zfp.md"
 
-[index]
+[proposal.index]
+path = "zfps-index.json"
 version = 2
 entries_key = "zfps"
 fields = ["zfp", { name = "path", source = "path" }, "title"]
@@ -54,14 +68,14 @@ mode the metadata title already includes the identifier and must equal the H1.
 
 ### Templates and summaries
 
-Each key in `templates` is an allowed value for the configured type field. Every
+Each key in `proposal.templates` is an allowed value for the configured type field. Every
 H2 in its Markdown template is required in documents of that type.
 
 An optional `summary` table configures a required prose prefix and inclusive
 sentence-count bounds:
 
 ```toml
-[summary]
+[proposal.summary]
 prefix = "**Executive Summary:**"
 minimum_sentences = 2
 maximum_sentences = 4
@@ -86,7 +100,7 @@ proposals are indexed regardless of lifecycle status, when the repository uses o
 The optional `graph.fields` array names relation metadata:
 
 ```toml
-[graph]
+[proposal.graph]
 fields = ["requires", "amends", "supersedes"]
 requires_field = "requires"
 amends_field = "amends"
@@ -109,12 +123,12 @@ The optional `history` table configures `initial_status`, record protection,
 bootstrap numbers, and allowed transitions:
 
 ```toml
-[history]
+[proposal.history]
 initial_status = "Draft"
 protect_records = true
 bootstrap_numbers = [0]
 
-[history.transitions]
+[proposal.history.transitions]
 Draft = ["Draft", "Review", "Withdrawn"]
 Review = ["Review", "Draft", "Accepted", "Rejected", "Withdrawn"]
 Accepted = ["Accepted", "Superseded"]
@@ -130,7 +144,7 @@ Bootstrap numbers may bypass the initial-status rule.
 A narrow, reviewable historical exception can be kept in repository policy:
 
 ```toml
-[[history.waivers]]
+[[proposal.history.waivers]]
 path = "proposals/VEP-0001-example.md"
 from_status = "Accepted"
 to_status = "Draft"
@@ -145,7 +159,7 @@ second lifecycle authority.
 An optional `defines` table maps a metadata list to stable HTML anchors:
 
 ```toml
-[defines]
+[proposal.defines]
 field = "defines"
 anchor_prefix = "term-"
 id_pattern = "[a-z][a-z0-9-]*"
@@ -185,20 +199,20 @@ and unsafe paths are configuration errors rather than silently ignored policy.
 ### Additional proposal checks and repairs
 
 ```toml
-[sections]
+[proposal.sections]
 nonempty = true
 ordered = true
 no_skip_levels = true
 placeholders = ["TBD", "TODO"]
 
-[links]
+[proposal.links]
 check = true
 heading_ids = "explicit"
 
-[fix]
+[proposal.fix]
 reference_style = "preserve"
 
-[fix.aliases.status]
+[proposal.fix.aliases.status]
 accepted = "Accepted"
 ```
 

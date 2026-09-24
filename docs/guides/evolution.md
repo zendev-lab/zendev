@@ -23,9 +23,31 @@ For UTF-8 standard input, use `--from -`:
 zendev evolution init --from - < origin.md
 ```
 
-A document containing only initial intent is valid. The
-[example template](https://github.com/zendev-lab/zendev/blob/main/templates/evolution.md)
-shows how to add a dated entry when there is a real change to record.
+A document containing only initial intent is valid. When there is a real change
+to record, add a dated entry like this:
+
+```markdown
+# 项目演进
+
+## 初始意图
+
+最初希望用一组工作流改善已有 Agent 的开发体验，
+基于宿主可以提供执行生命周期的假设。
+
+## 2026-09-08
+
+### 触发
+
+持久会话与执行调度逐渐超出宿主扩展能够承载的范围。
+
+### 变化
+
+目标调整为独立 Agent 产品，保留可追溯开发流程的初衷。
+
+### 理由
+
+接受维护运行时的成本，以获得完整的执行控制。
+```
 
 The format uses these top-level Markdown headings:
 
@@ -72,6 +94,29 @@ Diagnostics include the file
 path and line number. Exit codes are `0` for success, `1` for invalid document
 structure or invalid initial intent, and `2` for usage, missing files, existing
 initialization targets, I/O, or UTF-8 decoding errors.
+
+All commands accept `--format human|json|github`. Human output is the default;
+JSON uses the shared versioned diagnostic envelope. `summary.sections` contains
+`title` and one-based `line` for each validated section, with `summary.path`
+identifying the document. Invalid input yields an empty section list. GitHub
+output emits workflow annotations for diagnostics.
+
+```shell
+zendev evolution list --format json
+zendev evolution check --format github
+```
+
+The pure Python API returns the same diagnostics and validated navigation,
+without importing the CLI or reading files:
+
+```python
+from zendev.evolution import check_document
+
+result = check_document(text, path="EVOLUTION.md")
+if result.ok:
+    for section in result.sections:
+        print(section.title, section.line)
+```
 
 Listing and checking never change the file. No command creates locks or indexes.
 

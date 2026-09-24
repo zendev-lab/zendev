@@ -17,11 +17,13 @@ format:
     uvx ruff format
     uvx ruff check --fix
 
-# Type checking and linting
+# Read-only formatting, lint, and type checks
 check:
-    uvx ruff check --fix
+    just --fmt --check --unstable
+    uvx ruff format --check
+    uvx ruff check
     uvx ty check .
-    uvx pyrefly check
+    uv run pyrefly check
 
 # Run all tests
 test:
@@ -48,8 +50,12 @@ clean:
     find . -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
     find . -name "*.pyc" -delete 2>/dev/null || true
 
-# Full CI check (format + check + test with coverage)
-ci: format check cov
+# Read-only CI checks and tests (generated coverage is not tracked)
+ci: check cov
+
+# Build and verify isolated wheel installations
+packages:
+    uv run python scripts/verify_packages.py
 
 # Run pre-commit on all files
 pre-commit:

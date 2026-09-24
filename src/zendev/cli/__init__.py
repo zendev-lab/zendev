@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import typer
 
-from zendev.commit import create_commit
 from zendev.evolution.cli import app as evolution_app
-from zendev.message import app as message_app
+from zendev.message.cli import app as message_app
+from zendev.message.interactive import create_commit
 from zendev.proposal.cli import app as proposal_app
 
 app = typer.Typer(
