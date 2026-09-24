@@ -83,6 +83,7 @@ class ValidationResult:
 
 _CONVENTIONS = load_emoji_conventions()
 _CONVENTION_BY_GITMOJI_NAME = {convention.gitmoji.name: convention for convention in _CONVENTIONS}
+_TYPE_ALIASES = {"deps": "deps-up"}
 
 EMOJI_MAP: dict[str, str] = {convention.type: convention.gitmoji.emoji for convention in _CONVENTIONS}
 _DESCRIPTIONS: dict[str, str] = {convention.type: convention.gitmoji.description for convention in _CONVENTIONS}
@@ -209,7 +210,7 @@ def message(answers: ZendevAnswers) -> str:
     footer = answers["footer"]
     is_breaking_change = answers["is_breaking_change"]
 
-    emoji = EMOJI_MAP.get(prefix, "")
+    emoji = EMOJI_MAP.get(_TYPE_ALIASES.get(prefix, prefix), "")
     formatted_scope = f"({scope})" if scope else ""
     title = f"{emoji} {prefix}{formatted_scope}"
 
@@ -223,14 +224,19 @@ def message(answers: ZendevAnswers) -> str:
 
 
 def schema_pattern(*, require_emoji: bool = True) -> str:
-    types = "|".join(re.escape(name) for name in EMOJI_MAP)
+    types = "|".join(re.escape(name) for name in (*EMOJI_MAP, *_TYPE_ALIASES))
     if require_emoji:
         pairs: list[str] = []
         for convention in _CONVENTIONS:
             gitmoji = convention.gitmoji
             tokens = {gitmoji.emoji, gitmoji.emoji.replace("\ufe0f", ""), gitmoji.code}
             token_pattern = "|".join(re.escape(token) for token in sorted(tokens, key=len, reverse=True))
-            pairs.append(r"(?:" + token_pattern + r") " + re.escape(convention.type))
+            type_names = (
+                convention.type,
+                *(alias for alias, canonical in _TYPE_ALIASES.items() if canonical == convention.type),
+            )
+            type_pattern = "|".join(re.escape(name) for name in type_names)
+            pairs.append(r"(?:" + token_pattern + r") (?:" + type_pattern + r")")
         header = r"(?:" + "|".join(pairs) + r")"
     else:
         header = r"(?:\S+ )?(?:" + types + r")"
@@ -295,7 +301,7 @@ def _validate_zendev(normalized: str) -> ValidationResult:
         )
 
     expected_type = _CONVENTION_BY_GITMOJI_NAME[match.gitmoji.name].type
-    if parsed.header.type != expected_type:
+    if _TYPE_ALIASES.get(parsed.header.type, parsed.header.type) != expected_type:
         return ValidationResult(
             False,
             CommitProfile.ZENDEV,
@@ -347,7 +353,7 @@ def suggest_commit_message(text: str) -> str | None:
     parsed, _ = parse_conventional_commit(normalized)
     if parsed is None:
         return None
-    emoji = EMOJI_MAP.get(parsed.header.type)
+    emoji = EMOJI_MAP.get(_TYPE_ALIASES.get(parsed.header.type, parsed.header.type))
     if emoji is None:
         return None
     return f"{emoji} {normalized}"
@@ -398,10 +404,16 @@ def format_commit_convention_help_body(
         parts = [
             "",
             "  Expected: <emoji-or-shortcode> <type>(<scope>)!: <description>",
-            f"  Catalog:  {len(_CONVENTIONS)} strict emoji-to-type pairs covering every Gitmoji intention",
+            f"  Catalog:  {len(_CONVENTIONS)} canonical emoji-to-type pairs covering every Gitmoji intention",
             "",
             "  Type table:",
             *_format_type_table_lines(),
+            "",
+            "  Compatibility aliases:",
+            *(
+                f"    {EMOJI_MAP[canonical]} {alias} (alias of {canonical})"
+                for alias, canonical in _TYPE_ALIASES.items()
+            ),
             "",
             "  Examples:",
             *(f"    {example}" for example in COMMIT_CONVENTION_EXAMPLES),

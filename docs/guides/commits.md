@@ -16,7 +16,7 @@ The available profiles are:
 
 | Profile | Contract |
 | --- | --- |
-| `zendev` | A Gitmoji emoji or shortcode paired with its canonical commit type. |
+| `zendev` | A Gitmoji emoji or shortcode paired with its canonical commit type or a documented compatibility alias. |
 | `conventional` | Conventional Commits 1.0.0, including scopes, breaking changes, bodies, and footers. |
 | `gitmoji` | Gitmoji title syntax with Unicode or shortcode intentions and an optional scope or body. |
 
@@ -40,7 +40,14 @@ Examples accepted by the `zendev` profile include:
 ✨ feat: add export
 🐛 fix(parser): handle null token
 :memo: docs: update README
+⬆️ deps: update dependencies
 ```
+
+`deps` is a compatibility alias for `deps-up`, accepted with `⬆️`, `⬆`, or
+`:arrow_up:` in commit messages and PR titles. Scopes and breaking-change markers
+work with either spelling. The alias does not accept other dependency intentions:
+use `⬇️ deps-down`, `➕ deps-add`, `➖ deps-remove`, or `📌 deps-pin` for those changes.
+The interactive type picker continues to offer the canonical `deps-up` type.
 
 Git-generated `Merge`, `Revert`, `fixup!`, `squash!`, `amend!`, and `reword!`
 prefixes are accepted.

@@ -53,6 +53,22 @@ def test_auto_single_line_checks_title() -> None:
     assert "Title format is valid." in result.output
 
 
+@pytest.mark.parametrize(
+    ("text", "exit_code"),
+    [
+        ("⬆️ deps: Update dependencies (non-major)", 0),
+        ("⬆️ deps-up: Update dependencies (non-major)", 0),
+        (":arrow_up: deps(npm): update dependencies", 0),
+        ("⬇️ deps: downgrade dependencies", 1),
+        ("deps: update dependencies", 1),
+    ],
+)
+def test_title_scope_checks_dependency_alias(text: str, exit_code: int) -> None:
+    result = runner.invoke(zendev_app, ["message", "check", "--title", "--profile", "zendev", "--text", text])
+
+    assert result.exit_code == exit_code
+
+
 def test_auto_multiline_uses_commit_body_not_pr_template() -> None:
     result = runner.invoke(zendev_app, ["message", "check", "--text", COMMIT_WITH_BODY])
 
