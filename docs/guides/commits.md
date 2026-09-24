@@ -47,7 +47,7 @@ can accompany; an error lists that intention's allowed types.
 Generation always requires an explicit intention. `💥` requires `!` or a
 `BREAKING CHANGE` footer; other intentions may also declare breaking changes.
 The complete policy is defined in
-[ZFP-0007](https://github.com/zendev-lab/zendev/blob/main/zfps/ZFP-0007-domain-architecture.md).
+[ZFP-0006](https://github.com/zendev-lab/zendev/blob/main/zfps/ZFP-0006-domain-architecture.md).
 
 ## Create and check
 

@@ -1,5 +1,5 @@
 ---
-zfp: 6
+zfp: 7
 title: "项目初始意图与按日期记录的演进"
 type: Feature
 authors:
@@ -8,7 +8,7 @@ created: 2026-09-08
 supersedes: []
 ---
 
-# ZFP-0006: 项目初始意图与按日期记录的演进
+# ZFP-0007: 项目初始意图与按日期记录的演进
 
 ## 摘要
 
@@ -45,7 +45,7 @@ supersedes: []
 - `check`：验证全文，诊断带文件路径与行号。
 
 三个命令支持 `--format human|json|github`，使用
-[ZFP-0007](./ZFP-0007-domain-architecture.md) 的统一诊断模型与 JSON envelope。
+[ZFP-0006](./ZFP-0006-domain-architecture.md) 的统一诊断模型与 JSON envelope。
 默认 human 保持上述输出；JSON 的 `summary.sections` 包含已通过完整校验的
 `title` 与一基行号 `line`，无效文档不返回部分目录。`init` 的失败诊断定位到
 输入正文，成功目录定位到创建后的文件。
@@ -73,7 +73,7 @@ zendev evolution check
 包含 `sections`、`diagnostics` 和 `ok`；每个 `EvolutionSection` 提供 `title`、
 `line`。校验失败返回带 `evolution.*` 稳定代码的诊断，且 `sections` 为空。
 文件读取、独占创建、退出码和输出格式由 CLI 适配层负责；不需要 CLI 或文件系统
-即可使用文档校验。该领域扩展遵循 ZFP-0007 的依赖方向，作为第六个 distribution
+即可使用文档校验。该领域扩展遵循 ZFP-0006 的依赖方向，作为第六个 distribution
 加入同一构建、独立安装和 hook 验证流程。
 
 ## 兼容性
