@@ -46,8 +46,8 @@ writes. Repository configuration, JSON schemas and templates still own policy.
 exercises five isolated installations outside the checkout.
 
 [Hatch metadata hooks](https://hatch.pypa.io/latest/plugins/metadata-hook/reference/)
-resolve sibling pins from the VCS version. Component hook symlinks share the
-root implementation. Release ordering is core/log, then message/proposal, then
+resolve sibling pins from the VCS version. Component builds reference the same root hook file from the complete repository
+checkout. Releases publish independently installable wheels. Release ordering is core/log, then message/proposal, then
 the CLI distribution. New PyPI projects and trusted publishers must be configured
 before the first release; changing CI does not create those hosted resources.
 
