@@ -1,5 +1,5 @@
 ---
-zfp: 7
+zfp: 6
 title: "消息与提案领域及共享基础"
 type: Feature
 authors:
@@ -8,7 +8,7 @@ created: 2026-09-24
 supersedes: []
 ---
 
-# ZFP-0007: 消息与提案领域及共享基础
+# ZFP-0006: 消息与提案领域及共享基础
 
 ## 摘要
 

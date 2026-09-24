@@ -74,8 +74,8 @@
       "superseded_by": []
     },
     {
-      "zfp": 7,
-      "path": "zfps/ZFP-0007-domain-architecture.md",
+      "zfp": 6,
+      "path": "zfps/ZFP-0006-domain-architecture.md",
       "title": "消息与提案领域及共享基础",
       "type": "Feature",
       "authors": [
