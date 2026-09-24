@@ -95,6 +95,7 @@ path and line number. Exit codes are `0` for success, `1` for invalid document
 structure or invalid initial intent, and `2` for usage, missing files, existing
 initialization targets, I/O, or UTF-8 decoding errors.
 
+Output uses UTF-8 independently of the host encoding.
 All commands accept `--format human|json|github`. Human output is the default;
 JSON uses the shared versioned diagnostic envelope. `summary.sections` contains
 `title` and one-based `line` for each validated section, with `summary.path`

@@ -337,3 +337,50 @@ def test_github_diagnostics_escape_paths(tmp_path: Path) -> None:
     result = cli(tmp_path, "check", "--file", name, "--format", "github")
     assert result.returncode == 1 and result.stderr == ""
     assert result.stdout.startswith("::error file=a%2Cb%25.md,line=7::evolution.date:")
+
+
+@pytest.mark.parametrize(
+    ("command", "output_format"),
+    [("init", "json"), ("list", "human"), ("check", "json"), ("check", "github")],
+)
+def test_output_is_utf8_independently_of_host_encoding(tmp_path: Path, command: str, output_format: str) -> None:
+    source = tmp_path / "origin.md"
+    source.write_text("Original intent.", encoding="utf-8")
+    document = tmp_path / "演进.md"
+    if command != "init":
+        document.write_text(ORIGIN, encoding="utf-8")
+    args = [command, "--file", document.name, "--format", output_format]
+    if command == "init":
+        args += ["--from", source.name]
+    result = subprocess.run(
+        [sys.executable, "-m", "zendev", "evolution", *args],
+        cwd=tmp_path,
+        env={**os.environ, "PYTHONIOENCODING": "cp1252"},
+        capture_output=True,
+        timeout=15,
+        check=False,
+    )
+    assert result.returncode == 0 and result.stderr == b""
+    output = result.stdout.decode("utf-8")
+    if output_format == "json":
+        payload = json.loads(output)
+        assert payload["ok"]
+        assert payload["summary"] == {"path": document.name, "sections": [{"title": "初始意图", "line": 3}]}
+    elif command == "list":
+        assert output == "演进.md:3: 初始意图\n"
+    else:
+        assert output == "Validated 演进.md.\n"
+
+
+def test_error_output_preserves_unicode_paths_on_non_utf8_host(tmp_path: Path) -> None:
+    result = subprocess.run(
+        [sys.executable, "-m", "zendev", "evolution", "check", "--file", "不存在.md"],
+        cwd=tmp_path,
+        env={**os.environ, "PYTHONIOENCODING": "cp1252"},
+        capture_output=True,
+        timeout=15,
+        check=False,
+    )
+    assert result.returncode == 2 and result.stdout == b""
+    assert result.stderr.decode("utf-8").startswith("不存在.md:1: evolution.input.read:")
+    assert b"Traceback" not in result.stderr

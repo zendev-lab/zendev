@@ -43,7 +43,7 @@ def _finish(
         if command == "list"
         else f"{'Created' if command == 'init' else 'Validated'} {file}."
     )
-    print(
+    typer.echo(
         render_report(
             result.diagnostics,
             command=f"evolution {command}",
@@ -51,7 +51,9 @@ def _finish(
             summary={"path": str(file), "sections": [asdict(section) for section in result.sections]},
             success_message=success,
         ),
-        file=sys.stderr if not result.ok and output_format is OutputFormat.HUMAN else sys.stdout,
+        file=typer.get_text_stream(
+            "stderr" if not result.ok and output_format is OutputFormat.HUMAN else "stdout", encoding="utf-8"
+        ),
     )
     raise typer.Exit(exit_code if exit_code is not None else (0 if result.ok else 1))
 
