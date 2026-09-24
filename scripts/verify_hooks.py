@@ -24,7 +24,11 @@ def main() -> None:
             metadata = email.message_from_bytes(
                 archive.read(next(n for n in archive.namelist() if n.endswith("/METADATA")))
             )
-        environment = {**os.environ, "SETUPTOOLS_SCM_PRETEND_VERSION": metadata["Version"]}
+        environment = {
+            **os.environ,
+            "SETUPTOOLS_SCM_PRETEND_VERSION": metadata["Version"],
+            "UV_NO_SOURCES": "true",
+        }
         config = temporary / "prek.toml"
         dependencies = json.dumps([str(path) for path in component_wheels])
         config.write_text(
