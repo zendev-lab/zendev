@@ -24,13 +24,14 @@ same change:
 uv run zendev proposal check --fix
 ```
 
-`just ci` formats and lints code, runs ty and Pyrefly, and executes the test
-suite with coverage. Tests should assert observable behavior and public
+`just ci` checks formatting and lints code, runs ty and Pyrefly, and executes the test
+suite with coverage. Use `just format` explicitly to format source, and `just packages`
+to validate isolated wheel installations. Tests should assert observable behavior and public
 contracts rather than implementation control flow.
 
 ## Vendored Gitmoji data
 
-The commit package keeps an offline Gitmoji catalog pinned to an upstream
+The message package keeps an offline Gitmoji catalog pinned to an upstream
 revision. Refresh it only through the repository task:
 
 ```shell
@@ -39,7 +40,7 @@ just sync-gitmoji
 
 The task validates the upstream payload before updating the vendored file.
 Review both the data diff and the pairing table in
-[`packages/zendev-commit/src/zendev/data`](./packages/zendev-commit/src/zendev/data/)
+[`packages/zendev-message/src/zendev/message/data`](./packages/zendev-message/src/zendev/message/data/)
 before committing the result.
 
 ## Documentation ownership

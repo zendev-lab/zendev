@@ -23,11 +23,7 @@ jobs:
         run: uvx prek validate-manifest .pre-commit-hooks.yaml
 
       - name: Exercise public hooks
-        run: |
-          printf '%s\n' '✨ feat(hooks): validate public hooks' > .git/COMMIT_EDITMSG
-          uvx prek try-repo . zendev-proposal-check --all-files
-          uvx prek try-repo . zendev-message-check --stage commit-msg --commit-msg-filename .git/COMMIT_EDITMSG
-          git diff --exit-code
+        run: uv run python scripts/verify_hooks.py
 
   codeql:
     name: CodeQL

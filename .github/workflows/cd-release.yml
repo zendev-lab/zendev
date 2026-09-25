@@ -26,6 +26,8 @@ jobs:
           uv sync --all-packages --all-groups
           uvx prek run --all-files
           uv run pytest -v
+          uv build --all-packages --wheel
+          uv run python scripts/verify_packages.py dist
 
   build:
     name: Build ${{ matrix.package }}
@@ -35,10 +37,10 @@ jobs:
       matrix:
         package:
           - zendev
-          - zendev-commit
+          - zendev-core
           - zendev-log
           - zendev-proposal
-          - zendev-review
+          - zendev-message
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -59,27 +61,25 @@ jobs:
           path: dist/*.whl
           if-no-files-found: error
 
-  publish-commit:
-    name: Publish zendev-commit
+  publish-core:
+    name: Publish zendev-core
     needs: [verify, build]
     runs-on: ubuntu-latest
-    environment: pypi-zendev-commit
+    environment: pypi-zendev-core
     permissions:
       actions: read
       id-token: write
     steps:
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          name: dist-zendev-commit
+          name: dist-zendev-core
           path: dist
 
       - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
-        with:
-          skip-existing: ${{ github.ref_name == 'v0.2.0' }}
 
   publish-log:
     name: Publish zendev-log
-    needs: publish-commit
+    needs: [verify, build]
     runs-on: ubuntu-latest
     environment: pypi-zendev-log
     permissions:
@@ -92,12 +92,10 @@ jobs:
           path: dist
 
       - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
-        with:
-          skip-existing: ${{ github.ref_name == 'v0.2.0' }}
 
   publish-proposal:
     name: Publish zendev-proposal
-    needs: publish-log
+    needs: [publish-core, publish-log]
     runs-on: ubuntu-latest
     environment: pypi-zendev-proposal
     permissions:
@@ -110,30 +108,26 @@ jobs:
           path: dist
 
       - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
-        with:
-          skip-existing: ${{ github.ref_name == 'v0.2.0' }}
 
-  publish-review:
-    name: Publish zendev-review
-    needs: publish-proposal
+  publish-message:
+    name: Publish zendev-message
+    needs: [publish-core, publish-log]
     runs-on: ubuntu-latest
-    environment: pypi-zendev-review
+    environment: pypi-zendev-message
     permissions:
       actions: read
       id-token: write
     steps:
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          name: dist-zendev-review
+          name: dist-zendev-message
           path: dist
 
       - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
-        with:
-          skip-existing: ${{ github.ref_name == 'v0.2.0' }}
 
   publish-zendev:
     name: Publish zendev
-    needs: publish-review
+    needs: [publish-message, publish-proposal]
     runs-on: ubuntu-latest
     permissions:
       actions: read
@@ -145,8 +139,6 @@ jobs:
           path: dist
 
       - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
-        with:
-          skip-existing: ${{ github.ref_name == 'v0.2.0' }}
 
   github-release:
     name: Create GitHub release

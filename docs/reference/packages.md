@@ -1,26 +1,21 @@
 # Package reference
 
-The repository publishes five distributions from one uv workspace and release
-tag. They contribute independent portions of the PEP 420 `zendev` namespace.
+Five distributions share a release version and contribute disjoint portions of
+the PEP 420 `zendev` namespace.
 
 | Distribution | Ownership | Primary interfaces |
 | --- | --- | --- |
-| `zendev` | Complete toolkit and unified CLI | `zendev`, `python -m zendev` |
-| `zendev-commit` | Commit profiles, validation, interactive commits, vendored Gitmoji data | `zendev.commit`, `zendev.conventional`, `zendev.gitmoji`, `zendev-commit` |
-| `zendev-review` | Title, body, checklist, and complete-message validation | `zendev.title`, `zendev.body`, `zendev.message`, `zendev-message` |
-| `zendev-proposal` | Proposal configuration, validation, history, graph, and indexes | `zendev.proposal`, `zendev-proposal` |
+| `zendev` | Complete toolkit and CLI composition | `zendev`, `python -m zendev` |
+| `zendev-core` | Configuration discovery, diagnostics, source snapshots, Markdown facts | `zendev.core` |
+| `zendev-message` | Message parsing, policy, rendering, body checks, interactive adapter | `zendev.message`, `zendev-message`, `zendev-commit` |
+| `zendev-proposal` | Proposal policy, validation, history, graph, index, repair plans | `zendev.proposal`, `zendev-proposal` |
 | `zendev-log` | Idempotent Loguru setup | `zendev.log.setup_log` |
 
-The root `zendev` distribution requires every component. There is no optional
-import path or degraded unified command. Component distributions remain
-independently installable when a consumer deliberately wants a narrower surface.
+The root requires every component at its exact version. Message and proposal
+each require the same-version core. Core has no domain, CLI, or Git dependency;
+log remains independent. Every component is separately installable. The root CLI
+always exposes `commit`, `message`, and `proposal`.
 
-`zendev-log` is imported directly:
-
-```python
-from zendev.log import setup_log
-
-setup_log(verbose=True)
-```
-
-The former `from zendev import setup_log` re-export is not supported.
+The old `zendev-commit` and `zendev-review` **distributions** are removed;
+`zendev-commit` remains an executable supplied by `zendev-message`.
+See the [migration guide](../guides/migration.md) for Python API changes.

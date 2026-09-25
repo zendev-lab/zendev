@@ -42,8 +42,8 @@ concepts, guides, integrations, and the public reference.
 | Distribution | Purpose |
 | --- | --- |
 | `zendev` | Complete toolkit and unified CLI |
-| `zendev-commit` | Commit profiles, validation, and interactive commits |
-| `zendev-review` | Commit and pull-request message validation |
+| `zendev-core` | Configuration, diagnostics, source snapshots, Markdown facts |
+| `zendev-message` | Message parsing, validation, rendering, interactive commits |
 | `zendev-proposal` | Proposal validation and deterministic indexes |
 | `zendev-log` | Loguru setup helper |
 

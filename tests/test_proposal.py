@@ -10,10 +10,11 @@ from pathlib import Path
 import pytest
 from typer.testing import CliRunner
 
+from zendev.core.diagnostics import ToolError
+from zendev.proposal.application import apply_plan, plan_changes
 from zendev.proposal.cli import app as proposal_app
 from zendev.proposal.config import load_config
-from zendev.proposal.indexing import check_index, expected_index_text, write_index
-from zendev.proposal.model import ProposalToolError
+from zendev.proposal.indexing import check_index, expected_index_text
 from zendev.proposal.repository import load_repository, parse_frontmatter
 from zendev.proposal.validation import validate_repository
 
@@ -61,7 +62,7 @@ def _commit_fixture(repository: Path) -> None:
 
 def test_vep_fixture_validates_and_builds_inverse_index(tmp_path: Path) -> None:
     repository = _copy_fixture(tmp_path, "vep")
-    config = load_config(repository / "proposal.toml")
+    config = load_config(repository / "zendev.toml")
 
     result = validate_repository(config)
 
@@ -78,7 +79,7 @@ def test_vep_fixture_validates_and_builds_inverse_index(tmp_path: Path) -> None:
 
 def test_index_field_shorthand_matches_explicit_metadata_table(tmp_path: Path) -> None:
     repository = _copy_fixture(tmp_path, "vep")
-    policy = repository / "proposal.toml"
+    policy = repository / "zendev.toml"
     shorthand = load_config(policy)
     shorthand_text = expected_index_text(shorthand, load_repository(shorthand))
     policy.write_text(
@@ -99,7 +100,7 @@ def test_index_field_shorthand_matches_explicit_metadata_table(tmp_path: Path) -
 
 def test_index_fields_reject_duplicate_names_across_shorthand_and_tables(tmp_path: Path) -> None:
     repository = _copy_fixture(tmp_path, "vep")
-    policy = repository / "proposal.toml"
+    policy = repository / "zendev.toml"
     policy.write_text(
         policy.read_text(encoding="utf-8").replace(
             '  "title",\n',
@@ -108,7 +109,7 @@ def test_index_fields_reject_duplicate_names_across_shorthand_and_tables(tmp_pat
         encoding="utf-8",
     )
 
-    with pytest.raises(ProposalToolError) as error:
+    with pytest.raises(ToolError) as error:
         load_config(policy)
 
     assert error.value.diagnostic.code == "proposal.config.duplicate"
@@ -116,7 +117,7 @@ def test_index_fields_reject_duplicate_names_across_shorthand_and_tables(tmp_pat
 
 def test_identifier_index_source_is_rejected(tmp_path: Path) -> None:
     repository = _copy_fixture(tmp_path, "vep")
-    policy = repository / "proposal.toml"
+    policy = repository / "zendev.toml"
     policy.write_text(
         policy.read_text(encoding="utf-8").replace(
             '{ name = "path", source = "path" }',
@@ -125,7 +126,7 @@ def test_identifier_index_source_is_rejected(tmp_path: Path) -> None:
         encoding="utf-8",
     )
 
-    with pytest.raises(ProposalToolError) as error:
+    with pytest.raises(ToolError) as error:
         load_config(policy)
 
     assert error.value.diagnostic.code == "proposal.config.index-source"
@@ -133,16 +134,16 @@ def test_identifier_index_source_is_rejected(tmp_path: Path) -> None:
 
 def test_index_version_one_is_rejected(tmp_path: Path) -> None:
     repository = _copy_fixture(tmp_path, "vep")
-    policy = repository / "proposal.toml"
+    policy = repository / "zendev.toml"
     policy.write_text(
         policy.read_text(encoding="utf-8").replace(
-            "[index]\nversion = 2\n",
-            "[index]\nversion = 1\n",
+            "[proposal.index]\nversion = 2\n",
+            "[proposal.index]\nversion = 1\n",
         ),
         encoding="utf-8",
     )
 
-    with pytest.raises(ProposalToolError) as error:
+    with pytest.raises(ToolError) as error:
         load_config(policy)
 
     assert error.value.diagnostic.code == "proposal.config.index-version"
@@ -150,13 +151,13 @@ def test_index_version_one_is_rejected(tmp_path: Path) -> None:
 
 def test_empty_index_field_shorthand_is_rejected(tmp_path: Path) -> None:
     repository = _copy_fixture(tmp_path, "vep")
-    policy = repository / "proposal.toml"
+    policy = repository / "zendev.toml"
     policy.write_text(
         policy.read_text(encoding="utf-8").replace('  "title",\n', '  "",\n'),
         encoding="utf-8",
     )
 
-    with pytest.raises(ProposalToolError) as error:
+    with pytest.raises(ToolError) as error:
         load_config(policy)
 
     assert error.value.diagnostic.code == "proposal.config.type"
@@ -164,10 +165,10 @@ def test_empty_index_field_shorthand_is_rejected(tmp_path: Path) -> None:
 
 def test_repository_without_drafts_does_not_require_a_draft_directory(tmp_path: Path) -> None:
     repository = _copy_fixture(tmp_path, "vep")
-    policy = repository / "proposal.toml"
+    policy = repository / "zendev.toml"
     policy.write_text(
         policy.read_text(encoding="utf-8").replace(
-            """[drafts]
+            """[proposal.drafts]
 directory = "drafts"
 schema = "schemas/draft.schema.json"
 marker = "> Pre-VEP design draft. Non-normative."
@@ -190,7 +191,7 @@ pre_proposal = true
 
 def test_sep_frontmatter_draft_is_validated_but_not_indexed(tmp_path: Path) -> None:
     repository = _copy_fixture(tmp_path, "sep")
-    config = load_config(repository / "proposal.toml")
+    config = load_config(repository / "zendev.toml")
 
     result = validate_repository(config)
 
@@ -215,7 +216,7 @@ def test_real_yaml_parser_preserves_quoted_commas_and_rejects_duplicate_keys() -
 
 def test_nested_config_keys_fail_closed(tmp_path: Path) -> None:
     repository = _copy_fixture(tmp_path, "vep")
-    policy = repository / "proposal.toml"
+    policy = repository / "zendev.toml"
     policy.write_text(
         policy.read_text(encoding="utf-8").replace(
             "minimum_sentences = 2\n",
@@ -224,7 +225,7 @@ def test_nested_config_keys_fail_closed(tmp_path: Path) -> None:
         encoding="utf-8",
     )
 
-    with pytest.raises(ProposalToolError) as error:
+    with pytest.raises(ToolError) as error:
         load_config(policy)
 
     assert error.value.diagnostic.code == "proposal.config.unknown-key"
@@ -238,7 +239,7 @@ def test_drafts_are_validated_against_their_configured_schema(tmp_path: Path) ->
         encoding="utf-8",
     )
 
-    result = validate_repository(load_config(repository / "proposal.toml"))
+    result = validate_repository(load_config(repository / "zendev.toml"))
 
     diagnostic = next(item for item in result.diagnostics if item.code == "proposal.frontmatter.schema")
     assert diagnostic.path == "drafts/temporal-model.md"
@@ -252,7 +253,7 @@ def test_missing_metadata_reports_schema_diagnostic_instead_of_crashing(tmp_path
         encoding="utf-8",
     )
 
-    result = validate_repository(load_config(repository / "proposal.toml"))
+    result = validate_repository(load_config(repository / "zendev.toml"))
 
     assert "proposal.frontmatter.schema" in _codes(result)
 
@@ -264,7 +265,7 @@ def test_noncanonical_markdown_filename_cannot_bypass_discovery(tmp_path: Path) 
         repository / "veps" / "composition.md",
     )
 
-    result = validate_repository(load_config(repository / "proposal.toml"))
+    result = validate_repository(load_config(repository / "zendev.toml"))
 
     assert "proposal.filename.invalid" in _codes(result)
 
@@ -277,7 +278,7 @@ def test_template_headings_are_the_executable_section_policy(tmp_path: Path) -> 
         encoding="utf-8",
     )
 
-    result = validate_repository(load_config(repository / "proposal.toml"))
+    result = validate_repository(load_config(repository / "zendev.toml"))
 
     diagnostic = next(item for item in result.diagnostics if item.code == "proposal.sections.missing")
     assert "Motivation" in diagnostic.message
@@ -291,7 +292,7 @@ def test_pre_proposal_cannot_reserve_a_concrete_identifier(tmp_path: Path) -> No
         encoding="utf-8",
     )
 
-    result = validate_repository(load_config(repository / "proposal.toml"))
+    result = validate_repository(load_config(repository / "zendev.toml"))
 
     assert "proposal.draft.concrete-id" in _codes(result)
 
@@ -307,7 +308,7 @@ def test_proposal_draft_uses_the_configured_summary_policy(tmp_path: Path) -> No
         encoding="utf-8",
     )
 
-    result = validate_repository(load_config(repository / "proposal.toml"))
+    result = validate_repository(load_config(repository / "zendev.toml"))
 
     diagnostic = next(item for item in result.diagnostics if item.code == "proposal.summary.sentence-count")
     assert diagnostic.path == "drafts/script-mode.md"
@@ -321,7 +322,7 @@ def test_graph_rejects_missing_targets(tmp_path: Path) -> None:
         encoding="utf-8",
     )
 
-    result = validate_repository(load_config(repository / "proposal.toml"))
+    result = validate_repository(load_config(repository / "zendev.toml"))
 
     assert "proposal.graph.missing-target" in _codes(result)
 
@@ -334,7 +335,7 @@ def test_graph_rejects_noncanonical_edges_even_when_schema_is_permissive(tmp_pat
         encoding="utf-8",
     )
 
-    result = validate_repository(load_config(repository / "proposal.toml"))
+    result = validate_repository(load_config(repository / "zendev.toml"))
 
     assert "proposal.graph.invalid-edge" in _codes(result)
 
@@ -347,14 +348,14 @@ def test_graph_rejects_requires_cycles(tmp_path: Path) -> None:
         encoding="utf-8",
     )
 
-    result = validate_repository(load_config(repository / "proposal.toml"))
+    result = validate_repository(load_config(repository / "zendev.toml"))
 
     assert "proposal.graph.requires-cycle" in _codes(result)
 
 
 def test_index_drift_is_read_only_until_write_is_explicit(tmp_path: Path) -> None:
     repository = _copy_fixture(tmp_path, "vep")
-    config = load_config(repository / "proposal.toml")
+    config = load_config(repository / "zendev.toml")
     state = load_repository(config)
     config.index_path.write_text("{}\n", encoding="utf-8")
 
@@ -363,15 +364,17 @@ def test_index_drift_is_read_only_until_write_is_explicit(tmp_path: Path) -> Non
     assert diagnostic.code == "proposal.index.drift"
     assert diagnostic.hint == "Run `zendev proposal check --fix` and commit the result."
     assert config.index_path.read_text(encoding="utf-8") == "{}\n"
-    assert write_index(config, state)
+    plan = plan_changes(config)
+    assert config.index_path in plan.updates
+    apply_plan(plan)
     assert check_index(config, state) is None
-    assert not write_index(config, state)
+    assert not plan_changes(config).updates
 
 
 def test_check_cli_emits_stable_json(tmp_path: Path) -> None:
     repository = _copy_fixture(tmp_path, "vep")
 
-    result = runner.invoke(proposal_app, ["check", "--config", str(repository / "proposal.toml"), "--json"])
+    result = runner.invoke(proposal_app, ["check", "--config", str(repository / "zendev.toml"), "--format", "json"])
 
     assert result.exit_code == 0
     payload = json.loads(result.stdout)
@@ -395,11 +398,11 @@ def test_check_cli_distinguishes_validation_and_tool_errors(tmp_path: Path) -> N
 
     validation = runner.invoke(
         proposal_app,
-        ["check", "--config", str(repository / "proposal.toml"), "--json"],
+        ["check", "--config", str(repository / "zendev.toml"), "--format", "json"],
     )
     tool = runner.invoke(
         proposal_app,
-        ["check", "--config", str(repository / "missing.toml"), "--json"],
+        ["check", "--config", str(repository / "missing.toml"), "--format", "json"],
     )
     validation_payload = json.loads(validation.stdout)
     tool_payload = json.loads(tool.stdout)
@@ -407,7 +410,7 @@ def test_check_cli_distinguishes_validation_and_tool_errors(tmp_path: Path) -> N
     assert validation.exit_code == 1
     assert validation_payload["diagnostics"][0]["code"] == "proposal.draft.concrete-id"
     assert tool.exit_code == 2
-    assert tool_payload["diagnostics"][0]["code"] == "proposal.config.missing"
+    assert tool_payload["diagnostics"][0]["code"] == "config.read"
 
 
 def test_check_cli_is_read_only_without_fix(tmp_path: Path) -> None:
@@ -417,7 +420,7 @@ def test_check_cli_is_read_only_without_fix(tmp_path: Path) -> None:
 
     checked = runner.invoke(
         proposal_app,
-        ["check", "--config", str(repository / "proposal.toml"), "--json"],
+        ["check", "--config", str(repository / "zendev.toml"), "--format", "json"],
     )
     payload = json.loads(checked.stdout)
 
@@ -434,7 +437,7 @@ def test_check_cli_fix_writes_the_index(tmp_path: Path) -> None:
 
     written = runner.invoke(
         proposal_app,
-        ["check", "--config", str(repository / "proposal.toml"), "--fix"],
+        ["check", "--config", str(repository / "zendev.toml"), "--fix"],
     )
 
     assert written.exit_code == 0
@@ -453,7 +456,7 @@ def test_check_cli_fix_does_not_write_when_documents_are_invalid(tmp_path: Path)
 
     result = runner.invoke(
         proposal_app,
-        ["check", "--config", str(repository / "proposal.toml"), "--fix", "--json"],
+        ["check", "--config", str(repository / "zendev.toml"), "--fix", "--format", "json"],
     )
     payload = json.loads(result.stdout)
 
@@ -472,7 +475,7 @@ def test_history_rejects_invalid_transition(tmp_path: Path) -> None:
         encoding="utf-8",
     )
 
-    result = validate_repository(load_config(repository / "proposal.toml"), base_ref="HEAD")
+    result = validate_repository(load_config(repository / "zendev.toml"), base_ref="HEAD")
 
     assert "proposal.history.invalid-transition" in _codes(result)
 
@@ -485,12 +488,12 @@ def test_history_allows_an_exact_documented_waiver(tmp_path: Path) -> None:
         proposal.read_text(encoding="utf-8").replace("status: Accepted", "status: Draft"),
         encoding="utf-8",
     )
-    policy = repository / "proposal.toml"
+    policy = repository / "zendev.toml"
     policy.write_text(
         policy.read_text(encoding="utf-8")
         + """
 
-[[history.waivers]]
+[[proposal.history.waivers]]
 path = "veps/VEP-0000-foundation.md"
 from_status = "Accepted"
 to_status = "Draft"
@@ -509,7 +512,7 @@ def test_history_rejects_deleted_formal_records(tmp_path: Path) -> None:
     _commit_fixture(repository)
     (repository / "veps" / "VEP-0001-composition.md").unlink()
 
-    result = validate_repository(load_config(repository / "proposal.toml"), base_ref="HEAD")
+    result = validate_repository(load_config(repository / "zendev.toml"), base_ref="HEAD")
 
     assert "proposal.history.deleted" in _codes(result)
 
@@ -530,8 +533,8 @@ def test_history_fails_closed_on_invalid_base_frontmatter(tmp_path: Path) -> Non
         encoding="utf-8",
     )
 
-    with pytest.raises(ProposalToolError) as error:
-        validate_repository(load_config(repository / "proposal.toml"), base_ref="HEAD")
+    with pytest.raises(ToolError) as error:
+        validate_repository(load_config(repository / "zendev.toml"), base_ref="HEAD")
 
     assert error.value.diagnostic.code == "proposal.history.frontmatter"
 
@@ -540,8 +543,8 @@ def test_missing_base_ref_is_a_tool_error(tmp_path: Path) -> None:
     repository = _copy_fixture(tmp_path, "vep")
     _commit_fixture(repository)
 
-    with pytest.raises(ProposalToolError) as error:
-        validate_repository(load_config(repository / "proposal.toml"), base_ref="missing")
+    with pytest.raises(ToolError) as error:
+        validate_repository(load_config(repository / "zendev.toml"), base_ref="missing")
 
     assert error.value.diagnostic.code == "proposal.history.base-ref"
 
@@ -554,7 +557,7 @@ def test_defines_requires_a_matching_anchor(tmp_path: Path) -> None:
         encoding="utf-8",
     )
 
-    result = validate_repository(load_config(repository / "proposal.toml"))
+    result = validate_repository(load_config(repository / "zendev.toml"))
 
     assert "proposal.defines.missing-anchor" in _codes(result)
 
@@ -567,7 +570,7 @@ def test_defines_rejects_an_undeclared_anchor(tmp_path: Path) -> None:
         encoding="utf-8",
     )
 
-    result = validate_repository(load_config(repository / "proposal.toml"))
+    result = validate_repository(load_config(repository / "zendev.toml"))
 
     assert "proposal.defines.undeclared-anchor" in _codes(result)
 
@@ -587,6 +590,6 @@ def test_defines_rejects_duplicate_current_owners(tmp_path: Path) -> None:
         encoding="utf-8",
     )
 
-    result = validate_repository(load_config(repository / "proposal.toml"))
+    result = validate_repository(load_config(repository / "zendev.toml"))
 
     assert "proposal.defines.duplicate-owner" in _codes(result)

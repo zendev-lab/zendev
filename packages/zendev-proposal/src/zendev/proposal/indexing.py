@@ -3,49 +3,17 @@
 from __future__ import annotations
 
 import json
-import re
 
+from zendev.core.diagnostics import ToolError
+from zendev.core.source import read_text
+from zendev.proposal.graph import validate_graph
 from zendev.proposal.model import (
     Diagnostic,
     ProposalConfig,
     ProposalDocument,
-    ProposalToolError,
     RepositoryState,
 )
-
-
-def normalize_reference(config: ProposalConfig, value: object) -> str | None:
-    """Normalize integer or canonical string edges to a display identifier."""
-
-    if isinstance(value, int) and not isinstance(value, bool) and 0 <= value < 10**config.number_width:
-        return config.format_identifier(value)
-    if not isinstance(value, str):
-        return None
-    pattern = rf"^{re.escape(config.prefix)}-(\d{{{config.number_width}}})$"
-    return value if re.fullmatch(pattern, value) is not None else None
-
-
-def edge_identifiers(config: ProposalConfig, document: ProposalDocument, field: str) -> tuple[str, ...]:
-    raw = document.metadata.get(field)
-    if not isinstance(raw, list):
-        return ()
-    return tuple(identifier for value in raw if (identifier := normalize_reference(config, value)) is not None)
-
-
-def reference_number(config: ProposalConfig, value: object) -> int | None:
-    """Normalize an integer or canonical string edge to its numeric proposal key."""
-
-    identifier = normalize_reference(config, value)
-    if identifier is None:
-        return None
-    return int(identifier.removeprefix(f"{config.prefix}-"))
-
-
-def edge_numbers(config: ProposalConfig, document: ProposalDocument, field: str) -> tuple[int, ...]:
-    raw = document.metadata.get(field)
-    if not isinstance(raw, list):
-        return ()
-    return tuple(number for value in raw if (number := reference_number(config, value)) is not None)
+from zendev.proposal.references import edge_numbers, reference_number
 
 
 def _document_sort_key(config: ProposalConfig, document: ProposalDocument) -> tuple[int, int, str]:
@@ -57,10 +25,6 @@ def _document_sort_key(config: ProposalConfig, document: ProposalDocument) -> tu
 
 def build_index(config: ProposalConfig, state: RepositoryState) -> dict[str, object]:
     """Build the configured machine-readable index without writing it."""
-
-    # Validation uses reference parsing from this module; defer this import to
-    # share the graph rules without an import-time cycle.
-    from zendev.proposal.validation import _validate_graph
 
     diagnostics = list(state.diagnostics)
     documents = state.formal_documents
@@ -77,9 +41,9 @@ def build_index(config: ProposalConfig, state: RepositoryState) -> dict[str, obj
             )
         else:
             seen.add(number)
-    _validate_graph(config, state, diagnostics)
+    validate_graph(config, state, diagnostics)
     if diagnostics:
-        raise ProposalToolError(sorted(diagnostics, key=Diagnostic.sort_key)[0])
+        raise ToolError(sorted(diagnostics, key=Diagnostic.sort_key)[0])
 
     inverse_relations = {
         field.key for field in config.index.fields if field.source == "inverse" and field.key is not None
@@ -134,11 +98,11 @@ def check_index(
 ) -> Diagnostic | None:
     expected = expected_index_text(config, state)
     try:
-        current = config.index_path.read_text(encoding="utf-8")
+        current = read_text(config.index_path)
     except FileNotFoundError:
         current = None
     except (OSError, UnicodeError) as error:
-        raise ProposalToolError(
+        raise ToolError(
             Diagnostic(
                 code="proposal.index.read",
                 path=config.relative_path(config.index_path),
@@ -153,26 +117,3 @@ def check_index(
         message="committed proposal index is missing or out of date",
         hint=f"Run `{fix_invocation}` and commit the result.",
     )
-
-
-def write_index(config: ProposalConfig, state: RepositoryState) -> bool:
-    """Write the expected index and return whether the file changed."""
-
-    expected = expected_index_text(config, state)
-    try:
-        current = config.index_path.read_text(encoding="utf-8") if config.index_path.exists() else None
-        if current == expected:
-            return False
-        from zendev.proposal.transaction import commit_files, snapshot_inputs
-
-        before = snapshot_inputs(config)
-        commit_files(config, {config.index_path: expected.encode("utf-8")}, before)
-    except (OSError, UnicodeError) as error:
-        raise ProposalToolError(
-            Diagnostic(
-                code="proposal.index.write",
-                path=config.relative_path(config.index_path),
-                message=f"failed to write proposal index: {error}",
-            )
-        ) from error
-    return True

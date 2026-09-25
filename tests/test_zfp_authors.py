@@ -34,12 +34,12 @@ def test_zfp_rejects_invalid_authors_without_guessing_or_writing(tmp_path: Path,
     root = Path(__file__).parents[1]
     for directory in ("zfps", "templates", "schemas"):
         shutil.copytree(root / directory, tmp_path / directory)
-    for filename in ("proposal.toml", "zfps-index.json"):
+    for filename in ("zendev.toml", "zfps-index.json"):
         shutil.copyfile(root / filename, tmp_path / filename)
     proposal = tmp_path / "zfps/ZFP-0000-governance.md"
     proposal.write_text(proposal.read_text().replace('authors:\n  - "zrr1999"', "authors: " + json.dumps(authors)))
     before = {path: path.read_bytes() for path in tmp_path.rglob("*") if path.is_file()}
-    result = CliRunner().invoke(app, ["check", "--config", str(tmp_path / "proposal.toml"), "--fix", "--json"])
+    result = CliRunner().invoke(app, ["check", "--config", str(tmp_path / "zendev.toml"), "--fix", "--format", "json"])
     assert result.exit_code == 1, result.output
     payload = json.loads(result.stdout)
     assert any(item["code"] == "proposal.frontmatter.schema" for item in payload["diagnostics"])

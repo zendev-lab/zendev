@@ -11,7 +11,8 @@ from yaml.constructor import ConstructorError
 from yaml.nodes import MappingNode
 from yaml.resolver import BaseResolver
 
-from zendev.proposal._markdown_scan import scan_markdown
+from zendev.core.markdown import scan_markdown
+from zendev.core.source import read_text
 from zendev.proposal.model import (
     Diagnostic,
     ProposalConfig,
@@ -97,6 +98,11 @@ def _yaml_line(error: ValueError) -> int | None:
     return mark.line + 2 if mark is not None else 1
 
 
+def frontmatter_lines(raw: str) -> dict[str, int]:
+    tree = yaml.compose(raw, Loader=FrontmatterLoader)
+    return {str(key.value): key.start_mark.line + 2 for key, _ in tree.value} if isinstance(tree, MappingNode) else {}
+
+
 def _read_document(
     config: ProposalConfig, path: Path, *, is_draft: bool
 ) -> tuple[ProposalDocument | None, Diagnostic | None]:
@@ -108,7 +114,7 @@ def _read_document(
             message="proposal documents must be regular repository-local files",
         )
     try:
-        text = path.read_text(encoding="utf-8")
+        text = read_text(path)
     except (OSError, UnicodeError) as error:
         return None, Diagnostic(
             code="proposal.document.read",
@@ -125,6 +131,7 @@ def _read_document(
             line=_yaml_line(error),
             message=str(error).removeprefix(f"{relative}: "),
         )
+    field_lines = frontmatter_lines(raw)
     return (
         ProposalDocument(
             path=path,
@@ -133,6 +140,7 @@ def _read_document(
             metadata=metadata,
             body=body,
             is_draft=is_draft,
+            field_lines=field_lines,
         ),
         None,
     )
@@ -201,7 +209,7 @@ def h2_headings(markdown: str) -> tuple[str, ...]:
 def iter_markdown_lines(paths: tuple[Path, ...]) -> Iterator[tuple[Path, int, str]]:
     for path in sorted(paths):
         try:
-            text = path.read_text(encoding="utf-8")
+            text = read_text(path)
         except (OSError, UnicodeError):
             continue
         for line_number, line in enumerate(text.splitlines(), start=1):
