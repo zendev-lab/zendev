@@ -11,7 +11,8 @@ from tempfile import TemporaryDirectory
 from zipfile import ZipFile
 
 PACKAGES = {
-    "zendev": {"zendev", "zendev-core", "zendev-message", "zendev-proposal", "zendev-log"},
+    "zendev": {"zendev", "zendev-core", "zendev-message", "zendev-proposal", "zendev-log", "zendev-evolution"},
+    "zendev-evolution": {"zendev-evolution", "zendev-core"},
     "zendev-core": {"zendev-core"},
     "zendev-message": {"zendev-message", "zendev-core"},
     "zendev-proposal": {"zendev-proposal", "zendev-core"},
@@ -45,7 +46,7 @@ def verify(directory: Path, temporary: Path) -> None:
             expected = (
                 PACKAGES[name] - {name}
                 if name == "zendev"
-                else ({"zendev-core"} if name in {"zendev-message", "zendev-proposal"} else set())
+                else ({"zendev-core"} if name in {"zendev-message", "zendev-proposal", "zendev-evolution"} else set())
             )
             assert siblings == expected, (name, siblings)
             for member in archive.namelist():
@@ -55,7 +56,7 @@ def verify(directory: Path, temporary: Path) -> None:
                 owned[member] = name
     assert set(wheels) == set(PACKAGES) and len(versions) == 1, (wheels, versions)
     assert "zendev/__init__.py" not in owned
-    for component in ("core", "message", "proposal", "log"):
+    for component in ("core", "message", "proposal", "log", "evolution"):
         assert f"zendev/{component}/py.typed" in owned
     for name, expected in PACKAGES.items():
         environment = temporary / name
@@ -89,6 +90,10 @@ if "zendev-message" in installed:
     assert render_message(MessageDraft("add", "feat", "sparkles")) == "✨ feat: add"
 if "zendev-proposal" in installed:
     from zendev.proposal import load_config, check_project, plan_changes
+if "zendev-evolution" in installed:
+    from zendev.evolution import check_document
+    assert not check_document("").ok
+    assert "typer" not in __import__("sys").modules
 if "zendev-log" in installed:
     from zendev.log import setup_log
     setup_log()
@@ -108,6 +113,14 @@ if "zendev-log" in installed:
             ]
         if "zendev-proposal" in expected:
             commands += [("zendev-proposal", ["--help"])]
+        if "zendev-evolution" in expected:
+            source = temporary / "origin.md"
+            source.write_text("Original intent.", encoding="utf-8")
+            document = temporary / f"{name}-evolution.md"
+            prefix = ["evolution"] if name == "zendev" else []
+            command = "zendev" if name == "zendev" else "zendev-evolution"
+            for args in (["init", "--from", str(source)], ["list"], ["check"]):
+                commands.append((command, [*prefix, *args, "--file", str(document), "--format", "json"]))
         for command, args in commands:
             binary = bin_dir / (command + ".exe" if sys.platform == "win32" else command)
             completed = subprocess.run([str(binary), *args], cwd=temporary, check=True, capture_output=True, text=True)

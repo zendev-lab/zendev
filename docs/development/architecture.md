@@ -4,10 +4,12 @@
 graph TD
   CLI["zendev: CLI composition"] --> Message["zendev-message"]
   CLI --> Proposal["zendev-proposal"]
+  CLI --> Evolution["zendev-evolution"]
   CLI --> Log["zendev-log"]
   CLI --> Core["zendev-core"]
   Message --> Core
   Proposal --> Core
+  Evolution --> Core
 ```
 
 Core owns configuration discovery, diagnostic rendering, operation-scoped source
@@ -41,13 +43,19 @@ come from source positions rather than parsing human-readable error messages.
 retains remaining diagnostics and withholds an invalid index. `--diff` never
 writes. Repository configuration, JSON schemas and templates still own policy.
 
+Evolution exposes pure `check_document`, which returns immutable sections or shared
+diagnostics. It consumes core Markdown facts; evolution owns the fixed document
+rules. The CLI alone reads UTF-8 files, creates new documents exclusively, and
+renders human, JSON, or GitHub output. It has no proposal dependency, configuration
+discovery, repair transaction, or auxiliary index. Editors own subsequent changes.
+
 `just check` and `just ci` do not format source files; `just format` is explicit.
 `just packages` builds wheels, checks version pins and namespace ownership, and
-exercises five isolated installations outside the checkout.
+exercises six isolated installations outside the checkout.
 
 [Hatch metadata hooks](https://hatch.pypa.io/latest/plugins/metadata-hook/reference/)
 resolve sibling pins from the VCS version. Component builds reference the same root hook file from the complete repository
-checkout. Releases publish independently installable wheels. Release ordering is core/log, then message/proposal, then
+checkout. Releases publish independently installable wheels. Release ordering is core/log, then message/proposal/evolution, then
 the CLI distribution. uv cache keys include the Git commit/tags and all workspace build metadata, so
 editable installs rebuild together after a commit or metadata edit.
 See [uv dynamic metadata caching](https://docs.astral.sh/uv/concepts/cache/#dynamic-metadata).

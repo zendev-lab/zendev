@@ -78,6 +78,7 @@ path = "hatch_build.py"
 dependencies = [
   "typer>=0.27",
   "zendev-core=={version}",
+  "zendev-evolution=={version}",
   "zendev-log=={version}",
   "zendev-proposal=={version}",
   "zendev-message=={version}",
@@ -140,6 +141,7 @@ default-groups = ["check", "test"]
 
 [tool.uv.sources]
 zendev-core = { workspace = true }
+zendev-evolution = { workspace = true }
 zendev-log = { workspace = true }
 zendev-proposal = { workspace = true }
 zendev-message = { workspace = true }

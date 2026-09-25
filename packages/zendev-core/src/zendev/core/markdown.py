@@ -1,4 +1,4 @@
-"""Shared syntax-aware Markdown facts for proposal validation and repair."""
+"""Shared syntax-aware Markdown facts without domain policy."""
 
 from __future__ import annotations
 
@@ -19,6 +19,7 @@ class Heading:
     start: int
     end: int
     plain: str = ""
+    markup: str = ""
 
 
 @dataclass(frozen=True)
@@ -138,7 +139,9 @@ def _scan_markdown(markdown: str, marker: str | None = None) -> MarkdownFacts:
             plain = "".join(
                 child.content for child in (inline.children or []) if child.type in {"text", "code_inline", "image"}
             )
-            headings.append(Heading(int(token.tag[1:]), inline.content, token.map[0], token.map[1], plain))
+            headings.append(
+                Heading(int(token.tag[1:]), inline.content, token.map[0], token.map[1], plain, token.markup)
+            )
         if (
             marker is not None
             and token.type in {"paragraph_open", "html_block", "heading_open", "hr"}

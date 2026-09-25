@@ -114,3 +114,11 @@ def test_renderers_share_diagnostics_and_escape_annotation_data() -> None:
     assert github.count("\n") == 0
     assert "a%2Cb%3Ac.md" in github
     assert "%0A" in github and "%25" in github
+
+
+def test_markdown_heading_facts_preserve_source_syntax() -> None:
+    facts = scan_markdown("# ATX\n\nSetext\n---\n\n> ## Nested\n\n```md\n## Example\n```\n")
+    assert [(h.text, h.level, h.markup, h.start, h.end) for h in facts.headings] == [
+        ("ATX", 1, "#", 0, 1),
+        ("Setext", 2, "-", 2, 4),
+    ]

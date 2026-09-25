@@ -12,3 +12,11 @@
   pass_filenames: false
   always_run: true
   stages: [pre-commit]
+- id: zendev-evolution-check
+  name: zendev evolution check
+  description: Validate initial intent and dated project evolution.
+  entry: zendev evolution check
+  language: python
+  pass_filenames: false
+  always_run: true
+  stages: [pre-commit]

@@ -6,6 +6,7 @@ requires-python = ">=3.12"
 members = [
     "zendev",
     "zendev-core",
+    "zendev-evolution",
     "zendev-log",
     "zendev-message",
     "zendev-proposal",
@@ -897,6 +898,7 @@ source = { editable = "." }
 dependencies = [
     { name = "typer" },
     { name = "zendev-core" },
+    { name = "zendev-evolution" },
     { name = "zendev-log" },
     { name = "zendev-message" },
     { name = "zendev-proposal" },
@@ -930,6 +932,7 @@ test = [
 requires-dist = [
     { name = "typer", specifier = ">=0.27" },
     { name = "zendev-core", editable = "packages/zendev-core" },
+    { name = "zendev-evolution", editable = "packages/zendev-evolution" },
     { name = "zendev-log", editable = "packages/zendev-log" },
     { name = "zendev-message", editable = "packages/zendev-message" },
     { name = "zendev-proposal", editable = "packages/zendev-proposal" },
@@ -966,6 +969,20 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [{ name = "markdown-it-py", specifier = ">=4.0" }]
+
+[[package]]
+name = "zendev-evolution"
+source = { editable = "packages/zendev-evolution" }
+dependencies = [
+    { name = "typer" },
+    { name = "zendev-core" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "typer", specifier = ">=0.27" },
+    { name = "zendev-core", editable = "packages/zendev-core" },
+]
 
 [[package]]
 name = "zendev-log"

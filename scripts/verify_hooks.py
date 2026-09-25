@@ -29,15 +29,20 @@ def main() -> None:
             "SETUPTOOLS_SCM_PRETEND_VERSION": metadata["Version"],
             "UV_NO_SOURCES": "true",
         }
+        document = temporary / "EVOLUTION.md"
+        document.write_bytes((root / "templates" / "evolution.md").read_bytes())
         config = temporary / "prek.toml"
         dependencies = json.dumps([str(path) for path in component_wheels])
         config.write_text(
             f"[[repos]]\nrepo = {json.dumps(root.as_uri())}\nrev = {json.dumps(revision)}\nhooks = [\n"
             f'  {{ id = "zendev-proposal-check", additional_dependencies = {dependencies} }},\n'
-            f'  {{ id = "zendev-message-check", additional_dependencies = {dependencies} }},\n]\n'
+            f'  {{ id = "zendev-message-check", additional_dependencies = {dependencies} }},\n'
+            f'  {{ id = "zendev-evolution-check", args = ["--file", {json.dumps(str(document))}], '
+            f"additional_dependencies = {dependencies} }},\n]\n"
         )
         command = ["uvx", "prek", "run", "--config", str(config)]
         subprocess.run([*command, "zendev-proposal-check", "--all-files"], cwd=root, env=environment, check=True)
+        subprocess.run([*command, "zendev-evolution-check", "--all-files"], cwd=root, env=environment, check=True)
         message = temporary / "COMMIT_EDITMSG"
         message.write_text("Merge branch main\n")
         subprocess.run(

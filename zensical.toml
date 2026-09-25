@@ -22,6 +22,7 @@ nav = [
     { "Migration" = "guides/migration.md" },
     { "Message checks" = "guides/message-checks.md" },
     { "Proposals" = "guides/proposals.md" },
+    { "Project evolution" = "guides/evolution.md" },
   ] },
   { "Integrations" = [
     "integrations/index.md",
