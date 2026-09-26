@@ -1,10 +1,10 @@
 ---
-name: proposal
+name: add-proposal
 description: >
   Assess whether a change has enough impact to need a durable design proposal, then write, revise, or review it using the repository's proposal policy and zendev validation. Use for “是否需要提案”, “写提案”, “修改提案”, RFC/ZFP review, or a new design decision with substantial compatibility, migration, ownership, privacy, or governance consequences. Ordinary features, compatible options, aliases, bug fixes, and internal refactors do not trigger proposals merely because they change code or expose an interface. Do not use for routine implementation, project planning, evolution logs, or Git delivery.
 ---
 
-# Proposal
+# Add Proposal
 
 Keep the reasoning for consequential design decisions reviewable and durable.
 The first result is a decision about whether a proposal is needed. Creating a
