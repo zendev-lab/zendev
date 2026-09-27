@@ -21,8 +21,7 @@ uvx zendev --help
 For a narrower consumer, install a component distribution directly:
 
 ```shell
-uv add --dev zendev-commit
-uv add --dev zendev-review
+uv add --dev zendev-message
 uv add --dev zendev-proposal
 uv add zendev-log
 ```

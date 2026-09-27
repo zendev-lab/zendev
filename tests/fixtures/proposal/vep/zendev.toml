@@ -1,0 +1,60 @@
+version = 1
+
+[proposal]
+prefix = "VEP"
+number_field = "vep"
+documents_dir = "veps"
+schema = "schemas/vep.schema.json"
+metadata_title = "plain"
+
+[proposal.drafts]
+directory = "drafts"
+schema = "schemas/draft.schema.json"
+marker = "> Pre-VEP design draft. Non-normative."
+pre_proposal = true
+
+[proposal.templates]
+Technical = "templates/technical.md"
+
+[proposal.summary]
+prefix = "**Executive Summary:**"
+minimum_sentences = 2
+maximum_sentences = 4
+
+[proposal.graph]
+fields = ["requires"]
+requires_field = "requires"
+accepted_status = "Accepted"
+superseded_status = "Superseded"
+
+[proposal.history]
+initial_status = "Draft"
+protect_records = true
+bootstrap_numbers = [0]
+
+[proposal.history.transitions]
+Draft = ["Draft", "Review", "Withdrawn"]
+Review = ["Review", "Draft", "Accepted", "Rejected", "Withdrawn"]
+Accepted = ["Accepted", "Superseded"]
+Rejected = ["Rejected"]
+Withdrawn = ["Withdrawn"]
+Superseded = ["Superseded"]
+
+[proposal.index]
+version = 2
+path = "veps-index.json"
+entries_key = "veps"
+fields = [
+  "vep",
+  { name = "path", source = "path" },
+  "title",
+  "status",
+  "type",
+  "requires",
+  "defines",
+  { name = "required_by", source = "inverse", key = "requires" },
+]
+
+[proposal.defines]
+field = "defines"
+anchor_prefix = "term-"

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -10,7 +11,8 @@ from yaml.constructor import ConstructorError
 from yaml.nodes import MappingNode
 from yaml.resolver import BaseResolver
 
-from zendev.proposal._markdown_scan import iter_lines_outside_fences
+from zendev.core.markdown import scan_markdown
+from zendev.core.source import read_text
 from zendev.proposal.model import (
     Diagnostic,
     ProposalConfig,
@@ -81,6 +83,10 @@ def parse_frontmatter(raw: str, path: str) -> dict[str, object]:
         raise ValueError(f"{path}: invalid YAML frontmatter: {error}") from error
     if not isinstance(value, dict) or not all(isinstance(key, str) for key in value):
         raise ValueError(f"{path}: YAML frontmatter must be a mapping with string keys")
+    try:
+        json.dumps(value, allow_nan=False)
+    except (TypeError, ValueError, RecursionError) as error:
+        raise ValueError(f"{path}: frontmatter must contain finite JSON-compatible values: {error}") from error
     return value
 
 
@@ -92,12 +98,23 @@ def _yaml_line(error: ValueError) -> int | None:
     return mark.line + 2 if mark is not None else 1
 
 
+def frontmatter_lines(raw: str) -> dict[str, int]:
+    tree = yaml.compose(raw, Loader=FrontmatterLoader)
+    return {str(key.value): key.start_mark.line + 2 for key, _ in tree.value} if isinstance(tree, MappingNode) else {}
+
+
 def _read_document(
     config: ProposalConfig, path: Path, *, is_draft: bool
 ) -> tuple[ProposalDocument | None, Diagnostic | None]:
     relative = config.relative_path(path)
+    if path.is_symlink() or not path.resolve().is_relative_to(config.root):
+        return None, Diagnostic(
+            code="proposal.document.path",
+            path=relative,
+            message="proposal documents must be regular repository-local files",
+        )
     try:
-        text = path.read_text(encoding="utf-8")
+        text = read_text(path)
     except (OSError, UnicodeError) as error:
         return None, Diagnostic(
             code="proposal.document.read",
@@ -114,6 +131,7 @@ def _read_document(
             line=_yaml_line(error),
             message=str(error).removeprefix(f"{relative}: "),
         )
+    field_lines = frontmatter_lines(raw)
     return (
         ProposalDocument(
             path=path,
@@ -122,6 +140,7 @@ def _read_document(
             metadata=metadata,
             body=body,
             is_draft=is_draft,
+            field_lines=field_lines,
         ),
         None,
     )
@@ -138,6 +157,16 @@ def load_repository(config: ProposalConfig) -> RepositoryState:
 
     diagnostics: list[Diagnostic] = []
     formal: list[ProposalDocument] = []
+    for directory in [config.documents_dir, *([config.drafts.directory] if config.drafts else [])]:
+        for path in sorted(directory.rglob("*")):
+            if path.suffix.lower() == ".md" and (path.parent != directory or path.suffix != ".md"):
+                diagnostics.append(
+                    Diagnostic(
+                        code="proposal.document.layout",
+                        path=config.relative_path(path),
+                        message="Markdown proposals must use .md and reside directly in the configured directory",
+                    )
+                )
     formal_paths = tuple(sorted(path for path in config.documents_dir.glob("*.md") if path.name != "README.md"))
     if not formal_paths:
         diagnostics.append(
@@ -174,18 +203,13 @@ def load_repository(config: ProposalConfig) -> RepositoryState:
 def h2_headings(markdown: str) -> tuple[str, ...]:
     """Return H2 headings outside fenced code blocks, preserving order."""
 
-    headings: list[str] = []
-    for line in iter_lines_outside_fences(markdown):
-        stripped = line.strip()
-        if stripped.startswith("## ") and stripped[3:].strip():
-            headings.append(stripped[3:].strip())
-    return tuple(headings)
+    return tuple(heading.text for heading in scan_markdown(markdown).headings if heading.level == 2)
 
 
 def iter_markdown_lines(paths: tuple[Path, ...]) -> Iterator[tuple[Path, int, str]]:
     for path in sorted(paths):
         try:
-            text = path.read_text(encoding="utf-8")
+            text = read_text(path)
         except (OSError, UnicodeError):
             continue
         for line_number, line in enumerate(text.splitlines(), start=1):

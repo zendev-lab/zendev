@@ -13,14 +13,14 @@ jobs:
       pull-requests: read
     steps:
       - uses: actions/checkout@v4
-      - uses: zendev-lab/zendev/actions/validate-title@v0.3.0
+      - uses: zendev-lab/zendev/actions/validate-title@<release-or-commit>
         with:
           text: ${{ github.event.pull_request.title }}
-          profile: auto
 ```
 
-`text` is required. `profile` defaults to `auto` and accepts `zendev`,
-`conventional`, or `gitmoji`.
+`text` is required. Omit `profile` to use repository configuration, or override
+with `zendev`, `conventional`, or `gitmoji`. Replace `<release-or-commit>` with
+a pinned revision containing the domain-architecture migration.
 
 ## Validate a PR body
 
@@ -32,16 +32,18 @@ jobs:
       pull-requests: read
     steps:
       - uses: actions/checkout@v4
-      - uses: zendev-lab/zendev/actions/validate-body@v0.3.0
+      - uses: zendev-lab/zendev/actions/validate-body@<release-or-commit>
         with:
           body: ${{ github.event.pull_request.body }}
           template: .github/pull_request_template.md
 ```
 
-`body` is required. `template` defaults to
-`.github/pull_request_template.md`. Checklist enforcement is optional through
-`require-checklist`, `checklist-section`, and `fail-on-empty-checklist`.
+`body` is required. Omitted template/checklist inputs use repository configuration;
+without configuration the template is `.github/pull_request_template.md` and
+checklist enforcement is disabled. Override with `template`, `require-checklist`,
+`checklist-section`, or `fail-on-empty-checklist`. Boolean overrides accept `true`
+or `false`. Both Actions emit GitHub annotations from the shared diagnostic renderer.
 
-The checkout step is required because `profile: auto` and the body template are
+The checkout step is required because configuration discovery and the body template are
 repository-local inputs. Give the job read-only permissions unless another step
 has a separately justified need.

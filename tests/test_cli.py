@@ -13,8 +13,9 @@ from typer.testing import CliRunner
 
 from zendev.__main__ import app as module_app
 from zendev.cli import app as zendev_app
-from zendev.commit import commit_app
-from zendev.message import app as message_app
+from zendev.evolution.cli import app as evolution_app
+from zendev.message.cli import app as message_app
+from zendev.message.interactive import app as commit_app
 from zendev.proposal.cli import app as proposal_app
 
 runner = CliRunner()
@@ -29,8 +30,8 @@ def _copy_fixture(tmp_path: Path, name: str) -> Path:
 
 @pytest.mark.parametrize(
     "app",
-    [zendev_app, commit_app, message_app, proposal_app],
-    ids=["zendev", "commit", "message", "proposal"],
+    [zendev_app, commit_app, message_app, proposal_app, evolution_app],
+    ids=["zendev", "commit", "message", "proposal", "evolution"],
 )
 def test_public_cli_help_is_available(app: typer.Typer) -> None:
     result = runner.invoke(app, ["--help"])
@@ -45,7 +46,7 @@ def test_unified_cli_groups_workflows_by_domain() -> None:
 
     assert result.exit_code == 0
     commands = result.output.split("Commands:", 1)[-1]
-    for command in ("commit", "message", "proposal"):
+    for command in ("commit", "message", "proposal", "evolution"):
         assert re.search(rf"^\s+{command}\b", commands, re.MULTILINE)
     for command in ("check", "commit-msg", "review", "validate-title", "validate-body"):
         assert command not in result.output
@@ -59,7 +60,7 @@ def test_unified_cli_message_check_validates_a_title() -> None:
     result = runner.invoke(zendev_app, ["message", "check", "--title", "--text", "✨ feat: add unified CLI"])
 
     assert result.exit_code == 0
-    assert "Title format is valid." in result.output
+    assert "Check passed." in result.output
 
 
 def test_unified_cli_message_check_validates_a_message_file(tmp_path: Path) -> None:
@@ -93,7 +94,7 @@ def test_unified_cli_drift_hint_uses_zendev_proposal_check(tmp_path: Path) -> No
 
     result = runner.invoke(
         zendev_app,
-        ["proposal", "check", "--config", str(repository / "proposal.toml"), "--json"],
+        ["proposal", "check", "--config", str(repository / "zendev.toml"), "--format", "json"],
     )
     payload = json.loads(result.stdout)
 
@@ -107,6 +108,8 @@ def test_public_hooks_use_check_ids() -> None:
 
     assert "id: zendev-message-check" in text
     assert "id: zendev-proposal-check" in text
+    assert "id: zendev-evolution-check" in text
+    assert "entry: zendev evolution check" in text
     assert "entry: zendev message check" in text
     assert "entry: zendev proposal check" in text
     for removed in ("zendev-commit-msg", "zendev-proposal-index", "zendev-validate-title", "zendev-validate-body"):

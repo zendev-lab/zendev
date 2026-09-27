@@ -14,7 +14,9 @@ DEFAULT_SOURCE_URL = (
     "https://raw.githubusercontent.com/carloscuesta/gitmoji/"
     f"{DEFAULT_UPSTREAM_COMMIT}/packages/gitmojis/src/gitmojis.json"
 )
-DEFAULT_OUTPUT = Path(__file__).parents[1] / "packages" / "zendev-commit" / "src" / "zendev" / "data" / "gitmojis.json"
+DEFAULT_OUTPUT = (
+    Path(__file__).parents[1] / "packages" / "zendev-message" / "src" / "zendev" / "message" / "data" / "gitmojis.json"
+)
 
 app = typer.Typer(
     add_completion=False,

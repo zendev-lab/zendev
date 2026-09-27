@@ -60,6 +60,42 @@
       "created": "2026-09-02",
       "supersedes": [],
       "superseded_by": []
+    },
+    {
+      "zfp": 5,
+      "path": "zfps/ZFP-0005-proposal-repairs.md",
+      "title": "提案机械校验与确定性修复",
+      "type": "Feature",
+      "authors": [
+        "zrr1999"
+      ],
+      "created": "2026-09-08",
+      "supersedes": [],
+      "superseded_by": []
+    },
+    {
+      "zfp": 6,
+      "path": "zfps/ZFP-0006-domain-architecture.md",
+      "title": "消息与提案领域及共享基础",
+      "type": "Feature",
+      "authors": [
+        "zrr1999"
+      ],
+      "created": "2026-09-24",
+      "supersedes": [],
+      "superseded_by": []
+    },
+    {
+      "zfp": 7,
+      "path": "zfps/ZFP-0007-project-evolution.md",
+      "title": "项目初始意图与按日期记录的演进",
+      "type": "Feature",
+      "authors": [
+        "zrr1999"
+      ],
+      "created": "2026-09-08",
+      "supersedes": [],
+      "superseded_by": []
     }
   ]
 }

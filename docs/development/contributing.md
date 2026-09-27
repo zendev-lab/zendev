@@ -38,3 +38,23 @@ Checks` in `CI - Static Checks`.
 
 Do not commit generated `site/` output or add custom CSS, JavaScript, plugins,
 or a shared documentation preset without a demonstrated product requirement.
+
+## Distribution checks
+
+Build all six workspace wheels and exercise each isolated installation, including
+evolution initialization, listing, and checking:
+
+```shell
+just packages
+```
+
+The check builds into a temporary directory and verifies same-version dependencies,
+namespace ownership, pure APIs, and actual CLI commands outside the checkout.
+CI uses this same entry point. Public hook tests use `scripts/verify_hooks.py`
+with local wheels and `UV_NO_SOURCES=true`.
+
+Before the first release containing `zendev-evolution`, configure the PyPI
+Trusted Publisher for `zendev-lab/zendev`, workflow `cd-release.yml`, environment
+`pypi-zendev-evolution`, and the corresponding GitHub environment. The release
+workflow publishes this component before the complete toolkit. Adding the
+workflow does not provision those external settings or publish the package.

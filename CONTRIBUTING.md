@@ -24,13 +24,14 @@ same change:
 uv run zendev proposal check --fix
 ```
 
-`just ci` formats and lints code, runs ty and Pyrefly, and executes the test
-suite with coverage. Tests should assert observable behavior and public
+`just ci` checks formatting and lints code, runs ty and Pyrefly, and executes the test
+suite with coverage. Use `just format` explicitly to format source, and `just packages`
+to validate isolated wheel installations. Tests should assert observable behavior and public
 contracts rather than implementation control flow.
 
 ## Vendored Gitmoji data
 
-The commit package keeps an offline Gitmoji catalog pinned to an upstream
+The message package keeps an offline Gitmoji catalog pinned to an upstream
 revision. Refresh it only through the repository task:
 
 ```shell
@@ -39,7 +40,7 @@ just sync-gitmoji
 
 The task validates the upstream payload before updating the vendored file.
 Review both the data diff and the pairing table in
-[`packages/zendev-commit/src/zendev/data`](./packages/zendev-commit/src/zendev/data/)
+[`packages/zendev-message/src/zendev/message/data`](./packages/zendev-message/src/zendev/message/data/)
 before committing the result.
 
 ## Documentation ownership
@@ -64,11 +65,37 @@ transcripts may keep a session fence.
 
 ## Zendev Feature Proposals
 
-Public feature and governance changes begin with a ZFP. ZFP prose defaults to
+New public contracts and governance decisions begin with a ZFP. Implementing
+an existing ZFP, restoring its intended behavior, and maintenance that preserves
+public semantics can use a direct PR. Link the existing proposal when it covers
+the work; explain new decisions or uncertainty in the existing motivation or
+solution section. Compatible new interfaces still introduce public contracts.
+Use the [decision criteria and examples](./zfps/ZFP-0000-governance.md#何时需要提案),
+not change size or commit labels, to determine the route. This is a review
+decision, not a check inferred automatically from the diff.
+
+ZFP authors use lowercase GitHub usernames without `@`; see the
+[authorship policy](./zfps/ZFP-0000-governance.md#作者身份).
+
+ZFP prose defaults to
 Chinese, but another language is allowed when it makes the proposal clearer;
 machine metadata and technical identifiers remain English. See
 [`zfps/README.md`](./zfps/README.md) and the governing
 [`ZFP-0000`](./zfps/ZFP-0000-governance.md).
+
+Keep the ZFP and its implementation in separate PRs, even when both are
+prepared in the same task. Keep each PR in Draft until validation is ready.
+The proposal PR contains the ZFP, its generated index,
+and directly related proposal or contribution guidance. Implementation code,
+tests, package changes, CI, and feature usage documentation belong in the
+implementation PR, which links the ZFP and its proposal PR.
+
+When the implementation depends on an unmerged proposal, use a PR stack:
+`main <- proposal <- implementation`. Set the implementation PR's base to the
+proposal branch and verify each PR's diff against its own base: the proposal
+diff must contain no implementation, and the implementation diff must not
+repeat the proposal. The two PRs can be prepared and reviewed together without
+waiting for the proposal to merge.
 
 ## Pull requests
 
@@ -90,3 +117,6 @@ The pull-request body must retain the Chinese H2 structure in
 `解决方案` are required, while `说明` and `后续工作` are optional. Do not add a
 checklist merely to satisfy process; record material validation in the solution
 or notes.
+
+PR titles are validated for every author, including bots. Renovate is exempt
+only from the PR body template requirement.

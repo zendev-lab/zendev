@@ -18,7 +18,6 @@ jobs:
           persist-credentials: false
 
       - name: Check PR title
-        if: github.event.pull_request.user.login != 'renovate[bot]'
         uses: ./actions/validate-title
         with:
           text: ${{ github.event.pull_request.title }}
@@ -29,6 +28,6 @@ jobs:
         with:
           body: ${{ github.event.pull_request.body }}
 
-      - name: Skip PR message checks for Renovate
+      - name: Skip PR body check for Renovate
         if: github.event.pull_request.user.login == 'renovate[bot]'
-        run: echo "Renovate PRs are exempt from the repository title and description conventions."
+        run: echo "Renovate PRs are exempt only from the PR body template requirement."
