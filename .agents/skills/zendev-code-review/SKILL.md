@@ -1,9 +1,9 @@
 ---
-name: code-review
-description: Review a pull request, commit range, or local code changes for actionable correctness, security, compatibility, ownership, and complexity defects. Use for code review and pre-PR review, not message-format checks or implementation work.
+name: zendev-code-review
+description: Review a pull request, commit range, or local code changes for actionable correctness, security, compatibility, ownership, and complexity defects. Use for code review, codereview, “代码审查”, “审查改动”, and pre-PR review; not coding-style guidance, message-format checks, routine implementation, or a requirement to rewrite reviewed code.
 ---
 
-# Code review
+# Zendev Code Review
 
 Find defects a maintainer would act on, with enough evidence to verify them.
 Review reachable behavior and the contracts the change must preserve. Repository
@@ -46,16 +46,32 @@ Select the relevant lenses; do not mechanically run every check:
   protection from a field name or caller-supplied label.
 - **Ownership and lifecycle:** the authoritative state owner, atomicity, concurrent
   operations, cancellation, retries, restart recovery, and cleanup. Check both the
-  mutation path and dependent readers.
+  mutation path and dependent readers. Distinguish accepted, committed, published,
+  and drained work. Cancellation does not prove completed cleanup, and actor
+  isolation does not make a transaction atomic across suspension. Trace stale
+  results and permission changes through the final effect boundary.
 - **Compatibility:** public APIs, persisted data, protocol producers and consumers,
   defaults, deployment order, and migrations, as required by the repository.
 - **Complexity:** additional state, duplicated semantics, synchronization, public
   surface, or indirection without a required distinction. Identify the concrete
   maintenance burden or failure mode and what could be deleted or consolidated.
-  Small helpers and boundary validation can own useful invariants.
+  Ask what concrete invariant or boundary would be lost by deleting the addition.
+  Small helpers and boundary validation can own useful invariants; one implementation
+  can justify an interface, and a long file alone does not justify splitting an owner.
+- **Computation and interop:** shape, dtype, layout, encoding, buffer lifetime,
+  ownership transfer, and error translation across language or backend boundaries.
+  Separate parser success, type checking, execution, and artifact loading. Compare
+  numerical results with an independent reference or known property; backend parity
+  alone can preserve a shared defect.
+- **Performance claims:** equivalent workload, materialized results, cold versus
+  warm state, timing boundaries, and comparable environments. Missing measurements
+  are a verification gap, not proof of a regression. Do not infer a speedup from
+  fewer lines or accept one gained by silently omitting required work.
 - **Tests:** whether assertions exercise the claimed behavior and meaningful failure
   paths. A mock that removes the relevant boundary or a test that repeats the
-  implementation cannot establish that contract.
+  implementation cannot establish that contract. For races, prefer controlled
+  suspension over sleeps. Exact bytes or hashes may be valid when the representation
+  itself is the contract; source-text matching does not prove runtime behavior.
 
 Use targeted searches and batch independent reads when the tools support it.
 Verify unfamiliar APIs against local types, installed versions, or official docs.
@@ -113,7 +129,8 @@ by impact, then give a short scope and verification summary. Each finding includ
   existing owner or primitive when that avoids another source of truth.
 
 End with what was inspected, which checks actually ran and their results, and
-material limitations or unresolved decisions. If there are no findings, say
+material limitations or unresolved decisions. Keep local tests, hosted CI,
+installed artifacts, and device or native UI acceptance distinct. If there are no findings, say
 "在本次审查范围内未发现可操作的问题" (or its equivalent in the requested language)
 and state verification limits.
 Do not claim exhaustive safety, approval, or merge readiness from absence of findings.
