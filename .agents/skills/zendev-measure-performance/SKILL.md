@@ -1,10 +1,10 @@
 ---
-name: measure-performance
+name: zendev-measure-performance
 description: >
   Measure and compare latency, throughput, memory, or startup cost with a verified workload and reproducible evidence. Use for “性能测量”, “为什么变慢”, “benchmark 对比”, regression investigation, or validating an optimization. Not speculative optimization, functional test authoring, recurring monitoring, or a claim of improvement based on one unverified timing.
 ---
 
-# Measure Performance
+# Zendev Measure Performance
 
 Define what was measured and prove that both sides completed equivalent work.
 A lower number is useful only when workload, correctness, and measurement

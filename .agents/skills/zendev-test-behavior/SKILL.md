@@ -1,10 +1,10 @@
 ---
-name: test-behavior
+name: zendev-test-behavior
 description: >
   Add or repair tests that demonstrate an observable contract, regression, state transition, or backend equivalence. Use for “补测试”, “回归测试”, flaky ordering tests, cancellation and persistence checks, numerical reference comparisons, or compiler/backend parity. Not a coverage-percentage campaign, benchmark workflow, full code review, or a requirement to test every cosmetic edit.
 ---
 
-# Test Behavior
+# Zendev Test Behavior
 
 Build a test that distinguishes the intended behavior from a plausible defect.
 The tested boundary and observable result matter more than the number of cases,
