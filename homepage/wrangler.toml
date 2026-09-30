@@ -1,0 +1,13 @@
+name = "zendev-home"
+compatibility_date = "2026-09-03"
+workers_dev = true
+preview_urls = true
+
+[[routes]]
+pattern = "zendev.zrr.dev"
+custom_domain = true
+
+[assets]
+directory = "."
+html_handling = "auto-trailing-slash"
+not_found_handling = "404-page"
