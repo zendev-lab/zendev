@@ -171,11 +171,11 @@ def _check_project(
     fix_invocation: str,
 ) -> CheckReport:
     config = load_config(config_path)
+    if (partial or select is not None) and not (fix or diff):
+        raise ToolError(Diagnostic("proposal.fix.options", "--select and --partial require --fix or --diff"))
     selected = tuple(name.strip() for name in select.split(",")) if select is not None else RULES
     if not selected or any(name not in RULES for name in selected):
         raise ToolError(Diagnostic("proposal.fix.rule", "Select known repair rules: " + ", ".join(RULES)))
-    if partial and not (fix or diff):
-        raise ToolError(Diagnostic("proposal.fix.options", "--partial requires --fix or --diff"))
     if base_ref is not None:
         from zendev.proposal.history import resolve_base_ref
 
