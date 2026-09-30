@@ -379,7 +379,7 @@ def test_check_cli_emits_stable_json(tmp_path: Path) -> None:
     assert result.exit_code == 0
     payload = json.loads(result.stdout)
     assert payload == {
-        "command": "proposal check",
+        "command": "check",
         "diagnostics": [],
         "ok": True,
         "schema_version": 1,
