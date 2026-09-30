@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from importlib.metadata import version
+from typing import Annotated
+
 import typer
 
 from zendev.evolution.cli import app as evolution_app
@@ -17,6 +20,23 @@ app = typer.Typer(
     pretty_exceptions_enable=False,
     rich_markup_mode=None,
 )
+
+
+def _show_version(value: bool) -> None:
+    if value:
+        typer.echo(f"zendev {version('zendev')}")
+        raise typer.Exit()
+
+
+@app.callback()
+def _zendev(
+    _version: Annotated[
+        bool,
+        typer.Option("--version", callback=_show_version, is_eager=True, help="Show the version and exit."),
+    ] = False,
+) -> None:
+    """Run Zendev development workflows."""
+
 
 app.command("commit")(create_commit)
 app.add_typer(message_app, name="message")

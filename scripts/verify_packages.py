@@ -104,6 +104,7 @@ if "zendev-log" in installed:
         if name == "zendev":
             commands += [
                 ("zendev", ["--help"]),
+                ("zendev", ["--version"]),
                 ("zendev", ["message", "check", "--commit", "--text", "Merge branch main"]),
             ]
         if "zendev-message" in expected:
@@ -126,6 +127,8 @@ if "zendev-log" in installed:
             completed = subprocess.run([str(binary), *args], cwd=temporary, check=True, capture_output=True, text=True)
             if args[-1] == "json":
                 assert json.loads(completed.stdout)["ok"]
+            if args == ["--version"]:
+                assert completed.stdout == f"zendev {next(iter(versions))}\n", completed.stdout
         print(f"Verified independent installation: {name}", flush=True)
 
 
