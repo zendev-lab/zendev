@@ -64,10 +64,10 @@ def ask(profile: MessageProfile) -> MessageDraft:
 
 @app.command()
 def create_commit(
-    config: Annotated[Path | None, typer.Option("--config")] = None,
-    profile: Annotated[MessageProfile | None, typer.Option("--profile")] = None,
+    config: Annotated[Path | None, typer.Option("--config", help="Explicit ZenDev configuration source.")] = None,
+    profile: Annotated[MessageProfile | None, typer.Option("--profile", help="Override the message profile.")] = None,
 ) -> None:
-    """Create a message using the active profile and invoke Git."""
+    """Compose a message interactively and run git commit."""
     try:
         settings = load_message_config(config, profile=profile)
         text = render_message(ask(settings.profile), profile=settings.profile)
