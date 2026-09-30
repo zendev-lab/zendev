@@ -26,7 +26,7 @@ def main() -> None:
             )
         environment = {
             **os.environ,
-            "PDM_BUILD_SCM_VERSION": metadata["Version"],
+            "SETUPTOOLS_SCM_PRETEND_VERSION": metadata["Version"],
             "UV_NO_SOURCES": "true",
         }
         document = temporary / "EVOLUTION.md"
