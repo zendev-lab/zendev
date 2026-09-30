@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import re
 import shutil
+from importlib.metadata import version
 from pathlib import Path
 
 import pytest
@@ -54,6 +55,13 @@ def test_unified_cli_groups_workflows_by_domain() -> None:
 
 def test_python_module_exposes_the_unified_application() -> None:
     assert module_app is zendev_app
+
+
+def test_unified_cli_reports_the_installed_version() -> None:
+    result = runner.invoke(zendev_app, ["--version"])
+
+    assert result.exit_code == 0
+    assert result.output == f"zendev {version('zendev')}\n"
 
 
 def test_unified_cli_message_check_validates_a_title() -> None:
