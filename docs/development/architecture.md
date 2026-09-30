@@ -53,9 +53,10 @@ discovery, repair transaction, or auxiliary index. Editors own subsequent change
 `just packages` builds wheels, checks version pins and namespace ownership, and
 exercises six isolated installations outside the checkout.
 
-[Hatch metadata hooks](https://hatch.pypa.io/latest/plugins/metadata-hook/reference/)
-resolve sibling pins from the VCS version. Component builds reference the same root hook file from the complete repository
-checkout. Releases publish independently installable wheels. Release ordering is core/log, then message/proposal/evolution, then
+[pdm-backend](https://backend.pdm-project.org/metadata/#dynamic-project-version) resolves every
+distribution version from Git tags, and a [build hook](https://backend.pdm-project.org/hooks/) pins
+siblings to that version. Component builds reference the same root hook file from the complete repository
+checkout; sdists record the resolved pins statically. Releases publish independently installable wheels. Release ordering is core/log, then message/proposal/evolution, then
 the CLI distribution. uv cache keys include the Git commit/tags and all workspace build metadata, so
 editable installs rebuild together after a commit or metadata edit.
 See [uv dynamic metadata caching](https://docs.astral.sh/uv/concepts/cache/#dynamic-metadata).
