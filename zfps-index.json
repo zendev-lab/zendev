@@ -40,7 +40,7 @@
     {
       "zfp": 3,
       "path": "zfps/ZFP-0003-cli-surface.md",
-      "title": "Zendev CLI 命令面",
+      "title": "规范化统一 CLI 与提案 check --fix",
       "type": "Feature",
       "authors": [
         "zrr1999"
