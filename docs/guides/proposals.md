@@ -157,7 +157,7 @@ The JSON envelope is versioned independently of human wording:
 
 ```json
 {
-  "command": "proposal check",
+  "command": "check",
   "diagnostics": [
     {
       "code": "proposal.index.drift",

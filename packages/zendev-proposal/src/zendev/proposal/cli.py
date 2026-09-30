@@ -35,7 +35,7 @@ def check_command(
     fix: Annotated[bool, typer.Option("--fix", help="Apply validated repairs and update the index.")] = False,
     diff: Annotated[bool, typer.Option("--diff", help="Preview repairs without writing.")] = False,
     select: Annotated[
-        str | None, typer.Option("--select", help="Comma-separated repair rules; requires --fix or --diff.")
+        str | None, typer.Option("--select", help="Comma-separated repair rules for --fix or --diff.")
     ] = None,
     partial: Annotated[
         bool, typer.Option("--partial", help="Allow independently safe repairs with remaining errors.")
@@ -69,7 +69,7 @@ def check_command(
     typer.echo(
         render_report(
             diagnostics,
-            command="proposal check",
+            command="check",
             output_format=output_format,
             summary=summary,
             success_message=(

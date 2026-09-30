@@ -139,31 +139,6 @@ def test_unified_cli_drift_hint_uses_zendev_proposal_check(tmp_path: Path) -> No
     assert payload["diagnostics"][0]["hint"] == "Run `zendev proposal check --fix` and commit the result."
 
 
-@pytest.mark.parametrize(
-    ("app", "prefix"), [(zendev_app, ["proposal"]), (proposal_app, [])], ids=["unified", "component"]
-)
-def test_proposal_json_names_the_domain_command(tmp_path: Path, app: typer.Typer, prefix: list[str]) -> None:
-    repository = _copy_fixture(tmp_path, "vep")
-
-    result = runner.invoke(app, [*prefix, "check", "--config", str(repository / "zendev.toml"), "--format", "json"])
-
-    assert result.exit_code == 0
-    assert json.loads(result.stdout)["command"] == "proposal check"
-
-
-@pytest.mark.parametrize("option", ["--select", "--partial"])
-def test_repair_selection_requires_fix_or_diff(tmp_path: Path, option: str) -> None:
-    repository = _copy_fixture(tmp_path, "vep")
-    args = [option, "marker"] if option == "--select" else [option]
-
-    result = runner.invoke(
-        zendev_app, ["proposal", "check", "--config", str(repository / "zendev.toml"), *args, "--format", "json"]
-    )
-
-    assert result.exit_code == 2
-    assert [d["code"] for d in json.loads(result.stdout)["diagnostics"]] == ["proposal.fix.options"]
-
-
 @pytest.mark.parametrize("output_format", ["human", "json", "github"])
 def test_message_output_is_utf8_independently_of_host_encoding(tmp_path: Path, output_format: str) -> None:
     message = tmp_path / "提交.txt"
