@@ -5,6 +5,7 @@ status: Draft
 type: Technical
 requires:
   - VEP-0000
+defines: []
 ---
 
 # VEP-0001: Composition

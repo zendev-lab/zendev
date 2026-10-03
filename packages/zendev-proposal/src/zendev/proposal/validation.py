@@ -2,65 +2,37 @@
 
 from __future__ import annotations
 
-import json
 import re
-import subprocess
-from collections import defaultdict
+from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any, cast
 
-from jsonschema import FormatChecker
-from jsonschema.exceptions import SchemaError
-from jsonschema.validators import validator_for
+from referencing.exceptions import Unresolvable
 
-from zendev.proposal.indexing import edge_identifiers, normalize_reference
+from zendev.core.diagnostics import ToolError
+from zendev.core.markdown import markdown_session, scan_markdown
+from zendev.core.source import source_session
+from zendev.proposal.content import locate_diagnostics, validate_content
+from zendev.proposal.graph import validate_graph
+from zendev.proposal.history import validate_history
 from zendev.proposal.model import (
     Diagnostic,
     ProposalConfig,
     ProposalDocument,
-    ProposalToolError,
     RepositoryState,
     ValidationResult,
 )
+from zendev.proposal.references import edge_identifiers
 from zendev.proposal.repository import (
-    extract_frontmatter,
     h2_headings,
     load_repository,
-    parse_frontmatter,
 )
+from zendev.proposal.schema import load_schema, schema_properties
+from zendev.proposal.shape import formal_filename_pattern, template_headings
 
 
 def _load_schema(config: ProposalConfig, schema_path: Path):
-    try:
-        schema = json.loads(schema_path.read_text(encoding="utf-8"))
-    except (OSError, UnicodeError, json.JSONDecodeError) as error:
-        raise ProposalToolError(
-            Diagnostic(
-                code="proposal.schema.read",
-                path=config.relative_path(schema_path),
-                message=f"failed to load frontmatter schema: {error}",
-            )
-        ) from error
-    if not isinstance(schema, dict):
-        raise ProposalToolError(
-            Diagnostic(
-                code="proposal.schema.type",
-                path=config.relative_path(schema_path),
-                message="frontmatter schema must be a JSON object",
-            )
-        )
-    validator_class = validator_for(schema)
-    try:
-        validator_class.check_schema(schema)
-    except SchemaError as error:
-        raise ProposalToolError(
-            Diagnostic(
-                code="proposal.schema.invalid",
-                path=config.relative_path(schema_path),
-                message=f"invalid frontmatter schema: {error.message}",
-            )
-        ) from error
-    return validator_class(schema, format_checker=FormatChecker())
+    return load_schema(config, schema_path)[0]
 
 
 def _validate_schema(
@@ -77,10 +49,19 @@ def _validate_schema(
     )
     for document in state.documents:
         validator = draft_validator if document.is_draft else formal_validator
-        errors = sorted(
-            validator.iter_errors(cast(Any, document.metadata)),
-            key=lambda error: tuple(str(item) for item in error.absolute_path),
-        )
+        try:
+            errors = sorted(
+                validator.iter_errors(cast(Any, document.metadata)),
+                key=lambda error: tuple(str(item) for item in error.absolute_path),
+            )
+        except (Unresolvable, RecursionError) as error:
+            raise ToolError(
+                Diagnostic(
+                    code="proposal.schema.reference",
+                    path=document.relative_path,
+                    message=f"cannot resolve local schema: {error}",
+                )
+            ) from error
         for error in errors:
             location = "".join(f"[{item}]" if isinstance(item, int) else f".{item}" for item in error.absolute_path)
             diagnostics.append(
@@ -88,23 +69,56 @@ def _validate_schema(
                     code="proposal.frontmatter.schema",
                     path=document.relative_path,
                     message=f"frontmatter{location}: {error.message}",
+                    line=document.field_lines.get(str(next(iter(error.absolute_path), "")), 1),
                 )
             )
-
-
-def _formal_filename_pattern(config: ProposalConfig) -> re.Pattern[str]:
-    return re.compile(
-        rf"^{re.escape(config.prefix)}-(\d{{{config.number_width}}})-"
-        rf"(?:{config.filename_slug_pattern})\.md$"
-    )
 
 
 def _first_nonempty_line(markdown: str) -> str:
     return next((line.strip() for line in markdown.splitlines() if line.strip()), "")
 
 
+def _validate_title(config: ProposalConfig, document: ProposalDocument, diagnostics: list[Diagnostic]) -> None:
+    title = document.metadata.get(config.title_field)
+    if not isinstance(title, str) or not title.strip() or title != title.strip() or len(title.splitlines()) != 1:
+        diagnostics.append(
+            Diagnostic(
+                code="proposal.title.invalid",
+                path=document.relative_path,
+                message=f"`{config.title_field}` must be non-empty single-line text without surrounding whitespace",
+            )
+        )
+    elif not document.is_draft and config.metadata_title == "prefixed":
+        identifier = document.identifier(config)
+        if identifier is not None and title.startswith(f"{identifier}:") and not title[len(identifier) + 1 :].strip():
+            diagnostics.append(
+                Diagnostic(
+                    code="proposal.title.invalid",
+                    path=document.relative_path,
+                    message="metadata title must contain text after the proposal identifier",
+                )
+            )
+    h1s = [heading for heading in scan_markdown(document.body).headings if heading.level == 1]
+    if not h1s:
+        diagnostics.append(
+            Diagnostic(
+                code="proposal.h1.missing",
+                path=document.relative_path,
+                message="proposal body requires an actual Markdown H1",
+            )
+        )
+    if len(h1s) > 1:
+        diagnostics.append(
+            Diagnostic(
+                code="proposal.h1.duplicate",
+                path=document.relative_path,
+                message=f"proposal body must contain exactly one H1; found {len(h1s)}",
+            )
+        )
+
+
 def _validate_formal_shape(config: ProposalConfig, document: ProposalDocument, diagnostics: list[Diagnostic]) -> None:
-    match = _formal_filename_pattern(config).fullmatch(document.path.name)
+    match = formal_filename_pattern(config).fullmatch(document.path.name)
     if match is None:
         diagnostics.append(
             Diagnostic(
@@ -233,20 +247,22 @@ def _validate_frontmatter_draft(
             )
         )
 
-    nonempty = [line.strip() for line in document.body.splitlines() if line.strip()]
-    if drafts.marker is not None and (len(nonempty) < 2 or nonempty[1] != drafts.marker):
+    nonempty = [index for index, line in enumerate(document.body.splitlines()) if line.strip()]
+    markers = scan_markdown(document.body, drafts.marker).marker_lines
+    if drafts.marker is not None and (len(nonempty) < 2 or markers != (nonempty[1],)):
         diagnostics.append(
             Diagnostic(
                 code="proposal.draft.marker",
                 path=document.relative_path,
-                message=f"draft H1 must be followed by `{drafts.marker}`",
+                message=f"draft H1 must be followed by exactly one standalone `{drafts.marker}` marker",
             )
         )
 
     if not drafts.pre_proposal:
         return
     status_pattern = re.compile(rf"(?im)^\s*(?:{re.escape(config.status_field)}\s*:|#+\s+status\b)")
-    if status_pattern.search(document.body):
+    prose = "\n".join(text for _, text in scan_markdown(document.body).prose)
+    if status_pattern.search(prose):
         diagnostics.append(
             Diagnostic(
                 code="proposal.draft.declares-status",
@@ -255,7 +271,7 @@ def _validate_frontmatter_draft(
             )
         )
     identifier_pattern = re.compile(rf"\b{re.escape(config.prefix)}-\d{{{config.number_width}}}\b")
-    identifiers = sorted(set(identifier_pattern.findall(document.body)))
+    identifiers = sorted(set(identifier_pattern.findall(prose)))
     if identifiers:
         diagnostics.append(
             Diagnostic(
@@ -305,6 +321,16 @@ def _validate_summary(config: ProposalConfig, document: ProposalDocument, diagno
     index += 1
     while index < len(lines) and not lines[index].strip():
         index += 1
+    if (
+        document.is_draft
+        and config.drafts is not None
+        and config.drafts.marker is not None
+        and index < len(lines)
+        and lines[index].strip() == config.drafts.marker
+    ):
+        index += 1
+        while index < len(lines) and not lines[index].strip():
+            index += 1
     if index >= len(lines) or not lines[index].startswith(">"):
         diagnostics.append(
             Diagnostic(
@@ -353,32 +379,6 @@ def _validate_summary(config: ProposalConfig, document: ProposalDocument, diagno
         )
 
 
-def _template_headings(config: ProposalConfig) -> dict[str, tuple[str, ...]]:
-    result: dict[str, tuple[str, ...]] = {}
-    for proposal_type, path in config.templates.items():
-        try:
-            text = path.read_text(encoding="utf-8")
-        except (OSError, UnicodeError) as error:
-            raise ProposalToolError(
-                Diagnostic(
-                    code="proposal.template.read",
-                    path=config.relative_path(path),
-                    message=f"failed to read proposal template: {error}",
-                )
-            ) from error
-        headings = h2_headings(text)
-        if len(headings) != len(set(headings)):
-            raise ProposalToolError(
-                Diagnostic(
-                    code="proposal.template.duplicate-heading",
-                    path=config.relative_path(path),
-                    message="proposal template H2 headings must be unique",
-                )
-            )
-        result[proposal_type] = headings
-    return result
-
-
 def _validate_sections(
     config: ProposalConfig,
     document: ProposalDocument,
@@ -388,7 +388,17 @@ def _validate_sections(
     proposal_type = document.metadata.get(config.type_field)
     if not isinstance(proposal_type, str) or proposal_type not in templates:
         return
-    found = set(h2_headings(document.body))
+    headings = h2_headings(document.body)
+    found = set(headings)
+    repeated = [heading for heading in templates[proposal_type] if headings.count(heading) > 1]
+    if repeated:
+        diagnostics.append(
+            Diagnostic(
+                code="proposal.sections.duplicate",
+                path=document.relative_path,
+                message="duplicate required sections: " + ", ".join(repeated),
+            )
+        )
     missing = [heading for heading in templates[proposal_type] if heading not in found]
     if missing:
         diagnostics.append(
@@ -400,339 +410,217 @@ def _validate_sections(
         )
 
 
-def _validate_graph(config: ProposalConfig, state: RepositoryState, diagnostics: list[Diagnostic]) -> None:
+def _defined_ids(document: ProposalDocument, field: str) -> list[str]:
+    values = document.metadata.get(field)
+    if not isinstance(values, list):
+        return []
+    return [value for value in values if isinstance(value, str)]
+
+
+def _superseded_closure(
+    config: ProposalConfig,
+    start: str,
+    documents_by_id: dict[str, ProposalDocument],
+) -> set[str]:
     policy = config.graph
-    if policy is None:
-        return
-    by_id = {
-        identifier: document
-        for document in state.formal_documents
-        if (identifier := document.identifier(config)) is not None
-    }
-    for document in state.formal_documents:
-        source = document.identifier(config)
-        if source is None:
-            continue
-        for field in policy.fields:
-            raw = document.metadata.get(field)
-            if not isinstance(raw, list):
-                diagnostics.append(
-                    Diagnostic(
-                        code="proposal.graph.invalid-field",
-                        path=document.relative_path,
-                        message=f"`{field}` must be an array of proposal references",
-                    )
-                )
-                continue
-            normalized: list[str] = []
-            for index, value in enumerate(raw):
-                identifier = normalize_reference(config, value)
-                if identifier is None:
-                    diagnostics.append(
-                        Diagnostic(
-                            code="proposal.graph.invalid-edge",
-                            path=document.relative_path,
-                            message=f"`{field}[{index}]` is not a canonical proposal reference",
-                        )
-                    )
-                else:
-                    normalized.append(identifier)
-            if len(normalized) != len(set(normalized)):
-                diagnostics.append(
-                    Diagnostic(
-                        code="proposal.graph.duplicate-edge",
-                        path=document.relative_path,
-                        message=f"`{field}` contains duplicate edges",
-                    )
-                )
-            for target in normalized:
-                if target == source:
-                    diagnostics.append(
-                        Diagnostic(
-                            code="proposal.graph.self-edge",
-                            path=document.relative_path,
-                            message=f"`{field}` must not contain a self-edge",
-                        )
-                    )
-                elif target not in by_id:
-                    diagnostics.append(
-                        Diagnostic(
-                            code="proposal.graph.missing-target",
-                            path=document.relative_path,
-                            message=f"`{field}` references missing {target}",
-                        )
-                    )
-
-    requires_field = policy.requires_field
-    if requires_field is not None:
-        visiting: set[str] = set()
-        visited: set[str] = set()
-
-        def visit(identifier: str, path: list[str]) -> None:
-            if identifier in visiting:
-                cycle_start = path.index(identifier)
-                cycle = [*path[cycle_start:], identifier]
-                diagnostics.append(
-                    Diagnostic(
-                        code="proposal.graph.requires-cycle",
-                        message="requires graph contains a cycle: " + " -> ".join(cycle),
-                    )
-                )
-                return
-            if identifier in visited:
-                return
-            visiting.add(identifier)
-            path.append(identifier)
-            for target in edge_identifiers(config, by_id[identifier], requires_field):
-                if target in by_id:
-                    visit(target, path)
-            path.pop()
-            visiting.remove(identifier)
-            visited.add(identifier)
-
-        for identifier in sorted(by_id):
-            visit(identifier, [])
-
-        for document in state.formal_documents:
-            if document.metadata.get(config.status_field) != policy.accepted_status:
-                continue
-            pending = list(edge_identifiers(config, document, requires_field))
-            seen: set[str] = set()
-            while pending:
-                target = pending.pop()
-                if target in seen or target not in by_id:
-                    continue
-                seen.add(target)
-                target_document = by_id[target]
-                if target_document.metadata.get(config.status_field) != policy.accepted_status:
-                    diagnostics.append(
-                        Diagnostic(
-                            code="proposal.graph.accepted-requires-unaccepted",
-                            path=document.relative_path,
-                            message=f"accepted proposal transitively requires non-accepted {target}",
-                        )
-                    )
-                pending.extend(edge_identifiers(config, target_document, requires_field))
-
-    if policy.amends_field is not None:
-        for document in state.formal_documents:
-            for target in edge_identifiers(config, document, policy.amends_field):
-                if target in by_id and (by_id[target].metadata.get(config.status_field) != policy.accepted_status):
-                    diagnostics.append(
-                        Diagnostic(
-                            code="proposal.graph.amends-unaccepted",
-                            path=document.relative_path,
-                            message=f"amendment target {target} must remain accepted",
-                        )
-                    )
-
-    if policy.supersedes_field is None:
-        return
-    accepted_superseders: dict[str, list[str]] = defaultdict(list)
-    for document in state.formal_documents:
-        source = document.identifier(config)
-        status = document.metadata.get(config.status_field)
-        if source is None:
+    if policy is None or policy.supersedes_field is None:
+        return set()
+    seen: set[str] = set()
+    pending = [start]
+    while pending:
+        identifier = pending.pop()
+        document = documents_by_id.get(identifier)
+        if document is None:
             continue
         for target in edge_identifiers(config, document, policy.supersedes_field):
-            if target not in by_id:
-                continue
-            target_status = by_id[target].metadata.get(config.status_field)
-            if status in {policy.accepted_status, policy.superseded_status}:
-                if target_status != policy.superseded_status:
-                    diagnostics.append(
-                        Diagnostic(
-                            code="proposal.graph.supersession-incomplete",
-                            path=document.relative_path,
-                            message=(f"accepted supersession requires {target} to be superseded in the same tree"),
-                        )
-                    )
-            elif target_status != policy.accepted_status:
-                diagnostics.append(
-                    Diagnostic(
-                        code="proposal.graph.supersedes-unaccepted",
-                        path=document.relative_path,
-                        message=f"proposed supersession target {target} must remain accepted",
-                    )
-                )
-            if status == policy.accepted_status:
-                accepted_superseders[target].append(source)
+            if target not in seen:
+                seen.add(target)
+                pending.append(target)
+    return seen
 
-    for identifier, document in by_id.items():
-        if document.metadata.get(config.status_field) != policy.superseded_status:
-            continue
-        superseders = accepted_superseders.get(identifier, [])
-        if len(superseders) != 1:
+
+def _validate_defines(
+    config: ProposalConfig,
+    state: RepositoryState,
+    diagnostics: list[Diagnostic],
+) -> None:
+    policy = config.defines
+    if policy is None:
+        return
+
+    id_re = re.compile(policy.id_pattern)
+    owners: dict[str, list[ProposalDocument]] = defaultdict(list)
+
+    for document in state.documents:
+        raw = document.metadata.get(policy.field)
+        if policy.field in document.metadata and not isinstance(raw, list):
             diagnostics.append(
                 Diagnostic(
-                    code="proposal.graph.superseded-owner",
+                    code="proposal.defines.invalid-field",
+                    path=document.relative_path,
+                    message=f"`{policy.field}` must be an array of concept IDs",
+                )
+            )
+            continue
+        values = raw if isinstance(raw, list) else []
+        declared = _defined_ids(document, policy.field)
+        invalid = [value for value in values if not isinstance(value, str) or id_re.fullmatch(value) is None]
+        if invalid:
+            diagnostics.append(
+                Diagnostic(
+                    code="proposal.defines.invalid-id",
+                    path=document.relative_path,
+                    message=f"`{policy.field}` entries must be strings matching `{policy.id_pattern}`: {invalid!r}",
+                )
+            )
+        declared_set = set(declared)
+        if len(declared) != len(declared_set):
+            diagnostics.append(
+                Diagnostic(
+                    code="proposal.defines.duplicate-id",
+                    path=document.relative_path,
+                    message=f"`{policy.field}` must not contain duplicate concept IDs",
+                )
+            )
+        anchors: list[str] = []
+        for anchor_fact in scan_markdown(document.body).anchors:
+            if not anchor_fact.identifier.startswith(policy.anchor_prefix):
+                continue
+            concept = anchor_fact.identifier.removeprefix(policy.anchor_prefix)
+            if id_re.fullmatch(concept) is None or not anchor_fact.canonical:
+                diagnostics.append(
+                    Diagnostic(
+                        code="proposal.defines.invalid-anchor",
+                        path=document.relative_path,
+                        message=(
+                            f"definition anchor `{anchor_fact.identifier}` "
+                            "must use a valid ID and canonical empty <a> tag"
+                        ),
+                    )
+                )
+            anchors.append(concept)
+        counts = Counter(anchors)
+        for concept, count in counts.items():
+            if count > 1:
+                diagnostics.append(
+                    Diagnostic(
+                        code="proposal.defines.duplicate-anchor",
+                        path=document.relative_path,
+                        message=f"definition anchor `{policy.anchor_prefix}{concept}` occurs {count} times",
+                    )
+                )
+        for identifier in sorted(declared_set):
+            anchor = f'<a id="{policy.anchor_prefix}{identifier}"></a>'
+            count = counts[identifier]
+            if count != 1:
+                diagnostics.append(
+                    Diagnostic(
+                        code="proposal.defines.missing-anchor",
+                        path=document.relative_path,
+                        message=(
+                            f"`{policy.field}` entry `{identifier}` requires exactly one "
+                            f"`{anchor}` anchor; found {count}"
+                        ),
+                    )
+                )
+            owners[identifier].append(document)
+        for identifier in sorted(set(anchors) - declared_set):
+            diagnostics.append(
+                Diagnostic(
+                    code="proposal.defines.undeclared-anchor",
                     path=document.relative_path,
                     message=(
-                        "superseded proposal must have exactly one accepted forward "
-                        f"superseder; found {len(superseders)}"
+                        f"definition anchor `{policy.anchor_prefix}{identifier}` must be declared in `{policy.field}`"
                     ),
                 )
             )
 
-
-def _git(config: ProposalConfig, *arguments: str) -> subprocess.CompletedProcess[str]:
-    try:
-        return subprocess.run(
-            ["git", *arguments],
-            cwd=config.root,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-    except OSError as error:
-        raise ProposalToolError(
-            Diagnostic(
-                code="proposal.history.git",
-                message=f"failed to invoke Git: {error}",
-            )
-        ) from error
-
-
-def _metadata_at_ref(config: ProposalConfig, ref: str, relative_path: str) -> dict[str, object]:
-    result = _git(config, "show", f"{ref}:{relative_path}")
-    if result.returncode != 0:
-        raise ProposalToolError(
-            Diagnostic(
-                code="proposal.history.git",
-                path=relative_path,
-                message=f"failed to read proposal at the Git base: {result.stderr.strip()}",
-            )
-        )
-    try:
-        raw, _ = extract_frontmatter(result.stdout, relative_path)
-        return parse_frontmatter(raw, relative_path)
-    except ValueError as error:
-        raise ProposalToolError(
-            Diagnostic(
-                code="proposal.history.frontmatter",
-                path=relative_path,
-                message=f"invalid frontmatter at the Git base: {error}",
-            )
-        ) from error
-
-
-def _waived(config: ProposalConfig, path: str, previous: str, current: str) -> bool:
-    policy = config.history
-    assert policy is not None
-    return any(
-        waiver.path == path and waiver.from_status == previous and waiver.to_status == current
-        for waiver in policy.waivers
-    )
-
-
-def _validate_history(
-    config: ProposalConfig,
-    state: RepositoryState,
-    base_ref: str,
-    diagnostics: list[Diagnostic],
-) -> None:
-    policy = config.history
-    if policy is None:
-        raise ProposalToolError(
-            Diagnostic(
-                code="proposal.history.disabled",
-                path=config.relative_path(config.config_path),
-                message="`--base-ref` requires a `[history]` policy",
-            )
-        )
-    resolved = _git(config, "rev-parse", "--verify", "--end-of-options", f"{base_ref}^{{commit}}")
-    if resolved.returncode != 0:
-        raise ProposalToolError(
-            Diagnostic(
-                code="proposal.history.base-ref",
-                message=f"Git base ref does not exist: {base_ref}",
-                hint="Fetch the base ref or pass an exact locally available ref.",
-            )
-        )
-    base_commit = resolved.stdout.strip()
-
-    documents_relative = config.relative_path(config.documents_dir)
-    tree = _git(config, "ls-tree", "-r", "--name-only", base_commit, "--", documents_relative)
-    if tree.returncode != 0:
-        raise ProposalToolError(
-            Diagnostic(
-                code="proposal.history.git",
-                message=f"failed to read proposal tree at {base_ref}: {tree.stderr.strip()}",
-            )
-        )
-    pattern = _formal_filename_pattern(config)
-    old_paths = {line for line in tree.stdout.splitlines() if pattern.fullmatch(Path(line).name) is not None}
-    current_by_path = {document.relative_path: document for document in state.formal_documents}
-    if policy.protect_records:
-        for deleted in sorted(old_paths - set(current_by_path)):
-            diagnostics.append(
-                Diagnostic(
-                    code="proposal.history.deleted",
-                    path=deleted,
-                    message="formal proposal records must not be deleted",
-                )
-            )
-
-    previous_by_path = {path: _metadata_at_ref(config, base_commit, path) for path in old_paths}
-    old_number_paths: dict[int, str] = {}
-    for path, metadata in previous_by_path.items():
-        number = metadata.get(config.number_field)
-        if isinstance(number, int) and not isinstance(number, bool):
-            old_number_paths[number] = path
-
-    for document in state.formal_documents:
-        number = document.number(config)
-        if number is not None:
-            previous_path = old_number_paths.get(number)
-            if previous_path is not None and previous_path != document.relative_path:
-                diagnostics.append(
-                    Diagnostic(
-                        code="proposal.history.number-reused",
-                        path=document.relative_path,
-                        message=(
-                            f"{config.format_identifier(number)} was already assigned to {previous_path} at {base_ref}"
-                        ),
-                    )
-                )
-
-        previous = previous_by_path.get(document.relative_path)
-        current_status = document.metadata.get(config.status_field)
-        if previous is None:
-            if number not in policy.bootstrap_numbers and current_status != policy.initial_status:
-                diagnostics.append(
-                    Diagnostic(
-                        code="proposal.history.initial-status",
-                        path=document.relative_path,
-                        message=(f"new proposals must begin in `{policy.initial_status}`; found `{current_status}`"),
-                    )
-                )
+    documents_by_id = {
+        identifier: document
+        for document in state.formal_documents
+        if (identifier := document.identifier(config)) is not None
+    }
+    superseded_status = config.graph.superseded_status if config.graph is not None else "Superseded"
+    for identifier, defining_documents in sorted(owners.items()):
+        if len(defining_documents) == 1:
             continue
-        previous_status = previous.get(config.status_field)
-        if not isinstance(previous_status, str) or not isinstance(current_status, str):
-            continue
-        allowed = policy.transitions.get(previous_status, frozenset())
-        if current_status not in allowed and not _waived(
-            config, document.relative_path, previous_status, current_status
-        ):
-            diagnostics.append(
-                Diagnostic(
-                    code="proposal.history.invalid-transition",
-                    path=document.relative_path,
-                    message=f"invalid status transition `{previous_status}` -> `{current_status}`",
-                )
+        current = [
+            document
+            for document in defining_documents
+            if document.metadata.get(config.status_field) != superseded_status
+        ]
+        if len(current) == 1 and (current_id := current[0].identifier(config)) is not None:
+            superseded = _superseded_closure(config, current_id, documents_by_id)
+            previous = [document for document in defining_documents if document is not current[0]]
+            if all(
+                document.metadata.get(config.status_field) == superseded_status
+                and (previous_id := document.identifier(config)) is not None
+                and previous_id in superseded
+                for document in previous
+            ):
+                continue
+        locations = ", ".join(document.relative_path for document in defining_documents)
+        diagnostics.append(
+            Diagnostic(
+                code="proposal.defines.duplicate-owner",
+                path=current[0].relative_path if len(current) == 1 else defining_documents[0].relative_path,
+                message=f"`{identifier}` is defined by {locations}",
             )
+        )
 
 
 def validate_repository(config: ProposalConfig, *, base_ref: str | None = None) -> ValidationResult:
     """Validate repository mechanics while leaving project terminology local."""
 
-    state = load_repository(config)
+    with markdown_session(), source_session():
+        return validate_state(config, load_repository(config), base_ref=base_ref)
+
+
+def validate_state(config: ProposalConfig, state: RepositoryState, *, base_ref: str | None = None) -> ValidationResult:
+    """Validate a parsed snapshot, including a proposed repair before any writes."""
     diagnostics = list(state.diagnostics)
     _validate_schema(config, state, diagnostics)
+    properties = schema_properties(config, config.schema_path)
+    present = {key for document in state.formal_documents for key in document.metadata}
+    for field in config.index.fields:
+        if field.source == "metadata" and field.key not in properties and field.key not in present:
+            diagnostics.append(
+                Diagnostic(
+                    code="proposal.index.unknown-field",
+                    path=config.relative_path(config.config_path),
+                    message=(
+                        f"index metadata field `{field.key}` is neither declared in the schema nor present in proposals"
+                    ),
+                )
+            )
+    for name, mapping in config.fix.aliases.items():
+        enum = properties.get(name, {}).get("enum")
+        if name not in properties or (enum is not None and any(value not in enum for value in mapping.values())):
+            raise ToolError(
+                Diagnostic(
+                    code="proposal.config.alias",
+                    path=config.relative_path(config.config_path),
+                    message=f"aliases for `{name}` must target declared schema values",
+                )
+            )
+    status_enum = properties.get(config.status_field, {}).get("enum")
+    if (
+        config.history
+        and status_enum is not None
+        and any(name not in status_enum for name in config.history.transitions)
+    ):
+        raise ToolError(
+            Diagnostic(
+                code="proposal.config.history",
+                path=config.relative_path(config.config_path),
+                message="history statuses must belong to the schema enum",
+            )
+        )
     _validate_unique_numbers(config, state, diagnostics)
-    templates = _template_headings(config)
+    templates = template_headings(config)
 
     for document in state.documents:
+        _validate_title(config, document, diagnostics)
         if document.is_draft:
             _validate_frontmatter_draft(config, document, diagnostics)
             if config.drafts is not None and config.drafts.require_summary:
@@ -741,10 +629,13 @@ def validate_repository(config: ProposalConfig, *, base_ref: str | None = None) 
             _validate_formal_shape(config, document, diagnostics)
             _validate_summary(config, document, diagnostics)
         _validate_sections(config, document, templates, diagnostics)
+        validate_content(config, document, templates, diagnostics, {doc.path: doc.body for doc in state.documents})
 
-    _validate_graph(config, state, diagnostics)
+    validate_graph(config, state, diagnostics)
+    _validate_defines(config, state, diagnostics)
     if base_ref is not None:
-        _validate_history(config, state, base_ref, diagnostics)
+        validate_history(config, state, base_ref, diagnostics)
 
+    diagnostics = locate_diagnostics(config, state, diagnostics)
     ordered = tuple(sorted(diagnostics, key=Diagnostic.sort_key))
     return ValidationResult(state=state, diagnostics=ordered)

@@ -5,7 +5,7 @@ status: Draft
 type: Standards Track
 authors:
   - "Doe, Jane"
-requires: []
+requires: [0]
 ---
 
 # Draft SEP: Script Mode

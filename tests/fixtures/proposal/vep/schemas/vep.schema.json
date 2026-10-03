@@ -15,6 +15,7 @@
       "type": "array",
       "uniqueItems": true,
       "items": {"type": "string", "pattern": "^VEP-[0-9]{4}$"}
-    }
+    },
+    "defines": {"type": "array", "items": {"type": "string"}}
   }
 }

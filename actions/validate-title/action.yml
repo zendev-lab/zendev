@@ -1,23 +1,22 @@
 name: Validate PR title
-description: Validate a PR title against a zendev, Conventional Commits, or gitmoji profile.
+description: "Validate a PR title against a zendev, Conventional Commits, or gitmoji profile."
 
 inputs:
   text:
-    description: Text to validate (for example github.event.pull_request.title).
+    description: "Text to validate (for example github.event.pull_request.title)."
     required: true
   profile:
-    description: Commit profile (auto, zendev, conventional, or gitmoji).
+    description: "Optional profile override (zendev, conventional, or gitmoji)."
     required: false
-    default: "auto"
+    default: ""
 
 runs:
   using: composite
   steps:
-    - uses: actions/setup-python@v5
+    - name: Set up uv
+      uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
       with:
-        python-version: "3.12"
-
-    - uses: astral-sh/setup-uv@v6
+        python-version: "3.14"
 
     - name: Validate title
       shell: bash
@@ -29,4 +28,9 @@ runs:
 
         zendev_root="$(cd "${GITHUB_ACTION_PATH}/../.." && pwd)"
         echo "Using zendev from ${zendev_root}"
-        uvx --from "${zendev_root}" zendev-validate-title --profile "${INPUT_PROFILE}" "${INPUT_TEXT}"
+        args=(zendev-message check --title --format github --text "${INPUT_TEXT}")
+        if [[ -n "${INPUT_PROFILE}" ]]; then
+          args+=(--profile "${INPUT_PROFILE}")
+        fi
+        uvx --from "${zendev_root}/packages/zendev-message" \
+          --with "${zendev_root}/packages/zendev-core" "${args[@]}"

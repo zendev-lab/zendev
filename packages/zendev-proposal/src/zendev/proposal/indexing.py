@@ -3,41 +3,17 @@
 from __future__ import annotations
 
 import json
-import re
 
+from zendev.core.diagnostics import ToolError
+from zendev.core.source import read_text
+from zendev.proposal.graph import validate_graph
 from zendev.proposal.model import (
     Diagnostic,
     ProposalConfig,
     ProposalDocument,
-    ProposalToolError,
     RepositoryState,
 )
-
-
-def normalize_reference(config: ProposalConfig, value: object) -> str | None:
-    """Normalize integer or canonical string edges to a display identifier."""
-
-    if isinstance(value, int) and not isinstance(value, bool) and 0 <= value < 10**config.number_width:
-        return config.format_identifier(value)
-    if not isinstance(value, str):
-        return None
-    pattern = rf"^{re.escape(config.prefix)}-(\d{{{config.number_width}}})$"
-    return value if re.fullmatch(pattern, value) is not None else None
-
-
-def edge_identifiers(config: ProposalConfig, document: ProposalDocument, field: str) -> tuple[str, ...]:
-    raw = document.metadata.get(field)
-    if not isinstance(raw, list):
-        return ()
-    return tuple(identifier for value in raw if (identifier := normalize_reference(config, value)) is not None)
-
-
-def _identifier_sort_key(config: ProposalConfig, identifier: str) -> tuple[int, int, str]:
-    prefix = f"{config.prefix}-"
-    suffix = identifier.removeprefix(prefix)
-    if identifier.startswith(prefix) and suffix.isdigit():
-        return (0, int(suffix), identifier)
-    return (1, 0, identifier)
+from zendev.proposal.references import edge_numbers, reference_number
 
 
 def _document_sort_key(config: ProposalConfig, document: ProposalDocument) -> tuple[int, int, str]:
@@ -50,41 +26,57 @@ def _document_sort_key(config: ProposalConfig, document: ProposalDocument) -> tu
 def build_index(config: ProposalConfig, state: RepositoryState) -> dict[str, object]:
     """Build the configured machine-readable index without writing it."""
 
-    documents = state.documents if config.index.include_drafts else state.formal_documents
+    diagnostics = list(state.diagnostics)
+    documents = state.formal_documents
+    seen: set[int] = set()
+    for document in documents:
+        number = document.number(config)
+        if number is None or reference_number(config, number) is None or number in seen:
+            diagnostics.append(
+                Diagnostic(
+                    code="proposal.index.identity",
+                    path=document.relative_path,
+                    message="indexed proposals must have unique valid integer numbers",
+                )
+            )
+        else:
+            seen.add(number)
+    validate_graph(config, state, diagnostics)
+    if diagnostics:
+        raise ToolError(sorted(diagnostics, key=Diagnostic.sort_key)[0])
+
     inverse_relations = {
         field.key for field in config.index.fields if field.source == "inverse" and field.key is not None
     }
-    identifiers = {
-        identifier: document for document in documents if (identifier := document.identifier(config)) is not None
-    }
-    inverse: dict[str, dict[str, set[str]]] = {
-        identifier: {relation: set() for relation in inverse_relations} for identifier in identifiers
+    numbers = {number: document for document in documents if (number := document.number(config)) is not None}
+    inverse: dict[int, dict[str, set[int]]] = {
+        number: {relation: set() for relation in inverse_relations} for number in numbers
     }
     for document in documents:
-        source = document.identifier(config)
+        source = document.number(config)
         if source is None:
             continue
         for relation in inverse_relations:
-            for target in edge_identifiers(config, document, relation):
+            for target in edge_numbers(config, document, relation):
                 if target in inverse:
                     inverse[target][relation].add(source)
 
     entries: list[dict[str, object]] = []
     for document in sorted(documents, key=lambda item: _document_sort_key(config, item)):
-        identifier = document.identifier(config)
+        number = document.number(config)
         entry: dict[str, object] = {}
         for field in config.index.fields:
             if field.source == "metadata":
                 assert field.key is not None
                 value: object = document.metadata.get(field.key)
-            elif field.source == "identifier":
-                value = identifier
+                if config.graph is not None and field.key in config.graph.fields:
+                    value = list(edge_numbers(config, document, field.key))
             elif field.source == "path":
                 value = document.relative_path
             else:
                 assert field.key is not None
-                values = set() if identifier is None else inverse.get(identifier, {}).get(field.key, set())
-                value = sorted(values, key=lambda item: _identifier_sort_key(config, item))
+                values = set() if number is None else inverse.get(number, {}).get(field.key, set())
+                value = sorted(values)
             entry[field.name] = value
         entries.append(entry)
 
@@ -95,14 +87,22 @@ def expected_index_text(config: ProposalConfig, state: RepositoryState) -> str:
     return json.dumps(build_index(config, state), indent=2, ensure_ascii=False) + "\n"
 
 
-def check_index(config: ProposalConfig, state: RepositoryState) -> Diagnostic | None:
+DEFAULT_FIX_INVOCATION = "zendev proposal check --fix"
+
+
+def check_index(
+    config: ProposalConfig,
+    state: RepositoryState,
+    *,
+    fix_invocation: str = DEFAULT_FIX_INVOCATION,
+) -> Diagnostic | None:
     expected = expected_index_text(config, state)
     try:
-        current = config.index_path.read_text(encoding="utf-8")
+        current = read_text(config.index_path)
     except FileNotFoundError:
         current = None
     except (OSError, UnicodeError) as error:
-        raise ProposalToolError(
+        raise ToolError(
             Diagnostic(
                 code="proposal.index.read",
                 path=config.relative_path(config.index_path),
@@ -115,26 +115,5 @@ def check_index(config: ProposalConfig, state: RepositoryState) -> Diagnostic | 
         code="proposal.index.drift",
         path=config.relative_path(config.index_path),
         message="committed proposal index is missing or out of date",
-        hint="Run `zendev-proposal index --write` and commit the result.",
+        hint=f"Run `{fix_invocation}` and commit the result.",
     )
-
-
-def write_index(config: ProposalConfig, state: RepositoryState) -> bool:
-    """Write the expected index and return whether the file changed."""
-
-    expected = expected_index_text(config, state)
-    try:
-        current = config.index_path.read_text(encoding="utf-8") if config.index_path.exists() else None
-        if current == expected:
-            return False
-        config.index_path.parent.mkdir(parents=True, exist_ok=True)
-        config.index_path.write_text(expected, encoding="utf-8", newline="\n")
-    except (OSError, UnicodeError) as error:
-        raise ProposalToolError(
-            Diagnostic(
-                code="proposal.index.write",
-                path=config.relative_path(config.index_path),
-                message=f"failed to write proposal index: {error}",
-            )
-        ) from error
-    return True

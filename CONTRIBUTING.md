@@ -5,42 +5,42 @@
 Zendev requires Python 3.12 or newer. Install the complete workspace before
 changing code or generated metadata:
 
-```console
-$ uv sync --all-packages --all-groups
+```shell
+uv sync --all-packages --all-groups
 ```
 
 Run the repository gates before opening or updating a pull request:
 
-```console
-$ just ci
-$ uvx prek run --all-files
-$ uv pip check
+```shell
+just ci
+uvx prek run --all-files
+uv pip check
 ```
 
-When ZFP documents, templates, or policy change, also verify the proposal set
-and its committed index:
+When ZFP documents, templates, or policy change, write a drifted index into the
+same change:
 
-```console
-$ uv run zendev proposal check
-$ uv run zendev proposal index --check
+```shell
+uv run zendev proposal check --fix
 ```
 
-`just ci` formats and lints code, runs ty and Pyright, and executes the test
-suite with coverage. Tests should assert observable behavior and public
+`just ci` checks formatting and lints code, runs ty and Pyrefly, and executes the test
+suite with coverage. Use `just format` explicitly to format source, and `just packages`
+to validate isolated wheel installations. Tests should assert observable behavior and public
 contracts rather than implementation control flow.
 
 ## Vendored Gitmoji data
 
-The commit package keeps an offline Gitmoji catalog pinned to an upstream
+The message package keeps an offline Gitmoji catalog pinned to an upstream
 revision. Refresh it only through the repository task:
 
-```console
-$ just sync-gitmoji
+```shell
+just sync-gitmoji
 ```
 
 The task validates the upstream payload before updating the vendored file.
 Review both the data diff and the pairing table in
-[`packages/zendev-commit/src/zendev/data`](./packages/zendev-commit/src/zendev/data/)
+[`packages/zendev-message/src/zendev/message/data`](./packages/zendev-message/src/zendev/message/data/)
 before committing the result.
 
 ## Documentation ownership
@@ -49,34 +49,74 @@ Documentation stays with the code or policy that owns it:
 
 | Document | Owner |
 | --- | --- |
-| [`README.md`](./README.md) | Toolkit positioning, installation, unified commands, and package navigation |
-| `packages/*/README.md` | Component installation, API, independent commands, and boundaries |
-| [`actions/README.md`](./actions/README.md) | Composite Action inputs and integration examples |
+| [`README.md`](./README.md) | GitHub and PyPI landing page, quick installation, and navigation |
+| [`docs/`](./docs/) | Official concepts, guides, integrations, reference, and development documentation |
+| `packages/*/README.md` | Distribution landing pages and links to the official documentation |
+| [`actions/README.md`](./actions/README.md) | Composite Action landing page and official documentation link |
 | [`zfps/README.md`](./zfps/README.md) | ZFP reading and submission process |
 | `CONTRIBUTING.md` | Development gates, data maintenance, documentation ownership, and PR rules |
 
-Do not recreate a general `docs/` directory or duplicate component behavior in
-the root README.
+Preview the documentation with `just docs` and validate it with
+`just docs-build`. The strict build is also the `Documentation Checks` job in
+`CI - Static Checks`. Do not move or duplicate `zfps/` under `docs/`; ZFPs remain
+the repository's design and governance source of truth. Copyable command
+examples use `shell` fences and must not start with `$ `. Mixed command-and-output
+transcripts may keep a session fence.
 
 ## Zendev Feature Proposals
 
-Public feature and governance changes begin with a ZFP. ZFP prose defaults to
+New public contracts and governance decisions begin with a ZFP. Implementing
+an existing ZFP, restoring its intended behavior, and maintenance that preserves
+public semantics can use a direct PR. Link the existing proposal when it covers
+the work; explain new decisions or uncertainty in the existing motivation or
+solution section. Compatible new interfaces still introduce public contracts.
+Use the [decision criteria and examples](./zfps/ZFP-0000-governance.md#何时需要提案),
+not change size or commit labels, to determine the route. This is a review
+decision, not a check inferred automatically from the diff.
+
+ZFP authors use lowercase GitHub usernames without `@`; see the
+[authorship policy](./zfps/ZFP-0000-governance.md#作者身份).
+
+ZFP prose defaults to
 Chinese, but another language is allowed when it makes the proposal clearer;
 machine metadata and technical identifiers remain English. See
 [`zfps/README.md`](./zfps/README.md) and the governing
 [`ZFP-0000`](./zfps/ZFP-0000-governance.md).
 
+Keep the ZFP and its implementation in separate PRs, even when both are
+prepared in the same task. Keep each PR in Draft until validation is ready.
+The proposal PR contains the ZFP, its generated index,
+and directly related proposal or contribution guidance. Implementation code,
+tests, package changes, CI, and feature usage documentation belong in the
+implementation PR, which links the ZFP and its proposal PR.
+
+When the implementation depends on an unmerged proposal, use a PR stack:
+`main <- proposal <- implementation`. Set the implementation PR's base to the
+proposal branch and verify each PR's diff against its own base: the proposal
+diff must contain no implementation, and the implementation diff must not
+repeat the proposal. The two PRs can be prepared and reviewed together without
+waiting for the proposal to merge.
+
 ## Pull requests
 
 Use a valid Gitmoji-style title. ZFP pull requests use `docs(zfp)` and one of
-these verbs as a review convention, not as a machine-enforced lifecycle:
+these verbs as a review convention, not as a machine-enforced lifecycle.
+Propose and revise titles name the topic only. They do not include a
+`ZFP-NNNN` identifier; the formatted identifier belongs in filenames and
+references, while the numeric proposal number belongs in frontmatter and the
+generated index.
+A superseding pull request names the replaced proposal and the new topic,
+but not the new proposal number.
 
-- `📝 docs(zfp): propose ZFP-NNNN <topic>`
-- `📝 docs(zfp): revise ZFP-NNNN <topic>`
-- `📝 docs(zfp): supersede ZFP-NNNN with ZFP-MMMM`
+- `📝 docs(zfp): propose <topic>`
+- `📝 docs(zfp): revise <topic>`
+- `📝 docs(zfp): supersede ZFP-NNNN with <topic>`
 
 The pull-request body must retain the Chinese H2 structure in
 [the repository template](./.github/pull_request_template.md): `动机` and
 `解决方案` are required, while `说明` and `后续工作` are optional. Do not add a
 checklist merely to satisfy process; record material validation in the solution
 or notes.
+
+PR titles are validated for every author, including bots. Renovate is exempt
+only from the PR body template requirement.

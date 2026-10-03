@@ -1,9 +1,8 @@
 {
-  "version": 1,
+  "version": 2,
   "zfps": [
     {
       "zfp": 0,
-      "id": "ZFP-0000",
       "path": "zfps/ZFP-0000-governance.md",
       "title": "Zendev 功能提案治理",
       "type": "Governance",
@@ -16,7 +15,6 @@
     },
     {
       "zfp": 1,
-      "id": "ZFP-0001",
       "path": "zfps/ZFP-0001-package-split.md",
       "title": "将 Zendev 拆分为 PEP 420 发行包",
       "type": "Feature",
@@ -29,9 +27,80 @@
     },
     {
       "zfp": 2,
-      "id": "ZFP-0002",
-      "path": "zfps/ZFP-0002-single-toml-ide.md",
-      "title": "统一提案配置与 IDE 集成契约",
+      "path": "zfps/ZFP-0002-defined-concepts.md",
+      "title": "可选的定义所有权校验",
+      "type": "Feature",
+      "authors": [
+        "zrr1999"
+      ],
+      "created": "2026-09-02",
+      "supersedes": [],
+      "superseded_by": []
+    },
+    {
+      "zfp": 3,
+      "path": "zfps/ZFP-0003-cli-surface.md",
+      "title": "规范化统一 CLI 与提案 check --fix",
+      "type": "Feature",
+      "authors": [
+        "zrr1999"
+      ],
+      "created": "2026-09-02",
+      "supersedes": [],
+      "superseded_by": []
+    },
+    {
+      "zfp": 4,
+      "path": "zfps/ZFP-0004-numeric-proposal-index.md",
+      "title": "数值提案索引身份",
+      "type": "Feature",
+      "authors": [
+        "zrr1999"
+      ],
+      "created": "2026-09-02",
+      "supersedes": [],
+      "superseded_by": []
+    },
+    {
+      "zfp": 5,
+      "path": "zfps/ZFP-0005-proposal-repairs.md",
+      "title": "提案机械校验与确定性修复",
+      "type": "Feature",
+      "authors": [
+        "zrr1999"
+      ],
+      "created": "2026-09-08",
+      "supersedes": [],
+      "superseded_by": []
+    },
+    {
+      "zfp": 6,
+      "path": "zfps/ZFP-0006-domain-architecture.md",
+      "title": "消息与提案领域及共享基础",
+      "type": "Feature",
+      "authors": [
+        "zrr1999"
+      ],
+      "created": "2026-09-24",
+      "supersedes": [],
+      "superseded_by": []
+    },
+    {
+      "zfp": 7,
+      "path": "zfps/ZFP-0007-project-evolution.md",
+      "title": "项目初始意图与按日期记录的演进",
+      "type": "Feature",
+      "authors": [
+        "zrr1999"
+      ],
+      "created": "2026-09-08",
+      "supersedes": [],
+      "superseded_by": []
+    },
+    {
+      "zfp": 9,
+      "path": "zfps/ZFP-0009-metadata-profile-ide.md",
+      "title": "提案 metadata profile 与 IDE 集成契约",
       "type": "Feature",
       "authors": [
         "zrr1999"
