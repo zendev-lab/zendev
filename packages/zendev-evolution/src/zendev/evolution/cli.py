@@ -15,14 +15,14 @@ from zendev.evolution import EvolutionCheck, check_document
 app = typer.Typer(
     name="zendev-evolution",
     add_completion=False,
-    help="Initialize, list, and validate a project's initial intent and dated evolution.",
+    help="Initialize, list, and check an EVOLUTION.md record.",
     no_args_is_help=True,
     pretty_exceptions_enable=False,
     rich_markup_mode=None,
 )
 
 FileOption = Annotated[Path, typer.Option("--file", help="Document path, relative to the current directory.")]
-FormatOption = Annotated[OutputFormat, typer.Option("--format")]
+FormatOption = Annotated[OutputFormat, typer.Option("--format", help="Output format.")]
 
 
 @app.callback()
@@ -74,7 +74,7 @@ def init_command(
     file: FileOption = Path("EVOLUTION.md"),
     output_format: FormatOption = OutputFormat.HUMAN,
 ) -> None:
-    """Create a document from initial intent without overwriting an existing path."""
+    """Create a document from initial intent without overwriting any path."""
     source_name = "<stdin>" if str(source) == "-" else str(source)
     prefix = "# 项目演进\n\n## 初始意图\n\n"
     content = _read(source, "init", output_format, stdin=str(source) == "-")

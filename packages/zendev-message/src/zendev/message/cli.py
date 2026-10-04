@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import subprocess
-import sys
 from dataclasses import replace
 from enum import StrEnum
 from pathlib import Path
@@ -35,7 +34,7 @@ class MessageScope(StrEnum):
 
 @app.callback()
 def _message() -> None:
-    """Create and validate development messages."""
+    """Validate commit and pull-request messages."""
 
 
 def input_is_single_line(text: str) -> bool:
@@ -64,22 +63,35 @@ def _comment_char() -> str:
 
 @app.command("check")
 def check_command(
-    source_file: Annotated[Path | None, typer.Argument(metavar="FILE")] = None,
-    text: Annotated[str | None, typer.Option("--text")] = None,
-    title: Annotated[bool, typer.Option("--title")] = False,
-    body: Annotated[bool, typer.Option("--body")] = False,
+    source_file: Annotated[
+        Path | None, typer.Argument(metavar="FILE", help="Message file; mutually exclusive with --text.")
+    ] = None,
+    text: Annotated[str | None, typer.Option("--text", help="Message text; mutually exclusive with FILE.")] = None,
+    title: Annotated[bool, typer.Option("--title", help="Check exactly one title line.")] = False,
+    body: Annotated[bool, typer.Option("--body", help="Check a pull-request body against its template.")] = False,
     commit: Annotated[
         bool, typer.Option("--commit", help="Use Git message cleanup and special-message rules.")
     ] = False,
-    config: Annotated[Path | None, typer.Option("--config")] = None,
-    profile: Annotated[MessageProfile | None, typer.Option("--profile")] = None,
-    template: Annotated[Path | None, typer.Option("--template")] = None,
-    require_checklist: Annotated[bool | None, typer.Option("--require-checklist/--no-require-checklist")] = None,
-    checklist_section: Annotated[str | None, typer.Option("--checklist-section")] = None,
-    fail_on_empty_checklist: Annotated[
-        bool | None, typer.Option("--fail-on-empty-checklist/--allow-empty-checklist")
+    config: Annotated[Path | None, typer.Option("--config", help="Explicit ZenDev configuration source.")] = None,
+    profile: Annotated[
+        MessageProfile | None, typer.Option("--profile", help="Override the title and commit profile.")
     ] = None,
-    output_format: Annotated[OutputFormat, typer.Option("--format")] = OutputFormat.HUMAN,
+    template: Annotated[Path | None, typer.Option("--template", help="Override the PR template for --body.")] = None,
+    require_checklist: Annotated[
+        bool | None,
+        typer.Option("--require-checklist/--no-require-checklist", help="Require checked template rows with --body."),
+    ] = None,
+    checklist_section: Annotated[
+        str | None, typer.Option("--checklist-section", help="Checklist H2 title for --body.")
+    ] = None,
+    fail_on_empty_checklist: Annotated[
+        bool | None,
+        typer.Option(
+            "--fail-on-empty-checklist/--allow-empty-checklist",
+            help="Fail when the template has no checked rows, with --body.",
+        ),
+    ] = None,
+    output_format: Annotated[OutputFormat, typer.Option("--format", help="Output format.")] = OutputFormat.HUMAN,
 ) -> None:
     """Check FILE or --text using the selected message scope."""
     diagnostics: tuple[Diagnostic, ...] = ()
@@ -145,7 +157,8 @@ def check_command(
         diagnostics = (Diagnostic("message.input.read", str(error), path=str(source_file) if source_file else None),)
         exit_code = 2
     report = render_report(diagnostics, command="message check", output_format=output_format)
-    print(report, file=sys.stderr if diagnostics and output_format is OutputFormat.HUMAN else sys.stdout)
+    stream = "stderr" if diagnostics and output_format is OutputFormat.HUMAN else "stdout"
+    typer.echo(report, file=typer.get_text_stream(stream, encoding="utf-8"))
     if exit_code:
         raise typer.Exit(exit_code)
 

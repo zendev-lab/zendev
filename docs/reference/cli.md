@@ -39,7 +39,7 @@ multi-line input selects complete commit-message validation.
 | `--base-ref REF` | Exact local Git ref for lifecycle history validation. |
 | `--diff` | Preview source/index repairs without writing. |
 | `--select RULES` | Comma-separated repair rules. |
-| `--partial` | Explicitly apply independent safe repairs; retain errors and withhold an invalid index. |
+| `--partial` | Explicitly apply independent safe repairs; retain errors and withhold an invalid index. Requires `--fix` or `--diff`. |
 | `--fix` | Repair deterministic source omissions and update the index after successful validation. |
 | `--format human\|json\|github` | Shared human, JSON envelope, or GitHub annotations. |
 
