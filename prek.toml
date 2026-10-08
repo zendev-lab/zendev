@@ -92,6 +92,11 @@ hooks = [
 ]
 
 [[repos]]
+repo = "https://github.com/asamarts/alint-pre-commit"
+rev = "v0.17.0"
+hooks = [{ id = "alint" }]
+
+[[repos]]
 repo = "local"
 hooks = [
   { id = "zendev-message", name = "zendev commit message", entry = "uv run zendev message check --commit", language = "system", stages = ["commit-msg"] },

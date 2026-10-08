@@ -41,17 +41,24 @@ or a shared documentation preset without a demonstrated product requirement.
 
 ## Distribution checks
 
-Build all six workspace wheels and exercise each isolated installation, including
-evolution initialization, listing, and checking:
+Build all six workspace wheels into `dist/`, check their contents, and run each
+distribution's entry point in an isolated environment:
 
 ```shell
 just packages
 ```
 
-The check builds into a temporary directory and verifies same-version dependencies,
-namespace ownership, pure APIs, and actual CLI commands outside the checkout.
-CI uses this same entry point. Public hook tests use `scripts/verify_hooks.py`
-with local wheels and `UV_NO_SOURCES=true`.
+[check-wheel-contents](https://github.com/jwodder/check-wheel-contents) compares
+each wheel with its source tree, so a missing, extra, or duplicated module, data
+file, or `py.typed` fails the build. The pinned sibling versions exist only in
+`dist/`, so each installation uses the wheels just built.
+CI and the release workflow use this same entry point.
+
+Source layout rules run on every commit: [alint](https://github.com/asamarts/alint)
+enforces namespace ownership, typed subpackages, and same-version sibling pins
+from `.alint.yml`, and Ruff's banned-import rule keeps Typer and CLI modules out
+of domain modules. Public hook tests use `scripts/verify_hooks.py` with local
+wheels and `UV_NO_SOURCES=true`.
 
 Before the first release containing `zendev-evolution`, configure the PyPI
 Trusted Publisher for `zendev-lab/zendev`, workflow `cd-release.yml`, environment
