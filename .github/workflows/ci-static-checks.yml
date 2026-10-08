@@ -22,9 +22,6 @@ jobs:
       - name: Validate public hook manifest
         run: uvx prek validate-manifest .pre-commit-hooks.yaml
 
-      - name: Exercise public hooks
-        run: uv run python scripts/verify_hooks.py
-
   codeql:
     name: CodeQL
     runs-on: ubuntu-latest

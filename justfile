@@ -1,3 +1,5 @@
+set lazy
+
 # List all available commands
 default:
     @just --list
@@ -73,6 +75,21 @@ packages:
     {{ isolated }} dist/zendev_message-*.whl zendev-commit --help
     {{ isolated }} dist/zendev_proposal-*.whl zendev-proposal --help
     {{ isolated }} dist/zendev-*.whl zendev --help
+
+scm_version := `uvx --with hatch-vcs==0.5.0 hatchling==1.32.4 version`
+hook_env := "UV_NO_SOURCES=true UV_FIND_LINKS=" + justfile_directory() / "dist" + " SETUPTOOLS_SCM_PRETEND_VERSION=" + scm_version
+
+# Install the published hooks from the committed checkout against the wheels in dist/
+hooks: packages
+    git diff --exit-code HEAD
+    {{ hook_env }} uvx prek try-repo . zendev-proposal-check --all-files
+    echo "Merge branch main" > dist/COMMIT_EDITMSG
+    {{ hook_env }} uvx prek try-repo . zendev-message-check --stage commit-msg --commit-msg-filename dist/COMMIT_EDITMSG
+    git init -q dist/hook-repo
+    cp templates/evolution.md dist/hook-repo/EVOLUTION.md
+    git -C dist/hook-repo add EVOLUTION.md
+    {{ hook_env }} uvx prek try-repo -C dist/hook-repo {{ justfile_directory() }} zendev-evolution-check --all-files
+    git diff --exit-code HEAD
 
 # Run pre-commit on all files
 pre-commit:
