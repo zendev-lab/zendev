@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Iterator
+from collections.abc import Generator
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass, replace
@@ -77,7 +77,7 @@ _facts: ContextVar[dict[tuple[str, str | None], MarkdownFacts] | None] = Context
 
 
 @contextmanager
-def markdown_session() -> Iterator[None]:
+def markdown_session() -> Generator[None]:
     if _facts.get() is not None:
         yield
         return
