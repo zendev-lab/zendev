@@ -16,6 +16,10 @@ jobs:
         with:
           persist-credentials: false
 
+      - uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4.0.0
+        with:
+          just-version: "1.58.0"
+
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           enable-cache: false
@@ -26,8 +30,7 @@ jobs:
           uv sync --all-packages --all-groups
           uvx prek run --all-files
           uv run pytest -v
-          uv build --all-packages --wheel
-          uv run python scripts/verify_packages.py dist
+          just packages
 
   build:
     name: Build ${{ matrix.package }}

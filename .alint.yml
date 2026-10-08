@@ -1,0 +1,67 @@
+# Distribution layout policy for the zendev namespace packages.
+# yaml-language-server: $schema=https://raw.githubusercontent.com/asamarts/alint/main/schemas/v1/config.json
+
+version: 1
+
+rules:
+  - id: namespace-has-no-init
+    kind: file_absent
+    paths:
+      - src/zendev/__init__.py
+      - packages/*/src/zendev/*
+    level: error
+    message: "zendev is a PEP 420 namespace; components contribute only their own subpackage."
+
+  - id: namespace-ownership
+    kind: dir_absent
+    paths:
+      include:
+        - src/zendev/*
+        - packages/*/src/zendev/*
+      exclude:
+        - src/zendev/cli
+        - packages/zendev-core/src/zendev/core
+        - packages/zendev-evolution/src/zendev/evolution
+        - packages/zendev-log/src/zendev/log
+        - packages/zendev-message/src/zendev/message
+        - packages/zendev-proposal/src/zendev/proposal
+    level: error
+    message: "Each distribution owns exactly one zendev subpackage."
+
+  - id: subpackages-are-typed
+    kind: dir_contains
+    select: "{src/zendev/cli,packages/*/src/zendev/*}"
+    require:
+      - __init__.py
+      - py.typed
+    level: error
+    message: "Every zendev subpackage ships __init__.py and py.typed."
+
+  - id: sibling-pins
+    kind: toml_path_matches
+    paths:
+      - pyproject.toml
+      - packages/*/pyproject.toml
+    path: "$.tool.hatch.metadata.hooks.custom.dependencies[?search(@, '^zendev-')]"
+    matches: '^zendev-[a-z]+==\{version\}$'
+    if_present: true
+    level: error
+    message: "Sibling distributions are pinned to the release version with =={version}."
+
+  - id: components-depend-only-on-core
+    kind: toml_path_matches
+    paths: packages/*/pyproject.toml
+    path: "$.tool.hatch.metadata.hooks.custom.dependencies[?search(@, '^zendev-')]"
+    matches: '^zendev-core=='
+    if_present: true
+    level: error
+    message: "Components depend on no sibling other than zendev-core."
+
+  - id: no-unpinned-siblings
+    kind: toml_path_absent
+    paths:
+      - pyproject.toml
+      - packages/*/pyproject.toml
+    path: "$.project.dependencies[?search(@, '^zendev')]"
+    level: error
+    message: "Declare sibling distributions only in the pinning metadata hook."

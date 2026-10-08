@@ -114,14 +114,27 @@ select = [
   "C4",  # flake8-comprehensions
   "FA",  # flake8-future-annotations
   "RUF",  # ruff-specific rules
+  "TID251",  # banned imports
 ]
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"typer".msg = "Only CLI adapters import Typer; domain modules stay usable without the CLI."
+"zendev.cli".msg = "Only CLI adapters import CLI modules."
+"zendev.evolution.cli".msg = "Only CLI adapters import CLI modules."
+"zendev.message.cli".msg = "Only CLI adapters import CLI modules."
+"zendev.message.interactive".msg = "Only CLI adapters import CLI modules."
+"zendev.proposal.cli".msg = "Only CLI adapters import CLI modules."
 
 [tool.ruff.lint.isort]
 known-first-party = ["zendev"]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401", "I002"]
-"tests/**" = ["D"]
+"packages/*/src/zendev/*/cli.py" = ["TID251"]
+"packages/zendev-message/src/zendev/message/interactive.py" = ["TID251"]
+"scripts/**" = ["TID251"]
+"src/zendev/**" = ["TID251"]
+"tests/**" = ["D", "TID251"]
 
 [tool.ruff.format]
 quote-style = "double"
