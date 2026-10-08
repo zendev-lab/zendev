@@ -31,8 +31,8 @@ jobs:
         run: |
           uv run pytest --cov=zendev --cov-report=xml -v
 
-      - name: Build distributions
-        run: just packages
+      - name: Build distributions and exercise public hooks
+        run: just hooks
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7

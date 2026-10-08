@@ -48,5 +48,5 @@ Version `0.3.0` replaced the legacy IDs `zendev-commit-msg` and
 Replace `<release-or-commit>` with the release containing the migration. A
 released hook installs the complete toolkit and its exact-version components.
 For unreleased development, use the workspace `uv run zendev` command or build
-all components together. Maintainers can run `uv run python scripts/verify_hooks.py`
-on a clean committed checkout to test real hook installation using local wheels.
+all components together. Maintainers can run `just hooks` on a clean committed
+checkout to install the published hooks with `prek try-repo` against local wheels.
