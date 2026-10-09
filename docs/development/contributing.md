@@ -23,6 +23,14 @@ The strict build turns Zensical warnings such as broken internal links or
 anchors into failures. Pull requests run the same build as `Documentation
 Checks` in `CI - Static Checks`.
 
+## Machine-readable output
+
+Coding agents are a primary zendev audience, so the build also publishes
+`llms.txt`, `llms-full.txt`, and a Markdown copy of each page through Zensical's
+built-in `llmstxt` plugin. The same copies back the **Copy as Markdown** page
+action. Sections follow the site directories; a page added outside them must
+also be listed under `project.plugins.llmstxt.sections` in `zensical.toml`.
+
 ## Ownership rules
 
 - Keep GitHub and PyPI landing information in the root and package READMEs.

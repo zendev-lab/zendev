@@ -46,9 +46,11 @@ nav = [
 
 [project.theme]
 features = [
+  "content.action.copy",
   "content.action.edit",
   "content.action.view",
   "content.code.copy",
+  "navigation.footer",
   "navigation.indexes",
   "navigation.instant",
   "navigation.path",
@@ -56,3 +58,16 @@ features = [
   "search.highlight",
   "toc.follow",
 ]
+
+# Publish /llms.txt and per-page Markdown, which also backs "Copy as Markdown".
+[project.plugins.llmstxt]
+markdown_description = "Zendev keeps repository policy in Git, Markdown, TOML, and JSON Schema, and supplies deterministic tools for commits, pull-request messages, and proposal records."
+full_output = "llms-full.txt"
+
+[project.plugins.llmstxt.sections]
+"Getting started" = ["index.md", "getting-started.md"]
+"Concepts" = ["concepts/index.md", "concepts/*.md"]
+"Guides" = ["guides/index.md", "guides/*.md"]
+"Integrations" = ["integrations/index.md", "integrations/*.md"]
+"Reference" = ["reference/index.md", "reference/*.md"]
+"Development" = ["development/index.md", "development/*.md"]
