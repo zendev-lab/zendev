@@ -6,7 +6,7 @@ packages, composite Actions, proposal fixtures, and the documentation site.
 Install everything required for local development:
 
 ```shell
-uv sync --all-packages --all-groups
+just install
 ```
 
 Run the repository gates before updating a pull request:
@@ -14,7 +14,6 @@ Run the repository gates before updating a pull request:
 ```shell
 just ci
 just docs-build
-uvx prek run --all-files
 uv pip check
 ```
 

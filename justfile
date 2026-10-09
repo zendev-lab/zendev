@@ -1,58 +1,27 @@
 set lazy
 
-# List all available commands
 default:
     @just --list
 
-# Create virtual environment
-venv:
-    uv venv
-
-# Install dependencies in development mode
+# Install development dependencies and Git hooks
 install:
-    uv sync --all-packages --all-groups
-    uvx prek install
+    uv sync --frozen --all-packages --all-groups
+    uvx prek install --prepare-hooks --hook-type pre-commit --hook-type commit-msg
 
-# Format all code (Python + justfile)
-format:
-    just --fmt --unstable
-    uvx ruff format
-    uvx ruff check --fix
-
-# Read-only formatting, lint, and type checks
+# Run the repository gate
 check:
+    uvx prek run --all-files
     just --fmt --check --unstable
-    uvx ruff format --check
-    uvx ruff check
-    uvx ty check .
-    uv run pyrefly check
 
-# Run all tests
+# Run tests
 test:
-    uv run pytest -v
+    uv run --frozen pytest
 
 # Run tests with coverage
 cov:
-    uv run pytest --cov=zendev --cov-report=html --cov-report=xml
-    uv run coverage xml
+    uv run --frozen pytest --cov=zendev --cov-report=html --cov-report=xml
 
-# Generate and open HTML coverage report
-cov-open:
-    just cov
-    open htmlcov/index.html || xdg-open htmlcov/index.html
-
-# Clean build artifacts
-clean:
-    rm -rf .pytest_cache/
-    rm -rf .ruff_cache/
-    rm -rf htmlcov/
-    rm -rf dist/
-    rm -rf build/
-    rm -rf *.egg-info/
-    find . -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
-    find . -name "*.pyc" -delete 2>/dev/null || true
-
-# Read-only CI checks and tests (generated coverage is not tracked)
+# Run the repository gate and tests with coverage
 ci: check cov
 
 wheel_check := "uvx check-wheel-contents==0.6.3"
@@ -92,28 +61,14 @@ hooks: packages
     {{ hook_env }} uvx prek try-repo -C dist/hook-repo {{ justfile_directory() }} zendev-evolution-check --all-files
     git diff --exit-code HEAD
 
-# Run pre-commit on all files
-pre-commit:
-    uvx prek run --all-files
-
 # Serve documentation locally
 docs:
-    uv run --group docs zensical serve --open
+    uv run --frozen --group docs zensical serve --open
 
 # Validate and build documentation
 docs-build:
-    uv run --group docs zensical build --strict
-
-# Validate the current commit message file
-commit-msg:
-    uvx prek run --stage commit-msg --commit-msg-filename .git/COMMIT_EDITMSG --files .git/COMMIT_EDITMSG
+    uv run --frozen --group docs zensical build --strict
 
 # Refresh the offline gitmoji catalog from its pinned upstream revision
 sync-gitmoji:
-    uv run python scripts/sync_gitmoji.py
-
-# Display project information
-info:
-    @echo "=== zendev ==="
-    @echo "uv: $(uv --version)"
-    @echo "Python: $(uv run python --version)"
+    uv run --frozen python scripts/sync_gitmoji.py

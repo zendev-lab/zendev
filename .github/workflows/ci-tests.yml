@@ -32,11 +32,10 @@ jobs:
           python-version: ${{ matrix.python }}
 
       - name: Install dependencies
-        run: just install
+        run: uv sync --frozen --all-packages --all-groups
 
       - name: Run tests with coverage
-        run: |
-          uv run pytest --cov=zendev --cov-report=xml -v
+        run: just cov
 
       - name: Build distributions and exercise public hooks
         run: just hooks

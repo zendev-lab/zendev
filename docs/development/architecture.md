@@ -49,7 +49,9 @@ rules. The CLI alone reads UTF-8 files, creates new documents exclusively, and
 renders human, JSON, or GitHub output. It has no proposal dependency, configuration
 discovery, repair transaction, or auxiliary index. Editors own subsequent changes.
 
-`just check` and `just ci` do not format source files; `just format` is explicit.
+`just check` runs the repository hooks configured in `prek.toml` and checks justfile
+formatting. Hooks own formatting, lint, type, and repository policy checks and may
+apply fixes. `just ci` also runs the test suite with coverage.
 `just packages` builds wheels, checks their contents against the source trees, and
 runs each distribution in an isolated installation. `.alint.yml` and Ruff's
 banned-import rule enforce namespace ownership, sibling pins, and the CLI boundary.
