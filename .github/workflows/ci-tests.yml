@@ -10,7 +10,14 @@ permissions:
 
 jobs:
   test:
+    name: Python ${{ matrix.python }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.12", "3.13", "3.14"]
+    env:
+      UV_PYTHON: ${{ matrix.python }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -22,7 +29,7 @@ jobs:
 
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
-          python-version: "3.14"
+          python-version: ${{ matrix.python }}
 
       - name: Install dependencies
         run: just install
@@ -35,6 +42,7 @@ jobs:
         run: just hooks
 
       - name: Upload coverage to Codecov
+        if: matrix.python == '3.14'
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7
         with:
           files: coverage.xml
