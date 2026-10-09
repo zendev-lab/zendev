@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import sys
 from pathlib import Path
 from typing import Annotated
 
@@ -22,21 +21,26 @@ app = typer.Typer(
 
 @app.callback()
 def _proposal() -> None:
-    """Validate repository-native proposals."""
+    """Validate and repair repository-native proposals."""
 
 
 @app.command("check")
 def check_command(
     ctx: typer.Context,
     config: Annotated[Path | None, typer.Option("--config", help="Explicit ZenDev configuration source.")] = None,
-    base_ref: Annotated[str | None, typer.Option("--base-ref", envvar="PROPOSAL_BASE_REF")] = None,
+    base_ref: Annotated[
+        str | None,
+        typer.Option("--base-ref", envvar="PROPOSAL_BASE_REF", help="Exact local Git ref for history validation."),
+    ] = None,
     fix: Annotated[bool, typer.Option("--fix", help="Apply validated repairs and update the index.")] = False,
     diff: Annotated[bool, typer.Option("--diff", help="Preview repairs without writing.")] = False,
-    select: Annotated[str | None, typer.Option("--select", help="Comma-separated repair rule names.")] = None,
+    select: Annotated[
+        str | None, typer.Option("--select", help="Comma-separated repair rules for --fix or --diff.")
+    ] = None,
     partial: Annotated[
         bool, typer.Option("--partial", help="Allow independently safe repairs with remaining errors.")
     ] = False,
-    output_format: Annotated[OutputFormat, typer.Option("--format")] = OutputFormat.HUMAN,
+    output_format: Annotated[OutputFormat, typer.Option("--format", help="Output format.")] = OutputFormat.HUMAN,
 ) -> None:
     """Check proposals, relationships, history, and the committed index."""
     summary = None
@@ -59,9 +63,11 @@ def check_command(
     except (OSError, UnicodeError) as error:
         diagnostics = (Diagnostic("proposal.io", str(error)),)
         exit_code = 2
+    stdout = typer.get_text_stream("stdout", encoding="utf-8")
+    stderr = typer.get_text_stream("stderr", encoding="utf-8")
     if patch and output_format is not OutputFormat.JSON:
-        print(patch, end="")
-    print(
+        typer.echo(patch, file=stdout, nl=False)
+    typer.echo(
         render_report(
             diagnostics,
             command="check",
@@ -73,7 +79,7 @@ def check_command(
                 else "Proposal checks passed."
             ),
         ),
-        file=sys.stderr if diagnostics and output_format is OutputFormat.HUMAN else sys.stdout,
+        file=stderr if diagnostics and output_format is OutputFormat.HUMAN else stdout,
     )
     if exit_code:
         raise typer.Exit(exit_code)
