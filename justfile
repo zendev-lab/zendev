@@ -75,6 +75,7 @@ packages:
     {{ isolated }} dist/zendev_message-*.whl zendev-commit --help
     {{ isolated }} dist/zendev_proposal-*.whl zendev-proposal --help
     {{ isolated }} dist/zendev-*.whl zendev --help
+    {{ isolated }} dist/zendev-*.whl zendev --version
 
 scm_version := `uvx --with hatch-vcs==0.5.0 hatchling==1.32.4 version`
 hook_env := "UV_NO_SOURCES=true UV_FIND_LINKS=" + justfile_directory() / "dist" + " SETUPTOOLS_SCM_PRETEND_VERSION=" + scm_version

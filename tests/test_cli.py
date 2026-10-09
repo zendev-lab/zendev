@@ -8,6 +8,7 @@ import re
 import shutil
 import subprocess
 import sys
+from importlib.metadata import version
 from pathlib import Path
 from typing import Any
 
@@ -91,6 +92,13 @@ def test_every_command_and_parameter_has_help(path: str, command: Any) -> None:
 
 def test_python_module_exposes_the_unified_application() -> None:
     assert module_app is zendev_app
+
+
+def test_unified_cli_reports_the_installed_version() -> None:
+    result = runner.invoke(zendev_app, ["--version"])
+
+    assert result.exit_code == 0
+    assert result.output == f"zendev {version('zendev')}\n"
 
 
 def test_unified_cli_message_check_validates_a_title() -> None:

@@ -3,6 +3,7 @@
 ## Unified command
 
 ```text
+zendev --version
 zendev commit
 zendev message check [OPTIONS] [FILE]
 zendev proposal check [OPTIONS]
