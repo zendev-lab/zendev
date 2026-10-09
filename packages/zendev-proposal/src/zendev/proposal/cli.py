@@ -64,6 +64,7 @@ def check_command(
         diagnostics = (Diagnostic("proposal.io", str(error)),)
         exit_code = 2
     stdout = typer.get_text_stream("stdout", encoding="utf-8")
+    stderr = typer.get_text_stream("stderr", encoding="utf-8")
     if patch and output_format is not OutputFormat.JSON:
         typer.echo(patch, file=stdout, nl=False)
     typer.echo(
@@ -78,11 +79,7 @@ def check_command(
                 else "Proposal checks passed."
             ),
         ),
-        file=(
-            typer.get_text_stream("stderr", encoding="utf-8")
-            if diagnostics and output_format is OutputFormat.HUMAN
-            else stdout
-        ),
+        file=stderr if diagnostics and output_format is OutputFormat.HUMAN else stdout,
     )
     if exit_code:
         raise typer.Exit(exit_code)

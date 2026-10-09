@@ -50,8 +50,9 @@ renders human, JSON, or GitHub output. It has no proposal dependency, configurat
 discovery, repair transaction, or auxiliary index. Editors own subsequent changes.
 
 `just check` and `just ci` do not format source files; `just format` is explicit.
-`just packages` builds wheels, checks version pins and namespace ownership, and
-exercises six isolated installations outside the checkout.
+`just packages` builds wheels, checks their contents against the source trees, and
+runs each distribution in an isolated installation. `.alint.yml` and Ruff's
+banned-import rule enforce namespace ownership, sibling pins, and the CLI boundary.
 
 [Hatch metadata hooks](https://hatch.pypa.io/latest/plugins/metadata-hook/reference/)
 resolve sibling pins from the VCS version. Component builds reference the same root hook file from the complete repository

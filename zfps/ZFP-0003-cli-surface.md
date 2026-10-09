@@ -72,6 +72,10 @@ proposal  Validate repository-native proposals
 一命令同名，只是把第一个空格写成连字符。`python -m zendev` 暴露与 `zendev` 相同
 的分组命令树。
 
+统一命令提供全局 `--version`：输出一行 `zendev <version>` 并以 0 退出，不执行子
+命令。版本取自已安装的 `zendev` 发行包元数据；同仓组件固定为同一版本，因此不逐
+个列出组件版本。组件命令不增加该选项。
+
 不使用 `review` 或 `validate` 作为统一文案入口。不把文案校验收成
 `zendev check title|body|message`。统一 CLI 不再提供 `commit-msg`、
 `validate-title`、`validate-body` 或 `proposal index`。不保留这些旧命令名作为脚
@@ -198,7 +202,7 @@ hook id 别名。
   `zendev-proposal-index`；需要写索引时给 `zendev-proposal-check` 补
   `args = ["--fix"]`
 
-不添加废弃期或旧名称别名。
+不添加废弃期或旧名称别名。`--version` 是纯增量选项，不改变已有调用。
 
 ## 验证
 
@@ -206,6 +210,9 @@ hook id 别名。
 列出 `check`。`zendev message check --help` 列出 `--text`、`--title`、`--body`。
 `zendev proposal --help` 不再列出 `index`。组件入口为 `zendev-commit`、
 `zendev-message` 和 `zendev-proposal`。
+
+`zendev --version` 与 `python -m zendev --version` 输出 `zendev <version>` 并以 0
+退出，版本与已安装的 `zendev` 发行包元数据一致；`zendev --help` 列出 `--version`。
 
 `zendev message check` 对多行 commit message 不得要求 PR H2；`--body` 才使用 PR
 模板。`--title` 拒绝多行输入。`FILE` 与 `--text` 互斥，`--title` 与 `--body` 互

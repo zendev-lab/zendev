@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterator
+from collections.abc import Generator
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass, field
@@ -34,7 +34,7 @@ def current_snapshot() -> SourceSnapshot | None:
 
 
 @contextmanager
-def source_session(*, fresh: bool = False) -> Iterator[SourceSnapshot]:
+def source_session(*, fresh: bool = False) -> Generator[SourceSnapshot]:
     existing = _current.get()
     if existing is not None and not fresh:
         yield existing
