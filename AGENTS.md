@@ -32,8 +32,10 @@ Follow [CONTRIBUTING.md](./CONTRIBUTING.md#pull-requests) and
 - Body must keep the Chinese H2 structure: **`动机`** and **`解决方案`** are
   required; **`说明`** and **`后续工作`** are optional.
 - Use **Draft** until validation is ready.
-- Record material validation in the solution or notes — do not add checklist
-  items merely to satisfy process.
+- Do not list local test runs, commands, paths, or CI status in the body, and
+  do not add checklist items merely to satisfy process. `说明` covers only
+  impact such as compatibility, migration, risk, known limitations, key
+  trade-offs, or stack dependencies; omit it when empty.
 
 ## Security
 
