@@ -62,7 +62,7 @@ contracts rather than imposing one language, formatter, or workflow.
 
 | Skill | Result |
 | --- | --- |
-| [zendev-add-proposal](./.agents/skills/zendev-add-proposal/SKILL.md) | Decide whether a new decision has substantial impact, then prepare and validate a proposal when needed |
+| [zendev-add-proposal](./.agents/skills/zendev-add-proposal/SKILL.md) | Assess impact, research alternatives, resolve key choices with the user, then prepare and validate the proposal |
 | [zendev-code-review](./.agents/skills/zendev-code-review/SKILL.md) | Review changes for evidence-backed correctness, ownership, compatibility, and structural defects |
 | [zendev-test-behavior](./.agents/skills/zendev-test-behavior/SKILL.md) | Add meaningful regression, ordering, numerical, and backend-equivalence tests |
 | [zendev-measure-performance](./.agents/skills/zendev-measure-performance/SKILL.md) | Produce comparable latency, throughput, memory, or startup measurements |
