@@ -1,7 +1,7 @@
 ---
 name: zendev-add-proposal
 description: >
-  Assess whether a change has enough impact to need a durable design proposal, then write, revise, or review it using the repository's proposal policy and zendev validation. Use for “是否需要提案”, “写提案”, “修改提案”, RFC/ZFP review, or a new design decision with substantial compatibility, migration, ownership, privacy, or governance consequences. Ordinary features, compatible options, aliases, bug fixes, and internal refactors do not trigger proposals merely because they change code or expose an interface. Do not use for routine implementation, project planning, evolution logs, or Git delivery.
+  Assess whether a change needs a durable design proposal, research alternatives and ask the user about unresolved key choices before writing or materially revising it, or review it against repository policy and zendev validation. Use for “是否需要提案”, “写提案”, “修改提案”, RFC/ZFP review, or a new design decision with substantial compatibility, migration, ownership, privacy, or governance consequences. Ordinary features, compatible options, aliases, bug fixes, and internal refactors do not trigger proposals merely because they change code or expose an interface. Do not use for routine implementation, project planning, evolution logs, or Git delivery.
 ---
 
 # Zendev Add Proposal
@@ -69,8 +69,43 @@ do not silently broaden this skill's threshold or rewrite repository governance.
 
 State the route briefly: direct implementation, an existing proposal, or a new
 proposal, with the decisive evidence. A request to assess or review does not
-authorize implementing the design or creating a file. For a requested proposal,
-prepare the document without asking for another approval of the same work.
+authorize implementing the design or creating a file. A requested proposal already
+authorizes drafting; do not ask for that permission again. This does not resolve
+the design choices that must be discussed below.
+
+## Research and ask before choosing
+
+Before writing a new proposal or materially revising its design, research the
+decision and ask the user about unresolved key choices. This also applies to an
+explicitly requested small design draft; it does not broaden the proposal threshold.
+
+Read the owning implementation, tests, existing decisions, and relevant alternatives.
+For external approaches, dependencies, or APIs, verify current primary sources such
+as official documentation, source code, or papers. Record sources and applicable
+versions; distinguish observations from assumptions and inference. If evidence is
+unavailable, identify the gap and continue only work independent of that evidence.
+Do not invent findings or ask the user to retrieve facts available to the agent.
+
+Identify choices that change scope, public behavior, ownership, compatibility,
+migration, privacy, governance, or long-term cost. Present viable alternatives,
+including the status quo where relevant, with a recommendation, supporting evidence,
+and the main tradeoffs. Ask the root choices before questions that depend on them;
+do not manufacture alternatives just to fill an option list.
+
+Actually ask and obtain these choices before treating a direction as decided;
+an open-question list or the agent's recommendation is not a user decision. Do
+not defer the questions until a complete proposal has already fixed the direction.
+Reuse explicit choices already supplied by the user or established by applicable
+decisions, citing their basis instead of asking again. If the user explicitly
+delegates a choice, decide within the stated constraints and record that delegation
+and rationale. A request to write a proposal alone is not such delegation.
+Resolve routine reversible details independently, without relabeling key design
+choices as implementation details.
+
+While waiting, continue independent research or draft unaffected sections. Mark
+dependent alternatives as unresolved; silence does not select the recommendation.
+Do not finalize those decisions or implement their dependent behavior. Editorial
+corrections and implementation of existing decisions do not reopen settled choices.
 
 ## Write the decision
 
@@ -81,6 +116,8 @@ sections; do not add a second mandatory outline:
 - The proposed behavior, ownership and interfaces, including what is outside scope.
 - The meaningful alternatives, including retaining the current behavior, and why
   the chosen direction earns its migration and maintenance cost.
+- Research evidence and the basis of each key selection: the user's answer, an
+  applicable existing decision, or an explicitly delegated choice with its rationale.
 - Compatibility, affected consumers, rollout and recovery where relevant, and
   observable checks that would establish the intended result.
 
@@ -104,8 +141,8 @@ the check. Do not manually fabricate an index or let repairs rewrite unrelated
 records. Missing tools or configuration leave validation incomplete; they do not
 justify installing tools or initializing a governance system without scope.
 
-Report the impact decision, document location if one was written, actual checks,
-and unresolved questions. A schema pass proves structure, not design acceptance
-or that a proposal was necessary. Project planning and evolution records retain
+Report the impact decision, research and key choices, document location if one was
+written, actual checks, and unresolved questions. A schema pass proves structure,
+not design acceptance or that a proposal was necessary. Project planning and evolution records retain
 their own owners; Git topology, proposal/implementation PR separation, and delivery
 follow the repository workflow and the user's authorized endpoint.
