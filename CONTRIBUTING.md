@@ -54,6 +54,7 @@ Documentation stays with the code or policy that owns it:
 | --- | --- |
 | [`README.md`](./README.md) | GitHub and PyPI landing page, quick installation, and navigation |
 | [`docs/`](./docs/) | Official concepts, guides, integrations, reference, and development documentation |
+| [`homepage/`](./homepage/) | Public homepage for `zendev.zrr.dev`. See [ZFP-0008](./zfps/ZFP-0008-public-homepage.md). |
 | `packages/*/README.md` | Distribution landing pages and links to the official documentation |
 | [`actions/README.md`](./actions/README.md) | Composite Action landing page and official documentation link |
 | [`zfps/README.md`](./zfps/README.md) | ZFP reading and submission process |
