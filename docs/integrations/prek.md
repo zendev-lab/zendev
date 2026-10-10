@@ -7,6 +7,9 @@ Zendev publishes read-only hooks for commit-message and proposal validation.
 Add the released repository to `prek.toml`:
 
 ```toml
+default_install_hook_types = ["pre-commit", "commit-msg"]
+default_stages = ["pre-commit"]
+
 [[repos]]
 repo = "https://github.com/zendev-lab/zendev"
 rev = "<release-or-commit>"
@@ -16,10 +19,10 @@ hooks = [
 ]
 ```
 
-Install the Git hook and exercise every file:
+Install the configured Git hooks and exercise every file:
 
 ```shell
-uvx prek install --hook-type commit-msg
+uvx prek install --prepare-hooks
 uvx prek run --all-files
 ```
 
@@ -48,5 +51,5 @@ Version `0.3.0` replaced the legacy IDs `zendev-commit-msg` and
 Replace `<release-or-commit>` with the release containing the migration. A
 released hook installs the complete toolkit and its exact-version components.
 For unreleased development, use the workspace `uv run zendev` command or build
-all components together. Maintainers can run `just hooks` on a clean committed
-checkout to install the published hooks with `prek try-repo` against local wheels.
+all components together with `just packages` to validate their contents and
+isolated installations.

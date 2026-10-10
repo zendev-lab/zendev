@@ -27,9 +27,9 @@ jobs:
 
       - name: Verify release
         run: |
-          uv sync --all-packages --all-groups
-          uvx prek run --all-files
-          uv run pytest -v
+          uv sync --frozen --all-packages --all-groups
+          just check
+          just test
           just packages
 
   build:

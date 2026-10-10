@@ -47,12 +47,12 @@ For automated enforcement, continue with [prek](integrations/prek.md) or
 
 ## Develop zendev itself
 
-Clone the repository, then install all workspace packages and groups:
+Clone the repository, then install all workspace packages, groups, and Git hooks:
 
 ```shell
 git clone https://github.com/zendev-lab/zendev.git
 cd zendev
-uv sync --all-packages --all-groups
+just install
 just ci
 ```
 

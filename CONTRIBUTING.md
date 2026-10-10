@@ -2,18 +2,17 @@
 
 ## Development and validation
 
-Zendev requires Python 3.12 or newer. Install the complete workspace before
-changing code or generated metadata:
+Zendev requires Python 3.12 or newer. Install the complete workspace from the
+lockfile and prepare the pre-commit and commit-msg hooks:
 
 ```shell
-uv sync --all-packages --all-groups
+just install
 ```
 
 Run the repository gates before opening or updating a pull request:
 
 ```shell
 just ci
-uvx prek run --all-files
 uv pip check
 ```
 
@@ -24,9 +23,13 @@ same change:
 uv run zendev proposal check --fix
 ```
 
-`just ci` checks formatting and lints code, runs ty and Pyrefly, and executes the test
-suite with coverage. Use `just format` explicitly to format source, and `just packages`
-to validate isolated wheel installations. Tests should assert observable behavior and public
+`just check` runs the repository's pre-commit hooks, then checks justfile
+formatting. Hooks may format files or apply fixes; review those changes and rerun
+the gate. Use `just --fmt --unstable` to format the justfile.
+
+`just test` runs the test suite; `just cov` also writes HTML and XML coverage
+reports. `just ci` combines `check` and `cov`. Use `just packages` to validate
+isolated wheel installations. Tests should assert observable behavior and public
 contracts rather than implementation control flow.
 
 ## Vendored Gitmoji data
