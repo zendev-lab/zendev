@@ -37,8 +37,8 @@ jobs:
       - name: Run tests with coverage
         run: just cov
 
-      - name: Build distributions and exercise public hooks
-        run: just hooks
+      - name: Build and validate distributions
+        run: just packages
 
       - name: Upload coverage to Codecov
         if: matrix.python == '3.14'

@@ -73,6 +73,9 @@ profile = "zendev"
 Install released validation hooks through `prek.toml`:
 
 ```toml
+default_install_hook_types = ["pre-commit", "commit-msg"]
+default_stages = ["pre-commit"]
+
 [[repos]]
 repo = "https://github.com/zendev-lab/zendev"
 rev = "<release-or-commit>"
@@ -82,10 +85,10 @@ hooks = [
 ]
 ```
 
-Install the commit-message hook and exercise the repository gate:
+Install the configured Git hooks and exercise the repository gate:
 
 ```shell
-uvx prek install --hook-type commit-msg
+uvx prek install --prepare-hooks
 uvx prek run --all-files
 ```
 

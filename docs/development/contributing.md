@@ -65,8 +65,7 @@ CI and the release workflow use this same entry point.
 Source layout rules run on every commit: [alint](https://github.com/asamarts/alint)
 enforces namespace ownership, typed subpackages, and same-version sibling pins
 from `.alint.yml`, and Ruff's banned-import rule keeps Typer and CLI modules out
-of domain modules. `just hooks` installs the published hooks from the committed
-checkout with `prek try-repo` and resolves zendev only from the wheels in `dist/`.
+of domain modules.
 
 Before the first release containing `zendev-evolution`, configure the PyPI
 Trusted Publisher for `zendev-lab/zendev`, workflow `cd-release.yml`, environment
