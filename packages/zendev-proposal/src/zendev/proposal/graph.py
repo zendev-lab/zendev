@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections import defaultdict
 
 from zendev.proposal.model import Diagnostic, ProposalConfig, RepositoryState
-from zendev.proposal.references import edge_identifiers, normalize_reference
+from zendev.proposal.references import edge_identifiers, normalize_reference, reference_number
 
 
 def validate_graph(config: ProposalConfig, state: RepositoryState, diagnostics: list[Diagnostic]) -> None:
@@ -68,6 +68,21 @@ def validate_graph(config: ProposalConfig, state: RepositoryState, diagnostics: 
                             code="proposal.graph.missing-target",
                             path=document.relative_path,
                             message=f"`{field}` references missing {target}",
+                        )
+                    )
+                elif (
+                    policy.requires_earlier
+                    and field == policy.requires_field
+                    and (source_number := document.number(config)) is not None
+                    and (target_number := reference_number(config, target)) is not None
+                    and target_number > source_number
+                ):
+                    diagnostics.append(
+                        Diagnostic(
+                            code="proposal.graph.forward-dependency",
+                            path=document.relative_path,
+                            line=document.field_lines.get(field),
+                            message=f"`{field}` must reference an earlier proposal; {target} is later than {source}",
                         )
                     )
 

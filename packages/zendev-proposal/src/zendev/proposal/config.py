@@ -63,6 +63,8 @@ _GRAPH_KEYS = {
     "accepted_status",
     "superseded_status",
     "acyclic_fields",
+    "require_declared_references",
+    "requires_earlier",
 }
 _HISTORY_KEYS = {"initial_status", "protect_records", "bootstrap_numbers", "transitions", "waivers"}
 _HISTORY_WAIVER_KEYS = {"path", "from_status", "to_status", "reason"}
@@ -315,7 +317,19 @@ def _load_graph(raw: object, config_path: Path) -> GraphPolicy | None:
         raise _error(config_path, "proposal.config.graph-role", "graph roles must use distinct fields")
     if table.get("accepted_status", "Accepted") == table.get("superseded_status", "Superseded"):
         raise _error(config_path, "proposal.config.graph-role", "accepted and superseded statuses must differ")
+    require_declared_references = _boolean(
+        table, "require_declared_references", config_path=config_path, field="graph", default=False
+    )
+    requires_earlier = _boolean(table, "requires_earlier", config_path=config_path, field="graph", default=False)
+    if (require_declared_references or requires_earlier) and roles["requires_field"] is None:
+        raise _error(
+            config_path,
+            "proposal.config.graph-role",
+            "`graph.require_declared_references` and `graph.requires_earlier` require `graph.requires_field`",
+        )
     return GraphPolicy(
+        require_declared_references=require_declared_references,
+        requires_earlier=requires_earlier,
         acyclic_fields=acyclic,
         fields=fields,
         requires_field=roles["requires_field"],

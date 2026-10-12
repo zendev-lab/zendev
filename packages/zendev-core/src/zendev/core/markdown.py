@@ -10,6 +10,7 @@ from dataclasses import dataclass, replace
 from html.parser import HTMLParser
 
 from markdown_it import MarkdownIt
+from markdown_it.token import Token
 
 
 @dataclass(frozen=True)
@@ -29,6 +30,14 @@ class Anchor:
     line: int = 1
 
 
+@dataclass(frozen=True)
+class TextSpan:
+    text: str
+    line: int
+    code: bool = False
+    link: str | None = None
+
+
 class _Anchors(HTMLParser):
     def __init__(self, source: str) -> None:
         super().__init__(convert_charrefs=True)
@@ -36,12 +45,24 @@ class _Anchors(HTMLParser):
         self.anchors: list[Anchor] = []
         self.links: list[tuple[int, str]] = []
         self.text: list[str] = []
+        self.text_spans: list[TextSpan] = []
+        self.link: str | None = None
+        self.code_depth = 0
+        self.excluded_depth = 0
         self.feed(source)
 
     def handle_data(self, data: str) -> None:
         self.text.append(data)
+        if not self.excluded_depth:
+            self.text_spans.append(TextSpan(data, self.getpos()[0], bool(self.code_depth), self.link))
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if tag == "a":
+            self.link = dict(attrs).get("href")
+        elif tag == "code":
+            self.code_depth += 1
+        elif tag in {"pre", "script", "style"}:
+            self.excluded_depth += 1
         for key, value in attrs:
             if value is not None and ((tag == "a" and key == "href") or (tag == "img" and key == "src")):
                 self.links.append((self.getpos()[0], value))
@@ -51,6 +72,43 @@ class _Anchors(HTMLParser):
             offset = sum(len(part) for part in self.source.splitlines(keepends=True)[: line - 1]) + column
             canonical = tag == "a" and self.source[offset:].startswith(f'<a id="{value}"></a>')
             self.anchors.append(Anchor(value, canonical, line))
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag == "a":
+            self.link = None
+        elif tag == "code":
+            self.code_depth = max(0, self.code_depth - 1)
+        elif tag in {"pre", "script", "style"}:
+            self.excluded_depth = max(0, self.excluded_depth - 1)
+
+
+def _inline_text_spans(children: list[Token], line: int) -> list[TextSpan]:
+    spans: list[TextSpan] = []
+    link: str | None = None
+    html = _Anchors("")
+    for child in children:
+        if child.type == "link_open":
+            href = child.attrGet("href")
+            link = href if isinstance(href, str) else None
+        elif child.type == "link_close":
+            link = None
+        elif child.type == "html_inline":
+            html.feed(child.content)
+        elif child.type in {"text", "code_inline"} and not html.excluded_depth:
+            span = TextSpan(
+                child.content, line, child.type == "code_inline" or bool(html.code_depth), link or html.link
+            )
+            if (
+                spans
+                and not span.code
+                and not spans[-1].code
+                and (span.line, span.link) == (spans[-1].line, spans[-1].link)
+            ):
+                spans[-1] = replace(spans[-1], text=spans[-1].text + span.text)
+            else:
+                spans.append(span)
+        line += 1 if child.type in {"softbreak", "hardbreak"} else child.content.count("\n")
+    return spans
 
 
 @dataclass(frozen=True)
@@ -71,6 +129,7 @@ class MarkdownFacts:
     content: tuple[str, ...] = ()
     tasks: tuple[TaskItem, ...] = ()
     html_blocks: tuple[tuple[int, str], ...] = ()
+    text_spans: tuple[TextSpan, ...] = ()
 
 
 _facts: ContextVar[dict[tuple[str, str | None], MarkdownFacts] | None] = ContextVar("markdown_facts", default=None)
@@ -112,6 +171,7 @@ def _scan_markdown(markdown: str, marker: str | None = None) -> MarkdownFacts:
     content: list[str] = []
     tasks: list[TaskItem] = []
     html_blocks: list[tuple[int, str]] = []
+    text_spans: list[TextSpan] = []
     section: str | None = None
     for index, token in enumerate(tokens):
         if token.type == "heading_open" and token.level == 0:
@@ -153,6 +213,9 @@ def _scan_markdown(markdown: str, marker: str | None = None) -> MarkdownFacts:
             markers.append(token.map[0])
         if token.type == "html_block":
             parsed = _Anchors(token.content)
+            text_spans.extend(
+                replace(span, line=span.line + (token.map[0] if token.map else 0)) for span in parsed.text_spans
+            )
             content.extend(text for text in parsed.text if text.strip())
             links.extend((line + (token.map[0] if token.map else 0), url) for line, url in parsed.links)
             anchors.extend(
@@ -166,15 +229,18 @@ def _scan_markdown(markdown: str, marker: str | None = None) -> MarkdownFacts:
                     if child.type in {"text", "code_inline", "image"} and child.content.strip()
                 )
             line = token.map[0] + 1 if token.map else 1
+            text_spans.extend(_inline_text_spans(token.children, line))
             text = "".join(
                 child.content for child in token.children if child.type in {"text", "softbreak", "hardbreak"}
             )
             prose.extend((line + offset, part) for offset, part in enumerate(text.splitlines()))
+            link_line = line
             for child in token.children:
                 if child.type in {"link_open", "image"}:
                     url = child.attrGet("href" if child.type == "link_open" else "src")
                     if isinstance(url, str):
-                        links.append((line, url))
+                        links.append((link_line, url))
+                link_line += 1 if child.type in {"softbreak", "hardbreak"} else child.content.count("\n")
             # Keep adjacent HTML tokens together so an empty <a></a> stays intact.
             html = ""
             for child in token.children:
@@ -197,4 +263,5 @@ def _scan_markdown(markdown: str, marker: str | None = None) -> MarkdownFacts:
         tuple(content),
         tuple(tasks),
         tuple(html_blocks),
+        tuple(text_spans),
     )

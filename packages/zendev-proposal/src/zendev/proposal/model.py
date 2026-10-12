@@ -37,6 +37,8 @@ class GraphPolicy:
     accepted_status: str = "Accepted"
     superseded_status: str = "Superseded"
     acyclic_fields: tuple[str, ...] = ()
+    require_declared_references: bool = False
+    requires_earlier: bool = False
 
 
 @dataclass(frozen=True, slots=True)
