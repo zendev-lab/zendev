@@ -22,7 +22,7 @@ from zendev.proposal.model import (
     RepositoryState,
     ValidationResult,
 )
-from zendev.proposal.references import edge_identifiers
+from zendev.proposal.references import edge_identifiers, validate_references
 from zendev.proposal.repository import (
     h2_headings,
     load_repository,
@@ -632,6 +632,7 @@ def validate_state(config: ProposalConfig, state: RepositoryState, *, base_ref: 
         validate_content(config, document, templates, diagnostics, {doc.path: doc.body for doc in state.documents})
 
     validate_graph(config, state, diagnostics)
+    validate_references(config, state, diagnostics)
     _validate_defines(config, state, diagnostics)
     if base_ref is not None:
         validate_history(config, state, base_ref, diagnostics)

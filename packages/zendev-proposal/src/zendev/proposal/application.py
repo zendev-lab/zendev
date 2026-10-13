@@ -82,6 +82,7 @@ def _plan_changes(
         initial = {(d.path, d.code, d.message) for d in original.diagnostics}
         sensitive = (
             "proposal.graph.",
+            "proposal.reference.",
             "proposal.number.",
             "proposal.filename.",
             "proposal.history.",

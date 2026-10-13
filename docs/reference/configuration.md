@@ -119,6 +119,48 @@ proposal. The optional roles add stronger checks:
 - `supersedes_field` validates coordinated supersession and exactly one
   accepted current superseder along the replacement chain.
 
+Repositories can independently enable two additional dependency policies:
+
+```toml
+[proposal.graph]
+fields = ["requires", "supersedes"]
+requires_field = "requires"
+require_declared_references = true
+requires_earlier = true
+```
+
+Both options default to `false` and require a configured `requires_field`.
+`require_declared_references` requires each referenced proposal to appear directly
+in that metadata field. A transitive dependency or another relation does not
+authorize a reference. Self references do not require self dependencies.
+
+References include canonical identifiers in prose, an inline code span containing
+only one canonical identifier (such as `VEP-0001`), and local links to discovered
+proposal documents, including fragments and reference-style links. Linked labels
+use their destination instead of contributing a second identifier. External links
+and their labels, absolute URLs, fenced or indented code, compound inline code
+examples, and HTML comments do not declare proposal references. An unknown
+canonical identifier in prose reports a missing target. Prefix and number width
+come from the repository configuration; unrelated navigation files are not scanned.
+This policy is independent of `links.check`.
+
+`requires_earlier` requires dependency targets to have smaller proposal numbers.
+It uses numbers, not dates or Git history, and rejects forward dependencies even
+when the graph has no cycle. Unnumbered drafts still check direct declarations;
+they have no number to order. Existing draft, schema, and graph rules still apply.
+
+| Diagnostic | Author action |
+| --- | --- |
+| `proposal.reference.undeclared-dependency` | Declare the referenced proposal directly in the dependency field, or correct the reference. |
+| `proposal.reference.missing-target` | Correct the unknown canonical identifier. |
+| `proposal.graph.forward-dependency` | Remove the later proposal as a prerequisite or revise the proposal's design. |
+
+These diagnostics include the source location. Checks never add dependencies,
+remove references, or renumber proposals automatically, including with `--fix`.
+Enabling the policies may require a repository to backfill its actual direct
+dependencies and remove forward prerequisites. Index and metadata formats remain
+unchanged.
+
 The optional `history` table configures `initial_status`, record protection,
 bootstrap numbers, and allowed transitions:
 
