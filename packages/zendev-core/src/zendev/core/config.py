@@ -1,13 +1,16 @@
-"""Find one project-owned TOML source without merging configuration files."""
+"""Select one project-owned TOML source for a domain without merging files."""
 
 from __future__ import annotations
 
 import tomllib
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Literal
 
 from zendev.core.diagnostics import Diagnostic, ToolError
 from zendev.core.source import exists, read_text
+
+CONFIG_FILENAMES = ("zendev.toml", "pyproject.toml", "proposal.toml")
 
 
 @dataclass(frozen=True, slots=True)
@@ -45,8 +48,8 @@ def _pyproject(path: Path) -> dict[str, object] | None:
     return value
 
 
-def _source(path: Path, data: dict[str, object]) -> ConfigSource:
-    if "commit" in data or "templates" in data or (path.name == "proposal.toml"):
+def _source(path: Path, data: dict[str, object], *, dedicated: bool = False) -> ConfigSource:
+    if not dedicated and ("commit" in data or "templates" in data):
         raise config_error(
             path,
             "Legacy configuration: migrate to zendev.toml or [tool.zendev], "
@@ -55,6 +58,8 @@ def _source(path: Path, data: dict[str, object]) -> ConfigSource:
         )
     if type(data.get("version")) is not int or data["version"] != 1:
         raise config_error(path, "ZenDev configuration version must be 1", code="config.version")
+    if dedicated:
+        return ConfigSource(path.parent, path, data)
     unknown = sorted(set(data) - {"version", "message", "proposal"})
     if unknown:
         raise config_error(path, "Unknown ZenDev keys: " + ", ".join(unknown))
@@ -64,19 +69,27 @@ def _source(path: Path, data: dict[str, object]) -> ConfigSource:
     return ConfigSource(path.parent, path, data)
 
 
-def load_project_config(path: str | Path | None = None, *, start: Path | None = None) -> ConfigSource:
+def load_project_config(
+    path: str | Path | None = None,
+    *,
+    start: Path | None = None,
+    domain: Literal["message", "proposal"] | None = None,
+) -> ConfigSource:
     if path is not None:
-        selected = Path(path).resolve()
+        entry = Path(path)
+        selected = entry.parent.resolve() / entry.name
+        dedicated = selected.name == "proposal.toml"
+        if dedicated and domain != "proposal":
+            raise config_error(selected, "proposal.toml configures only the proposal domain", code="config.domain")
         data = _pyproject(selected) if selected.name == "pyproject.toml" else _read(selected)
         if data is None:
             raise config_error(selected, "Explicit pyproject.toml has no [tool.zendev] table")
-        return _source(selected, data)
+        return _source(selected, data, dedicated=dedicated)
     origin = (start or Path.cwd()).resolve()
     if origin.is_file():
         origin = origin.parent
     for directory in (origin, *origin.parents):
-        config = directory / "zendev.toml"
-        pyproject = directory / "pyproject.toml"
+        config, pyproject, dedicated = (directory / name for name in CONFIG_FILENAMES)
         embedded = _pyproject(pyproject) if exists(pyproject) else None
         if exists(config) and embedded is not None:
             raise config_error(
@@ -84,17 +97,21 @@ def load_project_config(path: str | Path | None = None, *, start: Path | None = 
                 "Both zendev.toml and [tool.zendev] configure this directory; choose one.",
                 code="config.conflict",
             )
+        source = None
         if exists(config):
-            return _source(config, _read(config))
-        if embedded is not None:
-            return _source(pyproject, embedded)
-        legacy = directory / "proposal.toml"
-        if exists(legacy):
-            raise config_error(
-                legacy,
-                "Migrate proposal.toml into the proposal table of a ZenDev configuration.",
-                code="config.migration",
-            )
+            source = _source(config, _read(config))
+        elif embedded is not None:
+            source = _source(pyproject, embedded)
+        if domain == "proposal" and exists(dedicated):
+            if source is not None and "proposal" in source.data:
+                raise config_error(
+                    dedicated,
+                    f"Both proposal.toml and {source.path} configure proposals; choose one.",
+                    code="config.conflict",
+                )
+            return _source(dedicated, _read(dedicated), dedicated=True)
+        if source is not None:
+            return source
         if (directory / ".git").exists():
             break
     return ConfigSource(origin, None, {})

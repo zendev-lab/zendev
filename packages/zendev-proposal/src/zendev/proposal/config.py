@@ -6,7 +6,7 @@ import re
 from collections.abc import Mapping
 from pathlib import Path
 
-from zendev.core.config import load_project_config
+from zendev.core.config import CONFIG_FILENAMES, ConfigSource, load_project_config
 from zendev.core.diagnostics import ToolError
 from zendev.proposal.model import (
     DefinesPolicy,
@@ -564,11 +564,25 @@ def _load_defines(raw: object, config_path: Path) -> DefinesPolicy | None:
     )
 
 
+def _dedicated_payload(source: ConfigSource, config_path: Path) -> dict[str, object]:
+    _reject_unknown(source.data, _TOP_LEVEL_KEYS, config_path=config_path, field="top-level")
+    proposal = _mapping(source.data.get("proposal"), config_path=config_path, field="proposal")
+    _reject_unknown(proposal, _PROPOSAL_KEYS, config_path=config_path, field="proposal")
+    index = _mapping(source.data.get("index"), config_path=config_path, field="index")
+    _reject_unknown(index, _INDEX_KEYS - {"path"}, config_path=config_path, field="index")
+    index_path = _string(proposal, "index", config_path=config_path, field="proposal")
+    payload = {key: value for key, value in source.data.items() if key not in {"version", "proposal"}}
+    payload.update(proposal)
+    payload["index"] = {**index, "path": index_path}
+    return payload
+
+
 def load_config(path: str | Path | None = None, *, start: Path | None = None) -> ProposalConfig:
     """Decode the proposal section of the selected project configuration."""
-    source = load_project_config(path, start=start)
+    source = load_project_config(path, start=start, domain="proposal")
     config_path = source.path or source.root / "zendev.toml"
-    payload = source.section("proposal")
+    dedicated = config_path.name == "proposal.toml"
+    payload = _dedicated_payload(source, config_path) if dedicated else source.section("proposal")
     if not payload:
         raise _error(config_path, "proposal.config.missing", "A [proposal] configuration is required")
     allowed = (_TOP_LEVEL_KEYS - {"version", "proposal"}) | (_PROPOSAL_KEYS - {"index"})
@@ -638,7 +652,7 @@ def load_config(path: str | Path | None = None, *, start: Path | None = None) ->
             field="proposal.index",
         ),
         config_path=config_path,
-        field="proposal.index.path",
+        field="proposal.index" if dedicated else "proposal.index.path",
     )
     if not documents_dir.is_dir():
         raise _error(
@@ -747,6 +761,7 @@ def load_config(path: str | Path | None = None, *, start: Path | None = None) ->
     if graph is not None and any(name in roles or (defines and name == defines.field) for name in graph.fields):
         raise _error(config_path, "proposal.config.field-role", "graph fields must not overlap metadata roles")
     inputs = {config_path, schema_path, *templates.values()}
+    inputs.update((root / name).resolve() for name in CONFIG_FILENAMES)
     if drafts is not None:
         inputs.add(drafts.schema_path)
         if drafts.directory == documents_dir:

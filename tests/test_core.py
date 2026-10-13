@@ -33,8 +33,9 @@ def test_nested_unrelated_pyproject_does_not_mask_config(tmp_path: Path) -> None
 
 
 @pytest.mark.parametrize("git_directory", [False, True])
-def test_discovery_stops_at_git_root_or_worktree_file(tmp_path: Path, git_directory: bool) -> None:
-    (tmp_path / "zendev.toml").write_text("version = 1\n")
+@pytest.mark.parametrize("config_name", ["zendev.toml", "proposal.toml"])
+def test_discovery_stops_at_git_root_or_worktree_file(tmp_path: Path, git_directory: bool, config_name: str) -> None:
+    (tmp_path / config_name).write_text("version = 1\n")
     nested = tmp_path / "repo"
     nested.mkdir()
     marker = nested / ".git"
@@ -42,7 +43,21 @@ def test_discovery_stops_at_git_root_or_worktree_file(tmp_path: Path, git_direct
         marker.mkdir()
     else:
         marker.write_text("gitdir: /unused\n")
-    assert load_project_config(start=nested).path is None
+    assert load_project_config(start=nested, domain="proposal").path is None
+
+
+def test_message_discovery_ignores_dedicated_policy(tmp_path: Path) -> None:
+    (tmp_path / ".git").mkdir()
+    policy = tmp_path / "proposal.toml"
+    policy.write_text("invalid TOML, irrelevant to messages")
+
+    result = load_message_config(start=tmp_path)
+
+    assert result.profile == "zendev"
+    assert result.source.path is None
+    with pytest.raises(ToolError) as error:
+        load_message_config(policy)
+    assert error.value.diagnostic.code == "config.domain"
 
 
 def test_source_conflict_and_explicit_selection(tmp_path: Path) -> None:
@@ -58,7 +73,6 @@ def test_source_conflict_and_explicit_selection(tmp_path: Path) -> None:
 @pytest.mark.parametrize(
     ("name", "text", "code"),
     [
-        ("proposal.toml", "version = 1\n", "config.migration"),
         ("zendev.toml", "version = 2\n", "config.version"),
         ("zendev.toml", "version = true\n", "config.version"),
         ("pyproject.toml", '[tool.zendev.commit]\nprofile = "zendev"\n', "config.migration"),
