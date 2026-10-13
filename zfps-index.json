@@ -96,18 +96,6 @@
       "created": "2026-09-08",
       "supersedes": [],
       "superseded_by": []
-    },
-    {
-      "zfp": 8,
-      "path": "zfps/ZFP-0008-proposal-dependency-references.md",
-      "title": "提案直接引用与依赖顺序",
-      "type": "Feature",
-      "authors": [
-        "zrr1999"
-      ],
-      "created": "2026-10-12",
-      "supersedes": [],
-      "superseded_by": []
     }
   ]
 }
