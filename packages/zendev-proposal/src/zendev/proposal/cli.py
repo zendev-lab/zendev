@@ -27,7 +27,9 @@ def _proposal() -> None:
 @app.command("check")
 def check_command(
     ctx: typer.Context,
-    config: Annotated[Path | None, typer.Option("--config", help="Explicit ZenDev configuration source.")] = None,
+    config: Annotated[
+        Path | None, typer.Option("--config", help="Explicit proposal.toml or unified ZenDev configuration source.")
+    ] = None,
     base_ref: Annotated[
         str | None,
         typer.Option("--base-ref", envvar="PROPOSAL_BASE_REF", help="Exact local Git ref for history validation."),

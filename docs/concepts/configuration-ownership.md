@@ -16,5 +16,8 @@ This boundary prevents a shared package release from silently redefining a
 repository's governance. It also makes policy changes reviewable alongside the
 repository content they affect.
 
-Configure both domains in `zendev.toml` or `[tool.zendev]` in `pyproject.toml`.
-Choose one source per directory. See [Configuration](../reference/configuration.md).
+Configure both domains in `zendev.toml` or `[tool.zendev]` in `pyproject.toml`,
+or keep proposal policy in its dedicated `proposal.toml`. A dedicated policy
+can coexist with unified message settings; duplicate proposal definitions are
+an error. Each domain uses one source without merging files.
+See [Configuration](../reference/configuration.md).

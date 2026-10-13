@@ -18,6 +18,8 @@ proposals-index.json
 
 Directory names are configurable. The repository owns its schema, template
 headings, terminology, graph fields, lifecycle rules, and waivers.
+Existing `proposal.toml` policies are equally supported without changing their
+layout. See the [dedicated configuration example](../reference/configuration.md#dedicated-proposal-configuration).
 
 ## Repository governance
 

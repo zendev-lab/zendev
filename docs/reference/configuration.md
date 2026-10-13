@@ -2,11 +2,26 @@
 
 ## Source discovery
 
-Use `zendev.toml` or `[tool.zendev]` in `pyproject.toml`. Discovery starts at the
-working directory and walks toward the Git root, selecting the nearest source.
-Unrelated pyprojects are skipped. Configuring both sources in the same directory
-is an error. `--config PATH` selects one explicit source without merging.
-Paths resolve relative to the selected file. Configuration version is 1.
+Use `zendev.toml` or `[tool.zendev]` in `pyproject.toml` for unified configuration.
+Proposals also support the dedicated `proposal.toml` file with its original
+layout. All three sources use configuration version 1.
+
+Discovery starts at the working directory and walks toward the Git root,
+including worktrees. Unrelated pyprojects are skipped. `zendev.toml` and
+`[tool.zendev]` in the same directory always conflict. For proposals,
+`proposal.toml` may coexist with a unified source that has no `proposal` table;
+defining proposals in both sources is an error, even if one table is empty.
+Message discovery ignores the dedicated file.
+
+Each domain selects one source in its nearest configuration directory. Fields
+are never inherited from other files or directories. A nearest unified source
+without proposal settings or an adjacent `proposal.toml` produces a missing
+proposal configuration error; it does not fall back to an ancestor's policy.
+`--config PATH` selects one explicit source without considering siblings.
+The dedicated layout is identified by the filename `proposal.toml`; explicitly
+passing that file to a message command is a domain error. Paths resolve relative
+to the selected entry's directory, not the working directory. Symlinked files
+retain their entry name and directory for layout selection and relative paths.
 
 ```toml
 version = 1
@@ -29,8 +44,8 @@ A missing body template is an error, even without checklist enforcement.
 
 ## Proposal policy
 
-`zendev.toml` is versioned, rejects unknown keys, and resolves all configured
-paths relative to its repository root. Paths may not escape that root.
+Both dedicated and unified policies reject unknown keys and resolve configured
+paths relative to the selected file's directory. Paths may not escape that root.
 
 A minimal stateless policy looks like:
 
@@ -58,6 +73,43 @@ version = 2
 entries_key = "zfps"
 fields = ["zfp", { name = "path", source = "path" }, "title"]
 ```
+
+### Dedicated proposal configuration
+
+Existing repositories can keep `proposal.toml` without renaming the file or
+moving its tables. The equivalent minimal policy is:
+
+```toml
+version = 1
+
+[proposal]
+prefix = "ZFP"
+number_field = "zfp"
+documents_dir = "zfps"
+schema = "schemas/zfp.schema.json"
+index = "zfps-index.json"
+
+[templates]
+Feature = "templates/zfp.md"
+Governance = "templates/zfp.md"
+
+[index]
+version = 2
+entries_key = "zfps"
+fields = ["zfp", { name = "path", source = "path" }, "title"]
+```
+
+In this layout, `drafts`, `templates`, `summary`, `graph`, `history`, `defines`,
+`index`, `sections`, `links`, and `fix` are top-level tables. Their fields have
+the same meaning as the `proposal.*` tables below. Only the index output path
+changes location: the `index` string in `[proposal]` replaces
+`[proposal.index] path`. Do not mix the two layouts within one file or put
+message settings in `proposal.toml`.
+
+Both layouts use the same proposal rules, diagnostics, and index version 2.
+Checks, previews, and repairs never rewrite or migrate the configuration file.
+An index cannot overwrite or create `proposal.toml`, `zendev.toml`, or
+`pyproject.toml` in the configuration directory, including through path aliases.
 
 ### Proposal table
 

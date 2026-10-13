@@ -1,7 +1,8 @@
 # Migrate to the domain architecture
 
-This is one breaking migration. Migrate active repository configuration and
+Message interfaces require a breaking migration. Migrate their configuration and
 consumer code together; historical Git commit messages do not need rewriting.
+Existing `proposal.toml` files remain supported with their original layout.
 
 ## Dependencies and imports
 
@@ -24,25 +25,31 @@ configuration/environment errors.
 
 ## Configuration
 
-Choose `zendev.toml` or `[tool.zendev]` in `pyproject.toml`, not both in one
-directory. Both use configuration version 1.
+For messages, choose `zendev.toml` or `[tool.zendev]` in `pyproject.toml`, not
+both in one directory. Move `[tool.zendev.commit]` to `[tool.zendev.message]`
+and add `[tool.zendev]` with `version = 1`; alternatively use `[message]` in
+`zendev.toml`. Old message tables still produce migration errors.
 
-1. Move `[tool.zendev.commit]` to `[tool.zendev.message]` and add
-   `[tool.zendev]` with `version = 1`; alternatively use `[message]` in `zendev.toml`.
-2. Move `proposal.toml` settings into the same source. Keep metadata keys in
-   `[proposal]` and nest auxiliary tables: `[templates]` becomes
-   `[proposal.templates]`, `[graph]` becomes `[proposal.graph]`, etc.
-3. Move the former `[proposal] index = "..."` string to
-   `[proposal.index] path = "..."`. Retain `version = 2` inside that index table.
-4. For the embedded source, prefix every table with `tool.zendev`, including
-   `[tool.zendev.proposal.index]`. All paths remain relative to the source's directory.
-5. Remove the old file/table, run `zendev proposal check --diff`, review the
-   result, then run `--fix` if a generated index needs updating.
+For proposals, keep the existing version 1 `proposal.toml`, including its
+top-level auxiliary tables and `[proposal] index = "..."` path. It may coexist
+with a unified file for messages, provided that file has no `proposal` table.
+Both layouts use the same current proposal validation rules and index version 2.
 
-The CLI now discovers the nearest valid source from the working directory up
-to the Git root. An unrelated `pyproject.toml` does not stop discovery.
-`--config PATH` selects a single source explicitly. Old keys and conflicts fail
-with migration diagnostics.
+Moving proposals into a unified source is optional. If you choose to do so:
+
+1. Keep metadata keys in `[proposal]` and nest auxiliary tables: `[templates]`
+   becomes `[proposal.templates]`, `[graph]` becomes `[proposal.graph]`, etc.
+2. Move `[proposal] index = "..."` to `[proposal.index] path = "..."`.
+   Retain `version = 2` inside the index table.
+3. For an embedded source, prefix every table with `tool.zendev`, including
+   `[tool.zendev.proposal.index]`. Paths remain relative to the source's directory.
+4. Remove the redundant dedicated file to avoid duplicate proposal definitions,
+   then run `zendev proposal check --diff` and review the result before using `--fix`.
+
+Discovery selects a source from the working directory up to the Git root;
+unrelated pyprojects are skipped. `--config PATH` selects a single source
+explicitly. Files are never merged and invalid configuration never falls back
+to another source. See [source discovery](../reference/configuration.md#source-discovery).
 
 ## Message policy and integrations
 
