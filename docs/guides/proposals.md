@@ -4,6 +4,10 @@
 Markdown. The complete toolkit exposes the same application as
 `zendev proposal`.
 
+For the reasoning and prose, see [Write a reviewable proposal](proposal-writing.md).
+For agent integration, see [Maintain a repository proposal skill](proposal-skills.md).
+This page covers validation and index maintenance.
+
 ## Repository shape
 
 A proposal repository supplies its own policy and content:
