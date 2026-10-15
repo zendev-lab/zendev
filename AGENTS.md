@@ -32,9 +32,11 @@ Follow [CONTRIBUTING.md](./CONTRIBUTING.md#pull-requests) and
 - Body must keep the Chinese H2 structure: **`动机`** and **`解决方案`** are
   required; **`说明`** and **`后续工作`** are optional.
 - Use **Draft** until validation is ready.
+- Keep a ZFP and its implementation in separate PRs even when both are
+  prepared in the same task.
 - Do not list local test runs, commands, paths, or CI status in the body, and
-  do not add checklist items merely to satisfy process. `说明` covers only
-  impact such as compatibility, migration, risk, known limitations, key
+  do not add checklist items merely to satisfy process. CI and the task
+  report hold the validation record. `说明` covers only impact such as compatibility, migration, risk, known limitations, key
   trade-offs, or stack dependencies; omit it when empty.
 
 ## Security
