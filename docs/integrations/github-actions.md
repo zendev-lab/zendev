@@ -13,14 +13,13 @@ jobs:
       pull-requests: read
     steps:
       - uses: actions/checkout@v4
-      - uses: zendev-lab/zendev/actions/validate-title@<release-or-commit>
+      - uses: zendev-lab/zendev/actions/validate-title@v0.5.0
         with:
           text: ${{ github.event.pull_request.title }}
 ```
 
 `text` is required. Omit `profile` to use repository configuration, or override
-with `zendev`, `conventional`, or `gitmoji`. Replace `<release-or-commit>` with
-a pinned revision containing the domain-architecture migration.
+with `zendev`, `conventional`, or `gitmoji`.
 
 ## Validate a PR body
 
@@ -32,7 +31,7 @@ jobs:
       pull-requests: read
     steps:
       - uses: actions/checkout@v4
-      - uses: zendev-lab/zendev/actions/validate-body@<release-or-commit>
+      - uses: zendev-lab/zendev/actions/validate-body@v0.5.0
         with:
           body: ${{ github.event.pull_request.body }}
           template: .github/pull_request_template.md

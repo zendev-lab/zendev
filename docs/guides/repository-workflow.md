@@ -78,7 +78,7 @@ default_stages = ["pre-commit"]
 
 [[repos]]
 repo = "https://github.com/zendev-lab/zendev"
-rev = "<release-or-commit>"
+rev = "v0.5.0"
 hooks = [
   { id = "zendev-message-check" },
   { id = "zendev-proposal-check" },
@@ -174,14 +174,9 @@ uv run zendev message check --body --text "$PR_BODY" \
   --template .github/pull_request_template.md
 ```
 
-In GitHub Actions, prefer the published title and body Actions. They are thin
-adapters around the same CLI contract and read the repository-local profile and
-template. See the [GitHub Actions integration](../integrations/github-actions.md)
-for copyable jobs.
-
-Keep CI permissions read-only unless another step has a separately justified
-need. The validation job should report policy violations; it should not rewrite
-the pull request or generated repository state.
+In GitHub Actions, prefer the published composite Actions (see the
+[GitHub Actions integration](../integrations/github-actions.md)) and keep CI
+permissions read-only.
 
 ## Decide when a proposal is warranted
 
@@ -217,18 +212,9 @@ An Agent working in a Zendev repository should follow this sequence:
 3. Run a read-only check to establish the current state.
 4. Use Zendev commands instead of reproducing their validation logic.
 5. Use `--fix` for deterministic proposal repairs and index updates, then inspect the diff.
-6. Prefer structured diagnostics when automation needs stable data.
+6. Prefer structured diagnostics (`--format json`, exit codes, and diagnostic codes)
+   over parsing human-readable prose.
 7. Run the repository's normal local gate before reporting completion.
-
-For proposal automation, consume the versioned JSON envelope and diagnostic
-codes:
-
-```shell
-uv run zendev proposal check --format json
-```
-
-Human-readable messages may improve over time. Agents should depend on command
-exit codes, JSON keys, and diagnostic codes instead of parsing that prose.
 
 A repository-local `SKILL.md` can preserve the seven behavioral rules above
 and link to this guide. Keep CLI flags, proposal fields, and parser behavior in

@@ -146,7 +146,7 @@ skipping history checks.
 ## Consume diagnostics
 
 Human diagnostics include a stable code, path, and line when available. Use
-`--format json` for a stable envelope suitable for other tools:
+`--format json` for a versioned envelope suitable for automation:
 
 ```shell
 zendev proposal check --format json
@@ -155,15 +155,13 @@ zendev proposal check --format json
 Exit codes distinguish valid state (`0`), invalid repository content (`1`),
 and configuration or environment errors (`2`).
 
-The JSON envelope is versioned independently of human wording:
-
 ```json
 {
   "command": "check",
   "diagnostics": [
     {
       "code": "proposal.index.drift",
-      "hint": "Run `zendev-proposal check --fix` and commit the result.",
+      "hint": "Run `zendev proposal check --fix` and commit the result.",
       "fixable": true,
       "line": null,
       "message": "committed proposal index is missing or out of date",
@@ -180,8 +178,8 @@ The JSON envelope is versioned independently of human wording:
 }
 ```
 
-Diagnostic codes and JSON keys are the automation contract. Human diagnostics
-may become more actionable without requiring consumers to parse prose.
+Diagnostic codes and JSON keys are the automation contract; consumers should
+not parse human prose.
 
 See [Configuration](../reference/configuration.md) for the policy surface and
 [Hooks](../reference/hooks.md) for commit-time enforcement.

@@ -12,7 +12,7 @@ default_stages = ["pre-commit"]
 
 [[repos]]
 repo = "https://github.com/zendev-lab/zendev"
-rev = "<release-or-commit>"
+rev = "v0.5.0"
 hooks = [
   { id = "zendev-message-check" },
   { id = "zendev-proposal-check" },
@@ -45,11 +45,7 @@ Keep proposal checks read-only in normal commits. Run
 `zendev proposal check --fix` explicitly when the committed index must be
 updated.
 
-Version `0.3.0` replaced the legacy IDs `zendev-commit-msg` and
-`zendev-proposal` with the names above. The old IDs are no longer published.
-
-Replace `<release-or-commit>` with the release containing the migration. A
-released hook installs the complete toolkit and its exact-version components.
+A released hook installs the complete toolkit and its exact-version components.
 For unreleased development, use the workspace `uv run zendev` command or build
 all components together with `just packages` to validate their contents and
 isolated installations.

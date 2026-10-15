@@ -83,110 +83,52 @@ proposal  Validate repository-native proposals
 
 ### message check
 
-两个正交维度：
+输入来源（`FILE` 或 `--text TEXT`）与检查范围（默认 `auto`、`--title` 或
+`--body`）正交且各自互斥，调用时必须提供输入来源。内部范围模型为 `AUTO`、
+`TITLE`、`BODY`、`FULL`（`FULL` 不直接暴露为 CLI 旗标）：
 
-```text
-Input:  FILE | --text TEXT
-Scope:  auto | --title | --body
-```
+| 请求范围 | 输入形态 | 解析结果 | 校验语义 |
+| --- | --- | --- | --- |
+| 默认 `auto` | 单行（忽略至多一个末尾换行） | `TITLE` | 只运行 commit profile 的 title validator |
+| 默认 `auto` | 多行 | `FULL` | title 走 commit profile，body 视为可选自由文本并剥离 Git 注释行 |
+| `--title` | 必须为单行 | `TITLE` | 只运行 title validator |
+| `--body` | 任意文本 | `BODY` | 只运行 PR 模板 H2 与可选 checklist validator |
 
-`FILE` 与 `--text` 互斥。`--title` 与 `--body` 互斥。两者都必须提供输入来源。
-
-默认 auto：
-
-```text
-one line     → TITLE
-multi-line   → FULL
-```
-
-单行判定去掉至多一个末尾换行后再看输入中是否还有换行。因此 `✨ feat: add foo\n`
-是 title；`✨ feat: add foo\n\nExplain why.\n` 是完整 message。
-
-显式范围：
-
-```text
---title  整个输入必须恰好是一行，只运行 title validator
---body   整个输入视为 PR body，只运行 PR 模板 validator
-```
-
-内部模型显式包含 CLI 不暴露的 `FULL`：
-
-```text
-AUTO
-TITLE
-BODY
-FULL
-```
-
-解析规则：
-
-```text
-AUTO + single-line → TITLE
-AUTO + multi-line  → FULL
-TITLE              → TITLE
-BODY               → BODY
-FULL               → FULL
-```
-
-`FULL` 使用现有 commit-message 语义：title 走 commit convention，body 是可选自
-由文本，并剥离 Git 注释行。`FULL` 不运行 PR 模板 validator。因此
-`zendev message check .git/COMMIT_EDITMSG` 对 commit-msg hook 安全。`--body` 是
-唯一采用 PR 模板 schema 的路径。
-
-换行只选择 `TITLE` 还是 `FULL`，不选择 body schema。
+换行只选择 `TITLE` 还是 `FULL`，不选择 body schema。因此
+`zendev message check .git/COMMIT_EDITMSG` 对 `commit-msg` hook 安全；`--body`
+是唯一采用 PR 模板 schema 的路径。
 
 ### 提案 check 与 --fix
 
 `check` 默认只读。提案文档、图或历史不合法时不检查也不写入索引。文档合法而索
 引缺失或与确定性生成结果不是逐字节相同时，报告 `proposal.index.drift`，hint 为
-当前调用路径加上 `--fix`，例如：
-
-```text
-hint: Run `zendev proposal check --fix` and commit the result.
-```
-
-独立命令 `zendev-proposal check` 的 hint 使用 `zendev-proposal check --fix`。
+当前调用路径加上 `--fix`（例如 `zendev proposal check --fix` 或
+`zendev-proposal check --fix`）。
 
 `--fix` 只在其余校验通过后写索引。索引已是期望内容时保持文件不变并以成功退
 出。`--fix` 不修复 frontmatter、章节、图或历史错误。
 
-删除 `zendev proposal index`、`zendev-proposal index --check` 和
-`zendev-proposal index --write`。
-
 ### 公开 hook
 
-`.pre-commit-hooks.yaml` 只发布与 check 命令同形的 hook。id 为
-`zendev-<noun>-check`，entry 为对应的统一命令：
+`.pre-commit-hooks.yaml` 只发布与 check 命令同形的 hook，不保留旧 hook id 或
+`--fix` / `index` 变体：
 
 | id | entry | 默认 stage | 默认行为 |
 | --- | --- | --- | --- |
-| `zendev-message-check` | `zendev message check` | `commit-msg` | 校验 Git 传入的提交说明文件 |
-| `zendev-proposal-check` | `zendev proposal check` | `pre-commit` | 只读校验提案、图、历史和已提交索引 |
+| `zendev-message-check` | `zendev message check` | `commit-msg` | 按 `auto` 范围校验 Git 传入的 `COMMIT_EDITMSG` |
+| `zendev-proposal-check` | `zendev proposal check` | `pre-commit` | 只读校验提案、图、历史和已提交索引（`pass_filenames: false`、`always_run: true`） |
 
-`zendev-proposal-check` 设置 `pass_filenames: false` 和 `always_run: true`，删除
-提案的提交也会运行。`zendev-message-check` 接收 Git 传入的 `COMMIT_EDITMSG` 路
-径，按 `message check` 的 auto 范围校验。
-
-hook 不另做 `--fix` 或 `index` 变体。默认不带 `--fix`。消费仓库若要写回索引或覆
-盖其它 CLI 旗标，在 hook 配置里补 `args`：
+消费仓库若要写回索引或覆盖其它 CLI 旗标，在 hook 配置里补 `args`：
 
 ```toml
 [[repos]]
 repo = "https://github.com/zendev-lab/zendev"
 rev = "v0.3.0"
 hooks = [
-  { id = "zendev-message-check" },
-  { id = "zendev-proposal-check" },
+  { id = "zendev-message-check", args = ["--profile", "conventional"] },
+  { id = "zendev-proposal-check", args = ["--fix"] },
 ]
 ```
-
-```toml
-{ id = "zendev-message-check", args = ["--profile", "conventional"] }
-{ id = "zendev-proposal-check", args = ["--fix"] }
-```
-
-删除 `zendev-commit-msg`、`zendev-proposal` 和 `zendev-proposal-index`。不保留旧
-hook id 别名。
 
 ## 兼容性
 

@@ -10,10 +10,11 @@ uv add zendev-log
 ```python
 from zendev.log import setup_log
 
-setup_log(verbose=True)
+setup_log(verbose=True, json=False)
 ```
 
-Version 0.2.0 removes the former `from zendev import setup_log` re-export.
+Set `ZENDEV_LOG_LEVEL` to override the configured log level (`INFO` by default,
+or `DEBUG` when `verbose=True`).
 
 See the official [package reference](https://docs.zendev.zrr.dev/reference/packages/)
 for the distribution boundary.

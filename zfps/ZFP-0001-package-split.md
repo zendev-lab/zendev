@@ -68,13 +68,8 @@ Typer command，不为缺失组件定义降级行为。
 
 ## 兼容性
 
-这是随 0.2.0 发布的破坏性变更。日志用户从：
-
-```python
-from zendev import setup_log
-```
-
-迁移为显式安装和导入：
+这是随 0.2.0 发布的破坏性变更。旧的根导入 `from zendev import setup_log` 必须
+失败，日志用户改为显式安装 `zendev-log` 并从 `zendev.log` 导入 `setup_log`：
 
 ```shell
 uv add zendev-log
@@ -84,10 +79,9 @@ uv add zendev-log
 from zendev.log import setup_log
 ```
 
-旧的根导入必须失败。安装 `zendev` 会通过必需依赖提供全部 namespace portions；
-只需要单项能力的用户可以独立安装对应组件。现有 Python 模块路径、五个兼容命令、
-统一命令和 `python -m zendev` 保持可用。不添加兼容发行包、模块别名或可选组件
-模式。
+安装 `zendev` 会通过必需依赖提供全部 namespace portions；只需要单项能力的用户
+可以独立安装对应组件。现有 Python 模块路径、五个兼容命令、统一命令和
+`python -m zendev` 保持可用。不添加兼容发行包、模块别名或可选组件模式。
 
 ## 验证
 
