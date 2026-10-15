@@ -86,8 +86,7 @@ machine metadata and technical identifiers remain English. See
 [`zfps/README.md`](./zfps/README.md) and the governing
 [`ZFP-0000`](./zfps/ZFP-0000-governance.md).
 
-Keep the ZFP and its implementation in separate PRs, even when both are
-prepared in the same task. Keep each PR in Draft until validation is ready.
+Keep the ZFP and its implementation in separate PRs.
 The proposal PR contains the ZFP, its generated index,
 and directly related proposal or contribution guidance. Implementation code,
 tests, package changes, CI, and feature usage documentation belong in the
@@ -119,10 +118,9 @@ The pull-request body must retain the Chinese H2 structure in
 [the repository template](./.github/pull_request_template.md): `动机` and
 `解决方案` are required, while `说明` and `后续工作` are optional. Do not add a
 checklist merely to satisfy process. Run the required checks, but do not list
-local test runs, commands, paths, or CI status in the body; CI and the task
-report hold that record. Use `说明` only for impact on review or use, such as
-compatibility, migration, risk, known limitations, key trade-offs, or stack
-dependencies, and omit it when there is nothing to add.
+local test runs, commands, paths, or CI status in the body. Use `说明` only for impact on review or
+use, such as compatibility, migration, risk, known limitations, key trade-offs,
+or stack dependencies, and omit it when there is nothing to add.
 
 PR titles are validated for every author, including bots. Renovate is exempt
 only from the PR body template requirement.
