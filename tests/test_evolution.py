@@ -6,6 +6,7 @@ import json
 import os
 import subprocess
 import sys
+from importlib.resources import files
 from pathlib import Path
 
 import pytest
@@ -14,7 +15,7 @@ from zendev.evolution import EvolutionSection, check_document
 
 ORIGIN = "# 项目演进\n\n## 初始意图\n\n最初为开发者简化工作流。\n"
 BODY = "### 触发\n出现新的需求。\n\n### 变化\n走向独立产品。\n\n### 理由\n需要拥有生命周期。\n"
-TEMPLATE = Path(__file__).parents[1] / "templates" / "evolution.md"
+TEMPLATE = files("zendev.evolution") / "templates" / "evolution.md"
 FENCE = "```"
 
 
