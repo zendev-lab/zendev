@@ -55,13 +55,8 @@ version = 1
 [proposal]
 prefix = "ZFP"
 number_field = "zfp"
-title_field = "title"
-type_field = "type"
 documents_dir = "zfps"
 schema = "schemas/zfp.schema.json"
-number_width = 4
-metadata_title = "plain"
-filename_slug_pattern = "[a-z0-9]+(?:-[a-z0-9]+)*"
 
 [proposal.templates]
 Feature = "templates/zfp.md"
@@ -113,18 +108,27 @@ An index cannot overwrite or create `proposal.toml`, `zendev.toml`, or
 
 ### Proposal table
 
-`proposal` defines the identifier and storage contract. `status_field` is
-optional; omit it for stateless records. `metadata_title` accepts `plain` or
-`prefixed`. In plain mode zendev constructs `# ZFP-0001: Title`; in prefixed
-mode the metadata title already includes the identifier and must equal the H1.
+`proposal` requires `prefix`, `number_field`, `documents_dir`, and `schema`.
+The index output path is `proposal.index.path` in the unified layout, or
+`proposal.index` in the dedicated layout. Optional keys and their defaults are `title_field = "title"`,
+`type_field = "type"`, `status_field = "status"`, `number_width = 4` (`1..12`),
+`metadata_title = "plain"`, and
+`filename_slug_pattern = "[a-z0-9]+(?:-[a-z0-9]+)*"`.
+
+`status_field` is only consulted when `[drafts]`, `[history]`, or status-aware
+graph roles are configured. `metadata_title` accepts `plain` or `prefixed`: in
+plain mode zendev constructs `# ZFP-0001: Title`; in prefixed mode the metadata
+title already includes the identifier and must equal the H1.
 
 ### Templates and summaries
 
 Each key in `proposal.templates` is an allowed value for the configured type field. Every
 H2 in its Markdown template is required in documents of that type.
 
-An optional `summary` table configures a required prose prefix and inclusive
-sentence-count bounds:
+An optional `summary` table requires a Markdown blockquote (`> ...`) immediately
+below the H1 heading that begins with `prefix` and ends with sentence
+punctuation within inclusive sentence-count bounds (`minimum_sentences = 2`,
+`maximum_sentences = 4` by default):
 
 ```toml
 [proposal.summary]
@@ -250,19 +254,21 @@ second lifecycle authority.
 
 ### Defined concepts
 
-An optional `defines` table maps a metadata list to stable HTML anchors:
+An optional `defines` table maps a metadata list to stable HTML anchors (all
+three keys are optional and default to the values shown):
 
 ```toml
 [proposal.defines]
 field = "defines"
 anchor_prefix = "term-"
-id_pattern = "[a-z][a-z0-9-]*"
+id_pattern = "[a-z][a-z0-9]*(?:-[a-z0-9]+)*"
 ```
 
-The validator requires each declared concept to have one matching anchor and
-rejects missing, undeclared, or duplicate current owners. A superseded proposal
-may keep its historical definition; current ownership can move only along the
-configured `supersedes` closure.
+The validator requires each declared concept to have exactly one matching
+`<a id="{anchor_prefix}{id}"></a>` anchor and rejects missing, undeclared, or
+duplicate current owners. A superseded proposal may keep its historical
+definition; current ownership can move only along the configured `supersedes`
+closure.
 
 ### Index fields
 
@@ -281,11 +287,9 @@ references, missing targets, unnumbered drafts, and external references fail bef
 generation or writing, including through the public Python indexing API. Ordinary
 metadata such as `authors`, `defines`, or `id` is preserved; `id` has no special meaning.
 
-Only `index.version = 2` is supported. Remove `source = "identifier"` and
-`index.include_drafts` from older configurations, then regenerate the committed
-index with `zendev proposal check --fix`. The top-level config version is unchanged.
-Fields are emitted in configuration order. Documents sort by proposal number. JSON uses UTF-8,
-two-space indentation, and one trailing newline before byte-for-byte comparison.
+Only `index.version = 2` is supported. Fields are emitted in configuration
+order. Documents sort by proposal number. JSON uses UTF-8, two-space
+indentation, and one trailing newline before byte-for-byte comparison.
 
 Unknown tables, keys, source names, invalid types, missing schemas or templates,
 and unsafe paths are configuration errors rather than silently ignored policy.

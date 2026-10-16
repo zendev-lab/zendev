@@ -24,7 +24,3 @@ Zendev does not decide whether a proposal should be accepted, store a proposal
 lifecycle in a service, or replace review. It validates the repository's chosen
 representation. Git history remains the record of how that representation
 changed.
-
-This also applies to the documentation site: Markdown under `docs/` is the
-source, Zensical validates and projects it into static HTML, and the generated
-`site/` directory is disposable.

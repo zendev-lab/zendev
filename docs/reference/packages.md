@@ -20,3 +20,12 @@ always exposes `commit`, `message`, `proposal`, and `evolution`.
 The old `zendev-commit` and `zendev-review` **distributions** are removed;
 `zendev-commit` remains an executable supplied by `zendev-message`.
 See the [migration guide](../guides/migration.md) for Python API changes.
+
+`zendev-log` configures Loguru for CLI output (`json=True` enables serialized
+logs, and `ZENDEV_LOG_LEVEL` overrides the log level):
+
+```python
+from zendev.log import setup_log
+
+setup_log(verbose=True, json=False)
+```

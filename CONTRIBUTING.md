@@ -13,6 +13,7 @@ Run the repository gates before opening or updating a pull request:
 
 ```shell
 just ci
+just docs-build
 uv pip check
 ```
 
@@ -80,11 +81,10 @@ decision, not a check inferred automatically from the diff.
 ZFP authors use lowercase GitHub usernames without `@`; see the
 [authorship policy](./zfps/ZFP-0000-governance.md#作者身份).
 
-ZFP prose defaults to
-Chinese, but another language is allowed when it makes the proposal clearer;
-machine metadata and technical identifiers remain English. See
-[`zfps/README.md`](./zfps/README.md) and the governing
-[`ZFP-0000`](./zfps/ZFP-0000-governance.md).
+ZFP prose defaults to Chinese, but another language is allowed when it makes
+the proposal clearer; machine metadata and technical identifiers remain English.
+See [`zfps/README.md`](./zfps/README.md) for authoring and pull-request titles,
+and [`ZFP-0000`](./zfps/ZFP-0000-governance.md) for the governance contract.
 
 Keep the ZFP and its implementation in separate PRs.
 The proposal PR contains the ZFP, its generated index,
@@ -101,18 +101,8 @@ waiting for the proposal to merge.
 
 ## Pull requests
 
-Use a valid Gitmoji-style title. ZFP pull requests use `docs(zfp)` and one of
-these verbs as a review convention, not as a machine-enforced lifecycle.
-Propose and revise titles name the topic only. They do not include a
-`ZFP-NNNN` identifier; the formatted identifier belongs in filenames and
-references, while the numeric proposal number belongs in frontmatter and the
-generated index.
-A superseding pull request names the replaced proposal and the new topic,
-but not the new proposal number.
-
-- `📝 docs(zfp): propose <topic>`
-- `📝 docs(zfp): revise <topic>`
-- `📝 docs(zfp): supersede ZFP-NNNN with <topic>`
+Use a valid `zendev`-profile title. ZFP pull requests follow the title conventions
+in [`zfps/README.md`](./zfps/README.md).
 
 The pull-request body must retain the Chinese H2 structure in
 [the repository template](./.github/pull_request_template.md): `动机` and

@@ -11,12 +11,6 @@ uv add --dev zendev-proposal
 uvx zendev-proposal check --help
 ```
 
-The complete toolkit exposes the same application:
-
-```shell
-uvx zendev proposal check
-```
-
 ```python
 from zendev.proposal import load_config, validate_repository
 

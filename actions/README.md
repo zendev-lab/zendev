@@ -18,5 +18,5 @@ defines title, body, template, and optional checklist behavior.
 Inside this repository, use `./actions/validate-title` or
 `./actions/validate-body` after checking out the repository.
 
-Replace `<release-or-commit>` with a pinned revision containing the domain
-architecture migration; do not mix it with older configuration examples.
+Replace `<release-or-commit>` with a pinned revision; do not mix it with older
+configuration examples.

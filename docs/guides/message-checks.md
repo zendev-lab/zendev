@@ -24,7 +24,9 @@ zendev message check --body --text "$PR_BODY" \
 ## PR template contract
 
 Body validation reads H2 headings from the repository PR template. Every H2 is
-required by default. Mark exceptions immediately before the heading:
+required by default. Override a heading's requirement with
+`<!-- pr-body:optional -->` or `<!-- pr-body:required -->` immediately before
+the heading:
 
 ```markdown
 ## Summary
