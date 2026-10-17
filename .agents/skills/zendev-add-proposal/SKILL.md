@@ -152,6 +152,13 @@ Resolve them from repository evidence or ask for the missing fact.
 
 ## Validate and deliver
 
+Read the draft without relying on the conversation. Trace a representative case
+and a relevant boundary or failure through its proposed behavior; check that
+the stated conditions lead to the stated result. Compare important claims with
+their sources. Preserve units, range endpoints, and the distinction between a
+measurement, an estimate, a target, and a guarantee. Language-checker findings
+require contextual review and do not establish factual or design correctness.
+
 Use the repository's existing validation command. For zendev repositories, discover
 exact syntax through the installed `zendev proposal --help` and subcommand help.
 Run a read-only check first. When editing proposals, use supported repair or index

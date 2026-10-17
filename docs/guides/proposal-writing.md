@@ -72,6 +72,12 @@ Name the actor and object when their identity affects the contract. Keep
 conditions, negation, quantifiers, ordering, exceptions, and uncertainty intact.
 Shortening a sentence must not change which action a condition controls.
 
+For numerical claims, identify the unit, comparison baseline, and whether a
+limit includes its endpoint where these affect the decision. Keep observations,
+estimates, targets, and guarantees distinct: a request measured at about five
+seconds does not establish a five-second upper bound. Resolve ambiguous limits
+from evidence or a decision before rewriting them as exact requirements.
+
 For example, this sentence leaves both the actor and the counting rule unclear:
 
 > 校验失败后重新提交，三次后通知管理员。
@@ -108,15 +114,28 @@ Do not use a proposal's status as proof of running behavior.
 
 ## Check the result
 
-Review the text for missing actors, ambiguous conditions, inconsistent terms,
-unsupported conclusions, and acceptance criteria that cannot be observed.
-For instance, "more reliable" needs a failure scenario and an expected result;
-it does not justify inventing a numerical target.
+Read the proposal as a reviewer who has not seen the conversation. Trace a
+representative input through the proposed behavior, including a boundary or
+failure case that could change the decision. The document should explain who
+acts, under which conditions, and what result would distinguish the proposal
+from the current behavior. An example that merely repeats the conclusion does
+not establish it.
+
+Check consequential claims against their evidence and proposed guarantees
+against their acceptance criteria. For instance, "more reliable" needs a
+failure scenario and an expected result; it does not justify inventing a
+numerical target. Keep unsupported steps in the reasoning visible as gaps.
 
 Run the repository's structural, link, and index checks. Inspect any generated
 or repaired diff and rerun the check. Passing a schema validates structure, not
 the design choice or its acceptance. Report remaining evidence and decision
 gaps alongside the checks actually performed.
+
+Language checkers can flag wording for review. Assess a suggestion in context
+before applying it: removing an estimate, making examples an exhaustive list,
+or splitting a condition from its action can change the contract. Judge quality
+by whether the reader can make the intended decision with accurate information;
+fewer warnings or shorter sentences alone do not demonstrate an improvement.
 
 ## Writing references
 
@@ -125,6 +144,16 @@ gaps alongside the checks actually performed.
 - [Controlled technical Chinese](https://github.com/Fenng/Tech-Doc-Style-Chinese/blob/main/references/controlled-technical-chinese.md)
   illustrates adapting terminology consistency and semantic preservation to
   Chinese.
+- [Simplified Technical Chinese](https://github.com/mzopedia/simplified-technical-chinese)
+  supplies Chinese wording rules and a checker. Its
+  [calibration report](https://github.com/mzopedia/simplified-technical-chinese/blob/main/docs/校准报告.md)
+  distinguishes checker findings from evidence about reader comprehension.
+- [Diátaxis](https://diataxis.fr/) organizes documentation around readers' needs.
+  A proposal remains a decision record under local governance, with its own
+  review questions and template.
+- [Google Technical Writing](https://developers.google.com/tech-writing/one/clear-sentences)
+  explains how specific subjects, verbs, and supported measurements improve
+  technical explanations.
 
 This guide uses those general editing ideas selectively. It does not reproduce
 the STE dictionary, apply English sentence limits to Chinese, or establish

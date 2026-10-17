@@ -93,10 +93,18 @@ budgets. Then use realistic requests that can reveal wrong decisions:
 - A task with an explicit prior choice should reuse it.
 - A requested draft with an ambiguous retry count should retain the gap until
   evidence or a decision resolves it.
+- A measured duration should remain an observation, rather than become a
+  guaranteed deadline to satisfy a wording rule.
+- A concise, structurally valid draft with an unsupported guarantee should
+  still be corrected or reported as incomplete.
 - A task in another repository should preserve that repository's authorship,
   numbering, lifecycle, and checker.
 
-Inspect the resulting reasoning and artifacts. Do not test prompt substrings
-as a substitute for these outcomes. Keep structure checks, author walkthroughs,
-independent execution, and comparative evaluations distinct in the report.
+Inspect whether the resulting document lets a reader identify the decision,
+its evidence, and the behavior of a representative case and a relevant
+exception. Use the same source material and reader task when comparing skill
+versions; count invented or lost facts separately from presentation issues.
+Do not test prompt substrings as a substitute for these outcomes.
+Keep structure checks, author walkthroughs, independent execution, and
+comparative evaluations distinct in the report.
 Only claim an improvement when comparable runs support it.
