@@ -56,6 +56,13 @@ for their public boundaries.
 
 ## Agent skills
 
+To establish a repository's proposal authoring guidance, start with
+[proposal writing](./docs/guides/proposal-writing.md) and
+[repository proposal skills](./docs/guides/proposal-skills.md). The guides explain
+how to adapt existing planning skills or create a local entry without changing
+governance. The documentation site also exposes them through its generated
+`llms.txt` and per-page Markdown.
+
 The repository also provides optional, self-contained agent skills under `.agents/skills/`.
 Load the one matching the task; they use the target project's configuration and
 contracts rather than imposing one language, formatter, or workflow.

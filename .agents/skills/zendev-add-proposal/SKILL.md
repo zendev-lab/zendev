@@ -1,7 +1,7 @@
 ---
 name: zendev-add-proposal
 description: >
-  Assess whether a change needs a durable design proposal, research alternatives and ask the user about unresolved key choices before writing or materially revising it, or review it against repository policy and zendev validation. Use for “是否需要提案”, “写提案”, “修改提案”, RFC/ZFP review, or a new design decision with substantial compatibility, migration, ownership, privacy, or governance consequences. Ordinary features, compatible options, aliases, bug fixes, and internal refactors do not trigger proposals merely because they change code or expose an interface. Do not use for routine implementation, project planning, evolution logs, or Git delivery.
+  Assess whether a change needs a durable design proposal under repository policy, research alternatives and ask the user about unresolved key choices before writing or materially revising it, or review it with zendev validation. Use for “是否需要提案”, “写提案”, “修改提案”, RFC/ZFP review, or a new public-contract or consequential design decision. In Zendev, new public interfaces follow ZFP-0000 even when compatible. Routine fixes restoring existing behavior and implementation of settled decisions do not need another proposal. Do not use for routine implementation, project planning, evolution logs, or Git delivery.
 ---
 
 # Zendev Add Proposal
@@ -12,14 +12,23 @@ proposal file is conditional, not the default outcome of loading this skill.
 
 ## Establish the impact
 
+For work in Zendev itself, first read
+[ZFP-0000](../../../zfps/ZFP-0000-governance.md) and the
+[submission guide](../../../zfps/README.md). They require proposals for new public
+contracts, including compatible new interfaces. In another repository, discover
+its corresponding policy; these Zendev-relative links are not portable
+installation dependencies. Apply the known local threshold before the general
+impact guidance below.
+
 Read the requested change, affected implementation and consumers, applicable
 repository guidance, and existing proposals. Identify the behavior before and
 after, who depends on it, and the practical cost of migration or reversal.
 Do not classify from a title, commit type, line count, or number of files.
 
-Require a proposal only when there is both a new decision not already covered
-by an existing proposal and clear evidence of substantial impact. Substantial
-impact means consequences such as:
+Where repository policy does not define the threshold, require a proposal only
+when there is both a new decision not already covered by an existing proposal
+and clear evidence of substantial impact. Substantial impact means consequences
+such as:
 
 - Breaking a supported API, CLI, configuration, protocol, or data contract so
   existing consumers must migrate or coordinate their rollout.
@@ -37,9 +46,10 @@ consumers, changed guarantee, and migration, coordination, or recovery burden.
 One concrete serious consequence can be sufficient; several speculative risks
 do not become evidence merely by being listed together.
 
-Ordinary additive features, compatible optional parameters, aliases using existing
-semantics, local refactors, tests, documentation, and routine dependency updates
-normally proceed directly. A new interface alone is not sufficient. Conversely,
+Under this fallback impact threshold, ordinary additive features, compatible
+optional parameters, aliases using existing semantics, local refactors, tests,
+documentation, and routine dependency updates normally proceed directly.
+A new interface alone is not sufficient under that threshold. Conversely,
 a small diff or an optional feature can have substantial impact, for example by
 introducing a new boundary for sensitive data. Judge its actual consequences.
 
@@ -47,8 +57,9 @@ Implementing an existing proposal does not need another proposal, even if the
 implementation is large. Link the existing decision; reassess only genuinely new
 choices outside its scope. Do not split one decision into a proposal per stage.
 
-When the evidence does not establish substantial impact, do not create a proposal
-as a precaution. Explain the specific uncertainty and inspect the missing facts;
+When local policy leaves the decision to impact and the evidence does not
+establish it, do not create a proposal as a precaution. Explain the specific
+uncertainty and inspect the missing facts;
 ask only if an unresolved answer changes the route. Continue independent work
 within the user's scope. Do not invent consumers, migration costs, or risk to
 justify a proposal. A user may explicitly request a design draft for a small
@@ -61,11 +72,11 @@ configuration, schema, template, and relevant existing records. Reuse their
 location, identifiers, metadata, and lifecycle instead of imposing ZFP conventions
 on every repository. Installation copies of this skill need no sibling files.
 
-If an explicit repository rule requires proposals more broadly than the impact
-threshold above, state the concrete conflict and distinguish policy compliance
-from a finding of substantial impact. Follow the user's current instruction when
-it resolves that conflict. Otherwise clarify only the conflicting requirement;
-do not silently broaden this skill's threshold or rewrite repository governance.
+If an explicit repository rule requires proposals more broadly than the general
+impact guidance, apply it and distinguish policy compliance from a finding of
+substantial impact. Do not ask the user to reconfirm an unambiguous local rule.
+Clarify only a missing or contradictory rule that affects the route, or a conflict
+with the user's current instruction. Do not silently rewrite repository governance.
 
 State the route briefly: direct implementation, an existing proposal, or a new
 proposal, with the decisive evidence. A request to assess or review does not
@@ -121,6 +132,14 @@ sections; do not add a second mandatory outline:
 - Compatibility, affected consumers, rollout and recovery where relevant, and
   observable checks that would establish the intended result.
 
+Use the project's preferred term for each concept and link its existing definition.
+Make actors, objects, condition scope, counting boundaries, and failure behavior
+explicit where they affect the decision. Preserve negation, exceptions, ordering,
+and uncertainty when editing. Ask about missing semantics instead of completing
+them by guesswork. Distinguish required behavior from recommendations using local
+conventions; proposed behavior and future acceptance criteria are not measured
+results. Use connected prose for reasoning and steps only for ordered actions.
+
 Scale detail to the decision. Preserve uncertainties as open questions instead
 of fabricating requirements or presenting a draft as accepted. Separate document
 validation, acceptance, implementation, and release according to local policy;
@@ -132,6 +151,13 @@ rules for the latter. Do not guess author identities, dates, or proposal numbers
 Resolve them from repository evidence or ask for the missing fact.
 
 ## Validate and deliver
+
+Read the draft without relying on the conversation. Trace a representative case
+and a relevant boundary or failure through its proposed behavior; check that
+the stated conditions lead to the stated result. Compare important claims with
+their sources. Preserve units, range endpoints, and the distinction between a
+measurement, an estimate, a target, and a guarantee. Language-checker findings
+require contextual review and do not establish factual or design correctness.
 
 Use the repository's existing validation command. For zendev repositories, discover
 exact syntax through the installed `zendev proposal --help` and subcommand help.
