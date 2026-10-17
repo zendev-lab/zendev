@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>zendev</title>
+    <meta
+      name="description"
+      content="Repository-native development workflows. Zendev checks commits, pull-request messages, proposals, and project evolution."
+    >
+    <link rel="canonical" href="https://zendev.zrr.dev/">
+    <meta name="theme-color" content="#f6f3ec" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#161513" media="(prefers-color-scheme: dark)">
+    <link rel="stylesheet" href="/site.css">
+  </head>
+  <body>
+    <a class="skip" href="#content">Skip to content</a>
+    <header class="bar">
+      <div class="wrap bar-inner">
+        <a class="mark" href="/">zendev</a>
+        <nav aria-label="Site">
+          <a href="https://docs.zendev.zrr.dev/">Docs</a>
+          <a href="https://github.com/zendev-lab/zendev">GitHub</a>
+        </nav>
+      </div>
+    </header>
+    <main id="content" class="wrap">
+      <h1>Repository-native development workflows</h1>
+      <p class="lede">
+        Git and committed repository files stay the source of truth. Zendev checks commits,
+        pull-request messages, proposals, and project evolution.
+      </p>
+      <div class="command">
+        <code>uvx zendev --help</code>
+        <button type="button" data-copy="uvx zendev --help">Copy</button>
+      </div>
+      <p class="aside">
+        Add it to a project from
+        <a href="https://docs.zendev.zrr.dev/getting-started/">Getting started</a>.
+        Python 3.12 or newer.
+      </p>
+
+      <section aria-labelledby="checks">
+        <h2 id="checks">Four checks</h2>
+        <ul class="work">
+          <li>
+            <h3>Commits</h3>
+            <p>Create a commit with the repository's message profile.</p>
+            <code>zendev commit</code>
+            <a href="https://docs.zendev.zrr.dev/guides/commits/">Commit guide</a>
+          </li>
+          <li>
+            <h3>Messages</h3>
+            <p>Check a title, a commit message, or a pull-request body.</p>
+            <code>zendev message check</code>
+            <a href="https://docs.zendev.zrr.dev/guides/message-checks/">Message checks</a>
+          </li>
+          <li>
+            <h3>Proposals</h3>
+            <p>Validate durable proposal records and their index.</p>
+            <code>zendev proposal check</code>
+            <a href="https://docs.zendev.zrr.dev/guides/proposals/">Proposal guide</a>
+          </li>
+          <li>
+            <h3>Evolution</h3>
+            <p>Check the initial intent and dated changes in <code>EVOLUTION.md</code>.</p>
+            <code>zendev evolution check</code>
+            <a href="https://docs.zendev.zrr.dev/guides/evolution/">Evolution guide</a>
+          </li>
+        </ul>
+      </section>
+
+      <section aria-labelledby="keeps">
+        <h2 id="keeps">What the repository keeps</h2>
+        <p>
+          The repository keeps its terminology, templates, schemas, and governance decisions.
+          Zendev validates that record.
+        </p>
+        <p>
+          <a href="https://docs.zendev.zrr.dev/concepts/repository-native/">Repository-native development</a>
+        </p>
+      </section>
+    </main>
+    <footer>
+      <div class="wrap footer-inner">
+        <a href="https://docs.zendev.zrr.dev/">Documentation</a>
+        <a href="https://github.com/zendev-lab/zendev">GitHub</a>
+        <a href="https://pypi.org/project/zendev/">PyPI</a>
+        <a href="https://github.com/zendev-lab/zendev/tree/main/zfps">Feature proposals</a>
+      </div>
+    </footer>
+    <script>
+      const copyButton = document.querySelector("button[data-copy]");
+      copyButton?.addEventListener("click", async () => {
+        const command = copyButton.dataset.copy ?? "";
+        try {
+          await navigator.clipboard.writeText(command);
+          copyButton.textContent = "Copied";
+        } catch {
+          copyButton.textContent = "Select the command";
+        }
+      });
+    </script>
+  </body>
+</html>
