@@ -87,9 +87,8 @@ def load_schema(config: ProposalConfig, path: Path):
     return validator, schema, registry
 
 
-def schema_properties(config: ProposalConfig, path: Path) -> dict[str, Any]:
+def schema_properties(config: ProposalConfig, path: Path, schema: Any, registry: Registry[Any]) -> dict[str, Any]:
     """Collect root properties across local references and schema alternatives."""
-    _, schema, registry = load_schema(config, path)
     found: dict[str, Any] = {}
     visited: set[str] = set()
 
