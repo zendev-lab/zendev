@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import re
 from collections import Counter, defaultdict
-from pathlib import Path
 from typing import Any, cast
 
 from referencing.exceptions import Unresolvable
@@ -31,21 +30,17 @@ from zendev.proposal.schema import load_schema, schema_properties
 from zendev.proposal.shape import formal_filename_pattern, template_headings
 
 
-def _load_schema(config: ProposalConfig, schema_path: Path):
-    return load_schema(config, schema_path)[0]
-
-
 def _validate_schema(
     config: ProposalConfig,
     state: RepositoryState,
     diagnostics: list[Diagnostic],
-) -> None:
-    formal_validator = _load_schema(config, config.schema_path)
+) -> dict[str, Any]:
+    formal_validator, schema, registry = load_schema(config, config.schema_path)
     drafts = config.drafts
     draft_validator = (
         formal_validator
         if drafts is None or drafts.schema_path == config.schema_path
-        else _load_schema(config, drafts.schema_path)
+        else load_schema(config, drafts.schema_path)[0]
     )
     for document in state.documents:
         validator = draft_validator if document.is_draft else formal_validator
@@ -72,6 +67,7 @@ def _validate_schema(
                     line=document.field_lines.get(str(next(iter(error.absolute_path), "")), 1),
                 )
             )
+    return schema_properties(config, config.schema_path, schema, registry)
 
 
 def _first_nonempty_line(markdown: str) -> str:
@@ -579,8 +575,7 @@ def validate_repository(config: ProposalConfig, *, base_ref: str | None = None) 
 def validate_state(config: ProposalConfig, state: RepositoryState, *, base_ref: str | None = None) -> ValidationResult:
     """Validate a parsed snapshot, including a proposed repair before any writes."""
     diagnostics = list(state.diagnostics)
-    _validate_schema(config, state, diagnostics)
-    properties = schema_properties(config, config.schema_path)
+    properties = _validate_schema(config, state, diagnostics)
     present = {key for document in state.formal_documents for key in document.metadata}
     for field in config.index.fields:
         if field.source == "metadata" and field.key not in properties and field.key not in present:
@@ -618,6 +613,7 @@ def validate_state(config: ProposalConfig, state: RepositoryState, *, base_ref: 
         )
     _validate_unique_numbers(config, state, diagnostics)
     templates = template_headings(config)
+    bodies = {document.path: document.body for document in state.documents}
 
     for document in state.documents:
         _validate_title(config, document, diagnostics)
@@ -629,7 +625,7 @@ def validate_state(config: ProposalConfig, state: RepositoryState, *, base_ref: 
             _validate_formal_shape(config, document, diagnostics)
             _validate_summary(config, document, diagnostics)
         _validate_sections(config, document, templates, diagnostics)
-        validate_content(config, document, templates, diagnostics, {doc.path: doc.body for doc in state.documents})
+        validate_content(config, document, templates, diagnostics, bodies)
 
     validate_graph(config, state, diagnostics)
     validate_references(config, state, diagnostics)
