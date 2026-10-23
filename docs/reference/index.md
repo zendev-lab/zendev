@@ -8,5 +8,4 @@ Use these pages for exact public interfaces:
 - [Hooks](hooks.md): published hook IDs and stages.
 - [Packages](packages.md): distribution, import, and entry-point ownership.
 
-Command `--help`, typed Python exports, and the repository source remain the
-authoritative interface for a specific installed release.
+Command `--help`, typed Python exports, and the repository source remain the authoritative interface for a specific installed release.

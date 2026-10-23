@@ -1,7 +1,6 @@
 # Configuration ownership
 
-Zendev owns reusable workflow mechanisms. A consuming repository owns the
-meaning of its own process.
+Zendev owns reusable workflow mechanisms. A consuming repository owns the meaning of its own process.
 
 | Zendev owns | Consuming repositories own |
 | --- | --- |
@@ -12,12 +11,6 @@ meaning of its own process.
 | Graph, history, and index mechanics | Lifecycle rules and relation semantics |
 | Stable diagnostics and exit codes | Waivers and governance decisions |
 
-This boundary prevents a shared package release from silently redefining a
-repository's governance. It also makes policy changes reviewable alongside the
-repository content they affect.
+This boundary prevents a shared package release from silently redefining a repository's governance. It also makes policy changes reviewable alongside the repository content they affect.
 
-Configure both domains in `zendev.toml` or `[tool.zendev]` in `pyproject.toml`,
-or keep proposal policy in its dedicated `proposal.toml`. A dedicated policy
-can coexist with unified message settings; duplicate proposal definitions are
-an error. Each domain uses one source without merging files.
-See [Configuration](../reference/configuration.md).
+Configure both domains in `zendev.toml` or `[tool.zendev]` in `pyproject.toml`, or keep proposal policy in its dedicated `proposal.toml`. A dedicated policy can coexist with unified message settings; duplicate proposal definitions are an error. Each domain uses one source without merging files. See [Configuration](../reference/configuration.md).

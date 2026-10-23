@@ -1,7 +1,6 @@
 # Guides
 
-Guides are organized by the task a contributor wants to complete, rather than
-by distribution name:
+Guides are organized by the task a contributor wants to complete, rather than by distribution name:
 
 - [Recommended repository workflow](repository-workflow.md): combine repository
   policy, local gates, commits, pull requests, CI, proposals, and Agent guidance.
@@ -17,5 +16,4 @@ by distribution name:
   to local policy, agent discovery, and validation.
 - [Project evolution](evolution.md): initialize, list, and check project intent and dated changes.
 
-Use the [CLI reference](../reference/cli.md) when you already know the workflow
-and need the exact command surface.
+Use the [CLI reference](../reference/cli.md) when you already know the workflow and need the exact command surface.

@@ -1,8 +1,6 @@
 # Getting started
 
-Zendev requires Python 3.12 or newer. The examples use
-[uv](https://docs.astral.sh/uv/), but the distributions are ordinary Python
-packages.
+Zendev requires Python 3.12 or newer. The examples use [uv](https://docs.astral.sh/uv/), but the distributions are ordinary Python packages.
 
 ## Choose an installation
 
@@ -37,13 +35,9 @@ uv run zendev message check --title --text "✨ feat: add documentation"
 
 ## Pick the first workflow
 
-Use [Commits](guides/commits.md) to choose a message profile and create commits,
-[Message checks](guides/message-checks.md) to validate commit or pull-request
-text, or [Proposals](guides/proposals.md) to validate a proposal repository and
-its deterministic index.
+Use [Commits](guides/commits.md) to choose a message profile and create commits, [Message checks](guides/message-checks.md) to validate commit or pull-request text, or [Proposals](guides/proposals.md) to validate a proposal repository and its deterministic index.
 
-For automated enforcement, continue with [prek](integrations/prek.md) or
-[GitHub Actions](integrations/github-actions.md).
+For automated enforcement, continue with [prek](integrations/prek.md) or [GitHub Actions](integrations/github-actions.md).
 
 ## Develop zendev itself
 

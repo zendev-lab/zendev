@@ -1,12 +1,8 @@
 # zendev
 
-Zendev is a repository-native development workflow toolkit for commit
-conventions, pull-request message checks, durable proposal repositories, and project evolution.
+Zendev is a repository-native development workflow toolkit for commit conventions, pull-request message checks, durable proposal repositories, and project evolution.
 
-Git and committed repository files remain the source of truth. Zendev provides
-typed Python mechanisms and thin hook or GitHub Action adapters; consuming
-repositories continue to own their schemas, templates, terminology, lifecycle
-policy, and governance decisions.
+Git and committed repository files remain the source of truth. Zendev provides typed Python mechanisms and thin hook or GitHub Action adapters; consuming repositories continue to own their schemas, templates, terminology, lifecycle policy, and governance decisions.
 
 ## Install
 
@@ -23,8 +19,7 @@ Run it without a global installation:
 uvx zendev --help
 ```
 
-Python 3.12 or newer is required. `python -m zendev` exposes the same command
-tree as `zendev`.
+Python 3.12 or newer is required. `python -m zendev` exposes the same command tree as `zendev`.
 
 ## Workflows
 
@@ -36,8 +31,7 @@ zendev proposal check
 zendev evolution check
 ```
 
-Read the [official documentation](https://docs.zendev.zrr.dev/) for
-concepts, guides, integrations, and the public reference.
+Read the [official documentation](https://docs.zendev.zrr.dev/) for concepts, guides, integrations, and the public reference.
 
 ## Packages
 
@@ -50,22 +44,13 @@ concepts, guides, integrations, and the public reference.
 | `zendev-evolution` | Initial intent and dated evolution records |
 | `zendev-log` | Loguru setup helper |
 
-The component distributions remain independently installable for narrower use.
-See the [package reference](https://docs.zendev.zrr.dev/reference/packages/)
-for their public boundaries.
+The component distributions remain independently installable for narrower use. See the [package reference](https://docs.zendev.zrr.dev/reference/packages/) for their public boundaries.
 
 ## Agent skills
 
-To establish a repository's proposal authoring guidance, start with
-[proposal writing](./docs/guides/proposal-writing.md) and
-[repository proposal skills](./docs/guides/proposal-skills.md). The guides explain
-how to adapt existing planning skills or create a local entry without changing
-governance. The documentation site also exposes them through its generated
-`llms.txt` and per-page Markdown.
+To establish a repository's proposal authoring guidance, start with [proposal writing](./docs/guides/proposal-writing.md) and [repository proposal skills](./docs/guides/proposal-skills.md). The guides explain how to adapt existing planning skills or create a local entry without changing governance. The documentation site also exposes them through its generated `llms.txt` and per-page Markdown.
 
-The repository also provides optional, self-contained agent skills under `.agents/skills/`.
-Load the one matching the task; they use the target project's configuration and
-contracts rather than imposing one language, formatter, or workflow.
+The repository also provides optional, self-contained agent skills under `.agents/skills/`. Load the one matching the task; they use the target project's configuration and contracts rather than imposing one language, formatter, or workflow.
 
 | Skill | Result |
 | --- | --- |
@@ -74,13 +59,8 @@ contracts rather than imposing one language, formatter, or workflow.
 | [zendev-test-behavior](./.agents/skills/zendev-test-behavior/SKILL.md) | Add meaningful regression, ordering, numerical, and backend-equivalence tests |
 | [zendev-measure-performance](./.agents/skills/zendev-measure-performance/SKILL.md) | Produce comparable latency, throughput, memory, or startup measurements |
 
-These skills are repository assets, separate from the Python CLI installation.
-Load them through the agent host's skill support. Project planning, implementation,
-and Git delivery retain their own workflows; loading a skill does not authorize
-installation, publication, or changes outside the requested task.
+These skills are repository assets, separate from the Python CLI installation. Load them through the agent host's skill support. Project planning, implementation, and Git delivery retain their own workflows; loading a skill does not authorize installation, publication, or changes outside the requested task.
 
 ## Contributing and design
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for repository gates and documentation
-ownership. Public feature and governance changes begin with a
-[Zendev Feature Proposal](./zfps/README.md).
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for repository gates and documentation ownership. Public feature and governance changes begin with a [Zendev Feature Proposal](./zfps/README.md).

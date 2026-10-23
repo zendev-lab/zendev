@@ -12,18 +12,11 @@ graph TD
   Evolution --> Core
 ```
 
-Core owns configuration discovery, diagnostic rendering, operation-scoped source
-snapshots and shared Markdown facts. It knows neither domain policy nor CLI/Git.
-Domain loaders interpret their own tables from one discovered source.
+Core owns configuration discovery, diagnostic rendering, operation-scoped source snapshots and shared Markdown facts. It knows neither domain policy nor CLI/Git. Domain loaders interpret their own tables from one discovered source.
 
-Message exposes pure `parse_message`, `check_message`, `check_git_message`,
-`render_message` and `check_body` functions. Parsing supplies structure; the
-ZenDev policy checks type/intention pairs. Interactive, CLI, hook and Action
-adapters read inputs and display the same diagnostics.
+Message exposes pure `parse_message`, `check_message`, `check_git_message`, `render_message` and `check_body` functions. Parsing supplies structure; the ZenDev policy checks type/intention pairs. Interactive, CLI, hook and Action adapters read inputs and display the same diagnostics.
 
-Proposal separates repository parsing, document shape, content, relationships,
-history and index projection. Indexing depends on relationship validation;
-validation does not import indexing. `application.py` owns the workflow:
+Proposal separates repository parsing, document shape, content, relationships, history and index projection. Indexing depends on relationship validation; validation does not import indexing. `application.py` owns the workflow:
 
 ```text
 source snapshot → parse → validate → candidate repairs → validate → ChangePlan
@@ -31,40 +24,16 @@ source snapshot → parse → validate → candidate repairs → validate → Ch
                                                     apply_plan → transaction
 ```
 
-A plan records configuration, schemas (including discovered local references),
-templates, proposals and observed linked files. Reads and Markdown facts are
-cached only for that operation. Applying a plan verifies its input bytes and
-absence observations again, prepares replacements and backups, then writes
-through one rollback-capable boundary. A changed input aborts the write. A
-requested history ref resolves to a commit before planning. Repair diagnostics
-come from source positions rather than parsing human-readable error messages.
+A plan records configuration, schemas (including discovered local references), templates, proposals and observed linked files. Reads and Markdown facts are cached only for that operation. Applying a plan verifies its input bytes and absence observations again, prepares replacements and backups, then writes through one rollback-capable boundary. A changed input aborts the write. A requested history ref resolves to a commit before planning. Repair diagnostics come from source positions rather than parsing human-readable error messages.
 
-`--partial` permits only the existing independently safe repair contract; it
-retains remaining diagnostics and withholds an invalid index. `--diff` never
-writes. Repository configuration, JSON schemas and templates still own policy.
+`--partial` permits only the existing independently safe repair contract; it retains remaining diagnostics and withholds an invalid index. `--diff` never writes. Repository configuration, JSON schemas and templates still own policy.
 
-Evolution exposes pure `check_document`, which returns immutable sections or shared
-diagnostics. It consumes core Markdown facts; evolution owns the fixed document
-rules. The CLI alone reads UTF-8 files, creates new documents exclusively, and
-renders human, JSON, or GitHub output. It has no proposal dependency, configuration
-discovery, repair transaction, or auxiliary index. Editors own subsequent changes.
+Evolution exposes pure `check_document`, which returns immutable sections or shared diagnostics. It consumes core Markdown facts; evolution owns the fixed document rules. The CLI alone reads UTF-8 files, creates new documents exclusively, and renders human, JSON, or GitHub output. It has no proposal dependency, configuration discovery, repair transaction, or auxiliary index. Editors own subsequent changes.
 
-`just check` runs the repository hooks configured in `prek.toml` and checks justfile
-formatting. Hooks own formatting, lint, type, and repository policy checks and may
-apply fixes. `just ci` also runs the test suite with coverage.
-`just packages` builds wheels, checks their contents against the source trees, and
-runs each distribution in an isolated installation. `.alint.yml` and Ruff's
-banned-import rule enforce namespace ownership, sibling pins, and the CLI boundary.
+`just check` runs the repository hooks configured in `prek.toml` and checks justfile formatting. Hooks own formatting, lint, type, and repository policy checks and may apply fixes. `just ci` also runs the test suite with coverage. `just packages` builds wheels, checks their contents against the source trees, and runs each distribution in an isolated installation. `.alint.yml` and Ruff's banned-import rule enforce namespace ownership, sibling pins, and the CLI boundary.
 
-[Hatch metadata hooks](https://hatch.pypa.io/latest/plugins/metadata-hook/reference/)
-resolve sibling pins from the VCS version. Component builds reference the same root hook file from the complete repository
-checkout. Releases publish independently installable wheels. Release ordering is core/log, then message/proposal/evolution, then
-the CLI distribution. uv cache keys include the Git commit/tags and all workspace build metadata, so
-editable installs rebuild together after a commit or metadata edit.
-See [uv dynamic metadata caching](https://docs.astral.sh/uv/concepts/cache/#dynamic-metadata).
+[Hatch metadata hooks](https://hatch.pypa.io/latest/plugins/metadata-hook/reference/) resolve sibling pins from the VCS version. Component builds reference the same root hook file from the complete repository checkout. Releases publish independently installable wheels. Release ordering is core/log, then message/proposal/evolution, then the CLI distribution. uv cache keys include the Git commit/tags and all workspace build metadata, so editable installs rebuild together after a commit or metadata edit. See [uv dynamic metadata caching](https://docs.astral.sh/uv/concepts/cache/#dynamic-metadata).
 
-New PyPI projects and trusted publishers must be configured
-before the first release; changing CI does not create those hosted resources.
+New PyPI projects and trusted publishers must be configured before the first release; changing CI does not create those hosted resources.
 
-`README.md` and package READMEs are landing pages. `docs/` owns usage guides;
-`zfps/` owns public design and governance decisions.
+`README.md` and package READMEs are landing pages. `docs/` owns usage guides; `zfps/` owns public design and governance decisions.

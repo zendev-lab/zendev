@@ -26,9 +26,7 @@ uvx prek install --prepare-hooks
 uvx prek run --all-files
 ```
 
-`zendev-message-check` runs at `commit-msg`. `zendev-proposal-check` always
-runs, including deletion-only changes, so index and history drift cannot be
-skipped by a file-pattern mismatch.
+`zendev-message-check` runs at `commit-msg`. `zendev-proposal-check` always runs, including deletion-only changes, so index and history drift cannot be skipped by a file-pattern mismatch.
 
 ## Pass command options
 
@@ -41,11 +39,6 @@ hooks = [
 ]
 ```
 
-Keep proposal checks read-only in normal commits. Run
-`zendev proposal check --fix` explicitly when the committed index must be
-updated.
+Keep proposal checks read-only in normal commits. Run `zendev proposal check --fix` explicitly when the committed index must be updated.
 
-A released hook installs the complete toolkit and its exact-version components.
-For unreleased development, use the workspace `uv run zendev` command or build
-all components together with `just packages` to validate their contents and
-isolated installations.
+A released hook installs the complete toolkit and its exact-version components. For unreleased development, use the workspace `uv run zendev` command or build all components together with `just packages` to validate their contents and isolated installations.

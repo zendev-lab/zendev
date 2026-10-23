@@ -8,7 +8,6 @@ The public manifest exposes these preferred hook IDs:
 | `zendev-proposal-check` | `pre-commit` | Runs `zendev proposal check` and always evaluates repository state. |
 | `zendev-evolution-check` | `pre-commit` | Opt-in check for an existing `EVOLUTION.md`; runs `zendev evolution check` without changed filenames. |
 
-All hooks install the complete `zendev` distribution from the pinned repository
-revision and forward configured `args`.
+All hooks install the complete `zendev` distribution from the pinned repository revision and forward configured `args`.
 
 See [prek](../integrations/prek.md) for a complete configuration.

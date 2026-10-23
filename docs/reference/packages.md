@@ -1,7 +1,6 @@
 # Package reference
 
-Six distributions share a release version and contribute disjoint portions of
-the PEP 420 `zendev` namespace.
+Six distributions share a release version and contribute disjoint portions of the PEP 420 `zendev` namespace.
 
 | Distribution | Ownership | Primary interfaces |
 | --- | --- | --- |
@@ -12,17 +11,11 @@ the PEP 420 `zendev` namespace.
 | `zendev-evolution` | Initial intent and dated evolution records | `zendev.evolution.check_document`, `zendev-evolution` |
 | `zendev-log` | Idempotent Loguru setup | `zendev.log.setup_log` |
 
-The root requires every component at its exact version. Message, proposal, and evolution
-each require the same-version core. Core has no domain, CLI, or Git dependency;
-log remains independent. Every component is separately installable. The root CLI
-always exposes `commit`, `message`, `proposal`, and `evolution`.
+The root requires every component at its exact version. Message, proposal, and evolution each require the same-version core. Core has no domain, CLI, or Git dependency; log remains independent. Every component is separately installable. The root CLI always exposes `commit`, `message`, `proposal`, and `evolution`.
 
-The old `zendev-commit` and `zendev-review` **distributions** are removed;
-`zendev-commit` remains an executable supplied by `zendev-message`.
-See the [migration guide](../guides/migration.md) for Python API changes.
+The old `zendev-commit` and `zendev-review` **distributions** are removed; `zendev-commit` remains an executable supplied by `zendev-message`. See the [migration guide](../guides/migration.md) for Python API changes.
 
-`zendev-log` configures Loguru for CLI output (`json=True` enables serialized
-logs, and `ZENDEV_LOG_LEVEL` overrides the log level):
+`zendev-log` configures Loguru for CLI output (`json=True` enables serialized logs, and `ZENDEV_LOG_LEVEL` overrides the log level):
 
 ```python
 from zendev.log import setup_log
