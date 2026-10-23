@@ -31,7 +31,7 @@ hooks = [
 
 [[repos]]
 repo = "https://github.com/astral-sh/ruff-pre-commit"
-rev = "v0.16.5"
+rev = "v0.17.2"
 hooks = [
   { id = "ruff-check", args = ["--fix"] },
   { id = "ruff-format" },
@@ -39,12 +39,12 @@ hooks = [
 
 [[repos]]
 repo = "https://github.com/astral-sh/ty-pre-commit"
-rev = "v0.0.75"
+rev = "v0.0.91"
 hooks = [{ id = "ty" }]
 
 [[repos]]
 repo = "https://github.com/facebook/pyrefly-pre-commit"
-rev = "1.2.0"
+rev = "1.4.0"
 hooks = [
   {
     id = "pyrefly-check",
@@ -55,12 +55,12 @@ hooks = [
 
 [[repos]]
 repo = "https://github.com/astral-sh/uv-pre-commit"
-rev = "0.12.7"
+rev = "0.13.5"
 hooks = [{ id = "uv-lock" }]
 
 [[repos]]
 repo = "https://github.com/tombi-toml/tombi-pre-commit"
-rev = "v1.5.0"
+rev = "v1.9.0"
 hooks = [
   { id = "tombi-format", exclude = "^uv\\.lock$" },
   { id = "tombi-lint", args = ["--error-on-warnings"], exclude = "^uv\\.lock$" },
@@ -73,7 +73,7 @@ hooks = [{ id = "actionlint" }]
 
 [[repos]]
 repo = "https://github.com/zizmorcore/zizmor-pre-commit"
-rev = "v1.30.0"
+rev = "v1.31.1"
 hooks = [{ id = "zizmor", args = ["--min-severity", "medium"] }]
 
 [[repos]]
@@ -89,14 +89,14 @@ hooks = [
 
 [[repos]]
 repo = "https://github.com/crate-ci/typos"
-rev = "v1.50.0"
+rev = "v1.51.1"
 hooks = [
   { id = "typos", args = ["--force-exclude"] },
 ]
 
 [[repos]]
 repo = "https://github.com/asamarts/alint-pre-commit"
-rev = "v0.17.0"
+rev = "v0.20.0"
 hooks = [{ id = "alint" }]
 
 [[repos]]
