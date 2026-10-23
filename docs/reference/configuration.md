@@ -2,26 +2,11 @@
 
 ## Source discovery
 
-Use `zendev.toml` or `[tool.zendev]` in `pyproject.toml` for unified configuration.
-Proposals also support the dedicated `proposal.toml` file with its original
-layout. All three sources use configuration version 1.
+Use `zendev.toml` or `[tool.zendev]` in `pyproject.toml` for unified configuration. Proposals also support the dedicated `proposal.toml` file with its original layout. All three sources use configuration version 1.
 
-Discovery starts at the working directory and walks toward the Git root,
-including worktrees. Unrelated pyprojects are skipped. `zendev.toml` and
-`[tool.zendev]` in the same directory always conflict. For proposals,
-`proposal.toml` may coexist with a unified source that has no `proposal` table;
-defining proposals in both sources is an error, even if one table is empty.
-Message discovery ignores the dedicated file.
+Discovery starts at the working directory and walks toward the Git root, including worktrees. Unrelated pyprojects are skipped. `zendev.toml` and `[tool.zendev]` in the same directory always conflict. For proposals, `proposal.toml` may coexist with a unified source that has no `proposal` table; defining proposals in both sources is an error, even if one table is empty. Message discovery ignores the dedicated file.
 
-Each domain selects one source in its nearest configuration directory. Fields
-are never inherited from other files or directories. A nearest unified source
-without proposal settings or an adjacent `proposal.toml` produces a missing
-proposal configuration error; it does not fall back to an ancestor's policy.
-`--config PATH` selects one explicit source without considering siblings.
-The dedicated layout is identified by the filename `proposal.toml`; explicitly
-passing that file to a message command is a domain error. Paths resolve relative
-to the selected entry's directory, not the working directory. Symlinked files
-retain their entry name and directory for layout selection and relative paths.
+Each domain selects one source in its nearest configuration directory. Fields are never inherited from other files or directories. A nearest unified source without proposal settings or an adjacent `proposal.toml` produces a missing proposal configuration error; it does not fall back to an ancestor's policy. `--config PATH` selects one explicit source without considering siblings. The dedicated layout is identified by the filename `proposal.toml`; explicitly passing that file to a message command is a domain error. Paths resolve relative to the selected entry's directory, not the working directory. Symlinked files retain their entry name and directory for layout selection and relative paths.
 
 ```toml
 version = 1
@@ -36,16 +21,11 @@ checklist_section = "Checklist"
 fail_on_empty_checklist = false
 ```
 
-For `pyproject.toml`, place `version = 1` inside `[tool.zendev]` and prefix every
-table with `tool.zendev`, including `[tool.zendev.message.body]`.
-Profiles are `zendev`, `conventional`, and `gitmoji`; an explicit `--profile`
-overrides a valid configured value. Invalid configuration always fails closed.
-A missing body template is an error, even without checklist enforcement.
+For `pyproject.toml`, place `version = 1` inside `[tool.zendev]` and prefix every table with `tool.zendev`, including `[tool.zendev.message.body]`. Profiles are `zendev`, `conventional`, and `gitmoji`; an explicit `--profile` overrides a valid configured value. Invalid configuration always fails closed. A missing body template is an error, even without checklist enforcement.
 
 ## Proposal policy
 
-Both dedicated and unified policies reject unknown keys and resolve configured
-paths relative to the selected file's directory. Paths may not escape that root.
+Both dedicated and unified policies reject unknown keys and resolve configured paths relative to the selected file's directory. Paths may not escape that root.
 
 A minimal stateless policy looks like:
 
@@ -71,8 +51,7 @@ fields = ["zfp", { name = "path", source = "path" }, "title"]
 
 ### Dedicated proposal configuration
 
-Existing repositories can keep `proposal.toml` without renaming the file or
-moving its tables. The equivalent minimal policy is:
+Existing repositories can keep `proposal.toml` without renaming the file or moving its tables. The equivalent minimal policy is:
 
 ```toml
 version = 1
@@ -94,41 +73,21 @@ entries_key = "zfps"
 fields = ["zfp", { name = "path", source = "path" }, "title"]
 ```
 
-In this layout, `drafts`, `templates`, `summary`, `graph`, `history`, `defines`,
-`index`, `sections`, `links`, and `fix` are top-level tables. Their fields have
-the same meaning as the `proposal.*` tables below. Only the index output path
-changes location: the `index` string in `[proposal]` replaces
-`[proposal.index] path`. Do not mix the two layouts within one file or put
-message settings in `proposal.toml`.
+In this layout, `drafts`, `templates`, `summary`, `graph`, `history`, `defines`, `index`, `sections`, `links`, and `fix` are top-level tables. Their fields have the same meaning as the `proposal.*` tables below. Only the index output path changes location: the `index` string in `[proposal]` replaces `[proposal.index] path`. Do not mix the two layouts within one file or put message settings in `proposal.toml`.
 
-Both layouts use the same proposal rules, diagnostics, and index version 2.
-Checks, previews, and repairs never rewrite or migrate the configuration file.
-An index cannot overwrite or create `proposal.toml`, `zendev.toml`, or
-`pyproject.toml` in the configuration directory, including through path aliases.
+Both layouts use the same proposal rules, diagnostics, and index version 2. Checks, previews, and repairs never rewrite or migrate the configuration file. An index cannot overwrite or create `proposal.toml`, `zendev.toml`, or `pyproject.toml` in the configuration directory, including through path aliases.
 
 ### Proposal table
 
-`proposal` requires `prefix`, `number_field`, `documents_dir`, and `schema`.
-The index output path is `proposal.index.path` in the unified layout, or
-`proposal.index` in the dedicated layout. Optional keys and their defaults are `title_field = "title"`,
-`type_field = "type"`, `status_field = "status"`, `number_width = 4` (`1..12`),
-`metadata_title = "plain"`, and
-`filename_slug_pattern = "[a-z0-9]+(?:-[a-z0-9]+)*"`.
+`proposal` requires `prefix`, `number_field`, `documents_dir`, and `schema`. The index output path is `proposal.index.path` in the unified layout, or `proposal.index` in the dedicated layout. Optional keys and their defaults are `title_field = "title"`, `type_field = "type"`, `status_field = "status"`, `number_width = 4` (`1..12`), `metadata_title = "plain"`, and `filename_slug_pattern = "[a-z0-9]+(?:-[a-z0-9]+)*"`.
 
-`status_field` is only consulted when `[drafts]`, `[history]`, or status-aware
-graph roles are configured. `metadata_title` accepts `plain` or `prefixed`: in
-plain mode zendev constructs `# ZFP-0001: Title`; in prefixed mode the metadata
-title already includes the identifier and must equal the H1.
+`status_field` is only consulted when `[drafts]`, `[history]`, or status-aware graph roles are configured. `metadata_title` accepts `plain` or `prefixed`: in plain mode zendev constructs `# ZFP-0001: Title`; in prefixed mode the metadata title already includes the identifier and must equal the H1.
 
 ### Templates and summaries
 
-Each key in `proposal.templates` is an allowed value for the configured type field. Every
-H2 in its Markdown template is required in documents of that type.
+Each key in `proposal.templates` is an allowed value for the configured type field. Every H2 in its Markdown template is required in documents of that type.
 
-An optional `summary` table requires a Markdown blockquote (`> ...`) immediately
-below the H1 heading that begins with `prefix` and ends with sentence
-punctuation within inclusive sentence-count bounds (`minimum_sentences = 2`,
-`maximum_sentences = 4` by default):
+An optional `summary` table requires a Markdown blockquote (`> ...`) immediately below the H1 heading that begins with `prefix` and ends with sentence punctuation within inclusive sentence-count bounds (`minimum_sentences = 2`, `maximum_sentences = 4` by default):
 
 ```toml
 [proposal.summary]
@@ -139,17 +98,9 @@ maximum_sentences = 4
 
 ### Drafts
 
-Omit `drafts` when a repository has no draft directory. When present, it accepts
-`directory`, optional `schema`, optional `marker`, `require_summary`, and
-`pre_proposal`. A pre-proposal draft is non-normative and must not assign a
-proposal number or encode lifecycle status. A lifecycle draft uses
-`pre_proposal = false` and must start in `Draft` status.
+Omit `drafts` when a repository has no draft directory. When present, it accepts `directory`, optional `schema`, optional `marker`, `require_summary`, and `pre_proposal`. A pre-proposal draft is non-normative and must not assign a proposal number or encode lifecycle status. A lifecycle draft uses `pre_proposal = false` and must start in `Draft` status.
 
-If no draft schema is configured, drafts use the formal proposal schema. A
-draft's H1 must match its metadata title, and a configured marker must
-immediately follow that H1. `require_summary` controls summary validation for
-drafts. Unnumbered drafts are validated but never indexed. Numbered formal
-proposals are indexed regardless of lifecycle status, when the repository uses one.
+If no draft schema is configured, drafts use the formal proposal schema. A draft's H1 must match its metadata title, and a configured marker must immediately follow that H1. `require_summary` controls summary validation for drafts. Unnumbered drafts are validated but never indexed. Numbered formal proposals are indexed regardless of lifecycle status, when the repository uses one.
 
 ### Graph and history
 
@@ -165,9 +116,7 @@ accepted_status = "Accepted"
 superseded_status = "Superseded"
 ```
 
-Every configured relation rejects duplicate, self, and missing-target edges.
-Integer references and canonical strings such as `VEP-0001` identify the same
-proposal. The optional roles add stronger checks:
+Every configured relation rejects duplicate, self, and missing-target edges. Integer references and canonical strings such as `VEP-0001` identify the same proposal. The optional roles add stronger checks:
 
 - `requires_field` rejects cycles and prevents an accepted proposal from
   transitively requiring a non-accepted proposal.
@@ -185,25 +134,11 @@ require_declared_references = true
 requires_earlier = true
 ```
 
-Both options default to `false` and require a configured `requires_field`.
-`require_declared_references` requires each referenced proposal to appear directly
-in that metadata field. A transitive dependency or another relation does not
-authorize a reference. Self references do not require self dependencies.
+Both options default to `false` and require a configured `requires_field`. `require_declared_references` requires each referenced proposal to appear directly in that metadata field. A transitive dependency or another relation does not authorize a reference. Self references do not require self dependencies.
 
-References include canonical identifiers in prose, an inline code span containing
-only one canonical identifier (such as `VEP-0001`), and local links to discovered
-proposal documents, including fragments and reference-style links. Linked labels
-use their destination instead of contributing a second identifier. External links
-and their labels, absolute URLs, fenced or indented code, compound inline code
-examples, and HTML comments do not declare proposal references. An unknown
-canonical identifier in prose reports a missing target. Prefix and number width
-come from the repository configuration; unrelated navigation files are not scanned.
-This policy is independent of `links.check`.
+References include canonical identifiers in prose, an inline code span containing only one canonical identifier (such as `VEP-0001`), and local links to discovered proposal documents, including fragments and reference-style links. Linked labels use their destination instead of contributing a second identifier. External links and their labels, absolute URLs, fenced or indented code, compound inline code examples, and HTML comments do not declare proposal references. An unknown canonical identifier in prose reports a missing target. Prefix and number width come from the repository configuration; unrelated navigation files are not scanned. This policy is independent of `links.check`.
 
-`requires_earlier` requires dependency targets to have smaller proposal numbers.
-It uses numbers, not dates or Git history, and rejects forward dependencies even
-when the graph has no cycle. Unnumbered drafts still check direct declarations;
-they have no number to order. Existing draft, schema, and graph rules still apply.
+`requires_earlier` requires dependency targets to have smaller proposal numbers. It uses numbers, not dates or Git history, and rejects forward dependencies even when the graph has no cycle. Unnumbered drafts still check direct declarations; they have no number to order. Existing draft, schema, and graph rules still apply.
 
 | Diagnostic | Author action |
 | --- | --- |
@@ -211,14 +146,9 @@ they have no number to order. Existing draft, schema, and graph rules still appl
 | `proposal.reference.missing-target` | Correct the unknown canonical identifier. |
 | `proposal.graph.forward-dependency` | Remove the later proposal as a prerequisite or revise the proposal's design. |
 
-These diagnostics include the source location. Checks never add dependencies,
-remove references, or renumber proposals automatically, including with `--fix`.
-Enabling the policies may require a repository to backfill its actual direct
-dependencies and remove forward prerequisites. Index and metadata formats remain
-unchanged.
+These diagnostics include the source location. Checks never add dependencies, remove references, or renumber proposals automatically, including with `--fix`. Enabling the policies may require a repository to backfill its actual direct dependencies and remove forward prerequisites. Index and metadata formats remain unchanged.
 
-The optional `history` table configures `initial_status`, record protection,
-bootstrap numbers, and allowed transitions:
+The optional `history` table configures `initial_status`, record protection, bootstrap numbers, and allowed transitions:
 
 ```toml
 [proposal.history]
@@ -235,9 +165,7 @@ Withdrawn = ["Withdrawn"]
 Superseded = ["Superseded"]
 ```
 
-With a base ref, zendev rejects deleted formal records, proposal-number reuse at
-a different path, invalid initial status, and transitions outside this table.
-Bootstrap numbers may bypass the initial-status rule.
+With a base ref, zendev rejects deleted formal records, proposal-number reuse at a different path, invalid initial status, and transitions outside this table. Bootstrap numbers may bypass the initial-status rule.
 
 A narrow, reviewable historical exception can be kept in repository policy:
 
@@ -249,13 +177,11 @@ to_status = "Draft"
 reason = "One-time bootstrap correction recorded by Process VEP-0000."
 ```
 
-A waiver applies only to that exact path and transition. It does not create a
-second lifecycle authority.
+A waiver applies only to that exact path and transition. It does not create a second lifecycle authority.
 
 ### Defined concepts
 
-An optional `defines` table maps a metadata list to stable HTML anchors (all
-three keys are optional and default to the values shown):
+An optional `defines` table maps a metadata list to stable HTML anchors (all three keys are optional and default to the values shown):
 
 ```toml
 [proposal.defines]
@@ -264,35 +190,17 @@ anchor_prefix = "term-"
 id_pattern = "[a-z][a-z0-9]*(?:-[a-z0-9]+)*"
 ```
 
-The validator requires each declared concept to have exactly one matching
-`<a id="{anchor_prefix}{id}"></a>` anchor and rejects missing, undeclared, or
-duplicate current owners. A superseded proposal may keep its historical
-definition; current ownership can move only along the configured `supersedes`
-closure.
+The validator requires each declared concept to have exactly one matching `<a id="{anchor_prefix}{id}"></a>` anchor and rejects missing, undeclared, or duplicate current owners. A superseded proposal may keep its historical definition; current ownership can move only along the configured `supersedes` closure.
 
 ### Index fields
 
-Each `index.fields` entry is a string shorthand or a table with a unique output
-`name`, a `source`, and an optional `key`. A string such as `"title"` means
-`{ name = "title", source = "metadata", key = "title" }`.
-Supported sources are `metadata`, `path`, and `inverse`. Metadata and inverse
-sources require a key; path sources do not. Inverse keys must belong to `graph.fields`.
-The configured `proposal.number_field` must be projected exactly once as metadata,
-with both name and key unchanged. Missing, renamed, or repeated identity projections
-are configuration errors; the generator does not inject fields.
+Each `index.fields` entry is a string shorthand or a table with a unique output `name`, a `source`, and an optional `key`. A string such as `"title"` means `{ name = "title", source = "metadata", key = "title" }`. Supported sources are `metadata`, `path`, and `inverse`. Metadata and inverse sources require a key; path sources do not. Inverse keys must belong to `graph.fields`. The configured `proposal.number_field` must be projected exactly once as metadata, with both name and key unchanged. Missing, renamed, or repeated identity projections are configuration errors; the generator does not inject fields.
 
-Graph metadata keys and inverse fields produce integer edges to existing numbered
-formal proposals. Renaming a graph output does not change normalization. Invalid
-references, missing targets, unnumbered drafts, and external references fail before
-generation or writing, including through the public Python indexing API. Ordinary
-metadata such as `authors`, `defines`, or `id` is preserved; `id` has no special meaning.
+Graph metadata keys and inverse fields produce integer edges to existing numbered formal proposals. Renaming a graph output does not change normalization. Invalid references, missing targets, unnumbered drafts, and external references fail before generation or writing, including through the public Python indexing API. Ordinary metadata such as `authors`, `defines`, or `id` is preserved; `id` has no special meaning.
 
-Only `index.version = 2` is supported. Fields are emitted in configuration
-order. Documents sort by proposal number. JSON uses UTF-8, two-space
-indentation, and one trailing newline before byte-for-byte comparison.
+Only `index.version = 2` is supported. Fields are emitted in configuration order. Documents sort by proposal number. JSON uses UTF-8, two-space indentation, and one trailing newline before byte-for-byte comparison.
 
-Unknown tables, keys, source names, invalid types, missing schemas or templates,
-and unsafe paths are configuration errors rather than silently ignored policy.
+Unknown tables, keys, source names, invalid types, missing schemas or templates, and unsafe paths are configuration errors rather than silently ignored policy.
 
 ### Additional proposal checks and repairs
 
@@ -314,28 +222,10 @@ reference_style = "preserve"
 accepted = "Accepted"
 ```
 
-Section constraints default to disabled. Placeholders match complete standalone
-prose lines, not words embedded in sentences or code examples. Required sections
-come from the configured template. Local link checking defaults to enabled and
-checks files and explicit HTML fragments. `heading_ids = "github"` additionally
-uses the vendored [github-slugger character tables](https://pypi.org/project/github-slugger/0.0.3/)
-for generated heading IDs, including duplicate suffixes and Unicode headings.
-Select this only for repositories rendered with that convention; `check = false`
-disables local link checking. External links are not fetched.
+Section constraints default to disabled. Placeholders match complete standalone prose lines, not words embedded in sentences or code examples. Required sections come from the configured template. Local link checking defaults to enabled and checks files and explicit HTML fragments. `heading_ids = "github"` additionally uses the vendored [github-slugger character tables](https://pypi.org/project/github-slugger/0.0.3/) for generated heading IDs, including duplicate suffixes and Unicode headings. Select this only for repositories rendered with that convention; `check = false` disables local link checking. External links are not fetched.
 
-`graph.acyclic_fields` can name any configured graph fields without requiring
-lifecycle roles. Requires and supersedes roles are always acyclic. Drafts receive
-integrity checks for relationships they actually declare.
+`graph.acyclic_fields` can name any configured graph fields without requiring lifecycle roles. Requires and supersedes roles are always acyclic. Drafts receive integrity checks for relationships they actually declare.
 
-`fix.reference_style` accepts `preserve`, `number`, or `identifier`; the result
-must still satisfy the repository schema. Alias mappings are explicit strings
-and must target schema-declared fields and enum values. Chains are rejected.
+`fix.reference_style` accepts `preserve`, `number`, or `identifier`; the result must still satisfy the repository schema. Alias mappings are explicit strings and must target schema-declared fields and enum values. Chains are rejected.
 
-Schemas and their file references are resolved offline inside the repository.
-Unknown formats, unresolved references, non-finite or non-JSON YAML values, output
-paths aliasing inputs, conflicting field roles and invalid history states are
-reported as errors. Optional index properties declared by a schema can remain
-null when absent; unknown projections cannot silently become null. Noncanonical
-Markdown extensions and nested proposal layouts are reported, not skipped.
-History paths work when the policy is in a Git subdirectory, and waivers must
-match the requested base transition when history checking is enabled.
+Schemas and their file references are resolved offline inside the repository. Unknown formats, unresolved references, non-finite or non-JSON YAML values, output paths aliasing inputs, conflicting field roles and invalid history states are reported as errors. Optional index properties declared by a schema can remain null when absent; unknown projections cannot silently become null. Noncanonical Markdown extensions and nested proposal layouts are reported, not skipped. History paths work when the policy is in a Git subdirectory, and waivers must match the requested base transition when history checking is enabled.

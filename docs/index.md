@@ -1,12 +1,8 @@
 # Repository-native development workflows
 
-Zendev turns repository policy into small, deterministic tools for commits,
-pull-request messages, and durable proposal records.
+Zendev turns repository policy into small, deterministic tools for commits, pull-request messages, and durable proposal records.
 
-It keeps the important state where collaborators already review it: Git,
-Markdown, TOML, JSON Schema, and committed indexes. Zendev supplies reusable
-mechanisms without taking ownership of a repository's terminology, templates,
-or governance decisions.
+It keeps the important state where collaborators already review it: Git, Markdown, TOML, JSON Schema, and committed indexes. Zendev supplies reusable mechanisms without taking ownership of a repository's terminology, templates, or governance decisions.
 
 ## Start in five minutes
 
@@ -41,15 +37,11 @@ Continue with [Getting started](getting-started.md), then choose a guide:
 
 ## One toolkit, focused distributions
 
-Installing `zendev` installs the complete toolkit. Each component remains an
-independently installable Python distribution for consumers that only need one
-contract. See the [package map](reference/packages.md) for the ownership and
-entry-point boundaries.
+Installing `zendev` installs the complete toolkit. Each component remains an independently installable Python distribution for consumers that only need one contract. See the [package map](reference/packages.md) for the ownership and entry-point boundaries.
 
 ## Source of truth
 
-This site explains the released interfaces. The repository remains
-authoritative for implementation and policy:
+This site explains the released interfaces. The repository remains authoritative for implementation and policy:
 
 - [source code](https://github.com/zendev-lab/zendev)
 - [Zendev Feature Proposals](https://github.com/zendev-lab/zendev/tree/main/zfps)

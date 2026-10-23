@@ -28,8 +28,7 @@ zendev proposal check [OPTIONS]
 | `--checklist-section TITLE` | Select the checklist H2; defaults to `Checklist`. |
 | `--fail-on-empty-checklist` | Fail if checklist enforcement finds no checked template rows. |
 
-Without `--title`, `--body`, or `--commit`, a single line selects title validation and a
-multi-line input selects complete commit-message validation.
+Without `--title`, `--body`, or `--commit`, a single line selects title validation and a multi-line input selects complete commit-message validation.
 
 ## Proposal check
 
@@ -45,8 +44,7 @@ multi-line input selects complete commit-message validation.
 
 `PROPOSAL_BASE_REF` supplies `--base-ref` when the option is absent.
 
-Message and proposal checks exit `0` for valid state, `1` for invalid proposal or
-index content, and `2` for configuration or environment errors. The interactive commit command propagates the delegated Git exit code.
+Message and proposal checks exit `0` for valid state, `1` for invalid proposal or index content, and `2` for configuration or environment errors. The interactive commit command propagates the delegated Git exit code.
 
 ## Component entry points
 
@@ -60,9 +58,4 @@ Use `<command> --help` for the exact options installed on the current machine.
 
 ## Project evolution
 
-`zendev evolution` exposes `init --from PATH`, `list`, and `check` for creating
-a document, locating its dates, and validating it. Initialization refuses to
-overwrite existing paths; listing and checking are read-only.
-The standalone `zendev-evolution` command exposes the same surface. All commands
-accept `--file PATH` and `--format human|json|github`; see the [Evolution guide](../guides/evolution.md) for
-the document format, template, diagnostics, and exit codes.
+`zendev evolution` exposes `init --from PATH`, `list`, and `check` for creating a document, locating its dates, and validating it. Initialization refuses to overwrite existing paths; listing and checking are read-only. The standalone `zendev-evolution` command exposes the same surface. All commands accept `--file PATH` and `--format human|json|github`; see the [Evolution guide](../guides/evolution.md) for the document format, template, diagnostics, and exit codes.

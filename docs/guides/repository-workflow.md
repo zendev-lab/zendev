@@ -1,13 +1,10 @@
 # Recommended repository workflow
 
-A mature repository combines Zendev's focused commands into one reviewable
-development contract. It does not ask Zendev to decide what the repository
-means.
+A mature repository combines Zendev's focused commands into one reviewable development contract. It does not ask Zendev to decide what the repository means.
 
 > **The repository owns policy. Zendev validates and automates it.**
 
-This guide is a recommended starting point, not a universal policy. Keep the
-parts that match the repository and change policy through ordinary review.
+This guide is a recommended starting point, not a universal policy. Keep the parts that match the repository and change policy through ordinary review.
 
 ## Principles
 
@@ -20,9 +17,7 @@ Keep four responsibilities separate:
 | Zendev CLI | Execute the validation and deterministic update contract. |
 | Agent skill | Route behavior and checks without copying the reference manual. |
 
-Use the same repository-owned contract locally and in CI. A CI workflow should
-invoke Zendev or its published adapters instead of maintaining a second set of
-regular expressions and parsing rules.
+Use the same repository-owned contract locally and in CI. A CI workflow should invoke Zendev or its published adapters instead of maintaining a second set of regular expressions and parsing rules.
 
 ## Recommended repository shape
 
@@ -48,10 +43,7 @@ Start with the files needed by the workflows the repository actually adopts:
 └── pyproject.toml
 ```
 
-The directory and index names are examples. A proposal repository defines its
-own shape in `zendev.toml`; do not rename existing policy files just to match
-this tree. The alternative `[tool.zendev]` source uses the same tables; do not
-configure both sources in the same directory.
+The directory and index names are examples. A proposal repository defines its own shape in `zendev.toml`; do not rename existing policy files just to match this tree. The alternative `[tool.zendev]` source uses the same tables; do not configure both sources in the same directory.
 
 ## Minimal setup
 
@@ -92,9 +84,7 @@ uvx prek install --prepare-hooks
 uvx prek run --all-files
 ```
 
-See the [prek integration](../integrations/prek.md) for hook stages and argument
-forwarding. Repositories that do not maintain proposals should omit the
-proposal hook rather than add unused policy files.
+See the [prek integration](../integrations/prek.md) for hook stages and argument forwarding. Repositories that do not maintain proposals should omit the proposal hook rather than add unused policy files.
 
 ## Golden path
 
@@ -131,8 +121,7 @@ Run read-only validation before mutation. When proposals are in scope:
 uv run zendev proposal check
 ```
 
-If valid proposal changes make the committed index drift, let Zendev update
-only that deterministic state, then review the result:
+If valid proposal changes make the committed index drift, let Zendev update only that deterministic state, then review the result:
 
 ```shell
 uv run zendev proposal check --fix
@@ -160,13 +149,11 @@ For a non-interactive check, pass the exact text and scope:
 uv run zendev message check --title --text "✨ feat: add export"
 ```
 
-The repository selects the profile. An Agent should not infer a different
-convention from recent commit messages or replace the configured policy.
+The repository selects the profile. An Agent should not infer a different convention from recent commit messages or replace the configured policy.
 
 ### Pull requests and CI
 
-A PR body is a repository-owned schema expressed by its template. Validate both
-inputs explicitly when testing locally or composing a CI adapter:
+A PR body is a repository-owned schema expressed by its template. Validate both inputs explicitly when testing locally or composing a CI adapter:
 
 ```shell
 uv run zendev message check --title --text "📝 docs: explain repository workflow"
@@ -174,14 +161,11 @@ uv run zendev message check --body --text "$PR_BODY" \
   --template .github/pull_request_template.md
 ```
 
-In GitHub Actions, prefer the published composite Actions (see the
-[GitHub Actions integration](../integrations/github-actions.md)) and keep CI
-permissions read-only.
+In GitHub Actions, prefer the published composite Actions (see the [GitHub Actions integration](../integrations/github-actions.md)) and keep CI permissions read-only.
 
 ## Decide when a proposal is warranted
 
-Proposal commands are simple; deciding what belongs in a durable proposal
-system is the important policy choice.
+Proposal commands are simple; deciding what belongs in a durable proposal system is the important policy choice.
 
 | Change | Recommended home |
 | --- | --- |
@@ -191,17 +175,14 @@ system is the important policy choice.
 | Durable public contract, architecture, or governance decision | Proposal. |
 | Semantic change to an accepted decision | New proposal or repository-defined amendment. |
 
-When history validation is part of the repository contract, fetch and name the
-base explicitly:
+When history validation is part of the repository contract, fetch and name the base explicitly:
 
 ```shell
 git fetch origin main
 uv run zendev proposal check --base-ref origin/main
 ```
 
-Do not create a proposal merely because a change is large. Use one when future
-contributors need a durable, reviewable account of a decision and its
-lifecycle.
+Do not create a proposal merely because a change is large. Use one when future contributors need a durable, reviewable account of a decision and its lifecycle.
 
 ## Work safely with Agents
 
@@ -216,10 +197,7 @@ An Agent working in a Zendev repository should follow this sequence:
    over parsing human-readable prose.
 7. Run the repository's normal local gate before reporting completion.
 
-A repository-local `SKILL.md` can preserve the seven behavioral rules above
-and link to this guide. Keep CLI flags, proposal fields, and parser behavior in
-the official documentation or `--help`; a skill is a workflow router, not a
-second manual.
+A repository-local `SKILL.md` can preserve the seven behavioral rules above and link to this guide. Keep CLI flags, proposal fields, and parser behavior in the official documentation or `--help`; a skill is a workflow router, not a second manual.
 
 ## Common anti-patterns
 
@@ -234,8 +212,7 @@ second manual.
 
 ## Complete example
 
-[Zendev uses its own workflow](https://github.com/zendev-lab/zendev). The
-repository provides a concrete, CI-validated example:
+[Zendev uses its own workflow](https://github.com/zendev-lab/zendev). The repository provides a concrete, CI-validated example:
 
 - [`pyproject.toml`](https://github.com/zendev-lab/zendev/blob/main/pyproject.toml)
   selects the commit profile and development dependencies.
@@ -254,5 +231,4 @@ repository provides a concrete, CI-validated example:
   [committed index](https://github.com/zendev-lab/zendev/blob/main/zfps-index.json)
   keep durable decisions reviewable in Git.
 
-Use this repository as an example of composition, not as a policy template to
-copy unchanged.
+Use this repository as an example of composition, not as a policy template to copy unchanged.

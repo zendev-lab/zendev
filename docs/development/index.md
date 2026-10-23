@@ -1,7 +1,6 @@
 # Development
 
-Zendev is a uv workspace containing the complete toolkit, four component
-packages, composite Actions, proposal fixtures, and the documentation site.
+Zendev is a uv workspace containing the complete toolkit, four component packages, composite Actions, proposal fixtures, and the documentation site.
 
 Install everything required for local development:
 
@@ -17,12 +16,10 @@ just docs-build
 uv pip check
 ```
 
-When proposal documents, templates, or policy change, also write the index and
-review its diff:
+When proposal documents, templates, or policy change, also write the index and review its diff:
 
 ```shell
 uv run zendev proposal check --fix
 ```
 
-Read [Architecture](architecture.md) for ownership boundaries and
-[Contributing](contributing.md) for documentation-specific work.
+Read [Architecture](architecture.md) for ownership boundaries and [Contributing](contributing.md) for documentation-specific work.
