@@ -96,6 +96,18 @@
       "created": "2026-09-08",
       "supersedes": [],
       "superseded_by": []
+    },
+    {
+      "zfp": 8,
+      "path": "zfps/ZFP-0008-public-homepage.md",
+      "title": "公开首页留在工具包仓库",
+      "type": "Governance",
+      "authors": [
+        "zrr1999"
+      ],
+      "created": "2026-09-30",
+      "supersedes": [],
+      "superseded_by": []
     }
   ]
 }
