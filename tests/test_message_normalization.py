@@ -44,11 +44,13 @@ runner = CliRunner()
 def test_unambiguous_messages_normalize_and_are_idempotent(text: str, expected: str) -> None:
     result = normalize_message(text)
 
-    assert result.ok and result.changed
+    assert result.ok
+    assert result.changed
     assert result.text == expected
     assert check_message(result.text).ok
     again = normalize_message(result.text)
-    assert again.ok and not again.changed
+    assert again.ok
+    assert not again.changed
     assert again.text == expected
 
 
@@ -78,7 +80,8 @@ def test_unambiguous_messages_normalize_and_are_idempotent(text: str, expected: 
 def test_ambiguous_or_invalid_messages_keep_the_original(text: str) -> None:
     result = normalize_message(text)
 
-    assert not result.ok and not result.changed
+    assert not result.ok
+    assert not result.changed
     assert result.text == text
 
 
@@ -95,7 +98,8 @@ def test_ambiguous_or_invalid_messages_keep_the_original(text: str) -> None:
 def test_valid_messages_keep_the_authors_choice(text: str, profile: str) -> None:
     result = normalize_message(text, profile=profile)
 
-    assert result.ok and not result.changed
+    assert result.ok
+    assert not result.changed
     assert result.text == text
 
 
@@ -103,7 +107,8 @@ def test_valid_messages_keep_the_authors_choice(text: str, profile: str) -> None
 def test_other_profiles_are_not_reinterpreted(profile: str) -> None:
     result = normalize_message("[ImgBot] Optimize images", profile=profile)
 
-    assert not result.ok and not result.changed
+    assert not result.ok
+    assert not result.changed
 
 
 def test_commit_cleanup_locates_subject_without_rewriting_any_other_text() -> None:
@@ -115,7 +120,8 @@ def test_commit_cleanup_locates_subject_without_rewriting_any_other_text() -> No
 
     result = normalize_message(text, commit=True, comment_char=";")
 
-    assert result.ok and result.changed
+    assert result.ok
+    assert result.changed
     assert result.text == text.replace("feat(api)!:", "✨ feat(api)!:", 1)
 
 

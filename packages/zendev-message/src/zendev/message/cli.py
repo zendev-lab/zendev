@@ -107,10 +107,9 @@ def check_command(
             raise ToolError(Diagnostic("message.input", "Provide exactly one of FILE and --text."))
         if sum((title, body, commit)) > 1:
             raise ToolError(Diagnostic("message.scope", "--title, --body, and --commit are mutually exclusive."))
-        if body and profile is not None:
-            raise ToolError(Diagnostic("message.options", "--profile does not apply to --body."))
-        if body and fix:
-            raise ToolError(Diagnostic("message.options", "--fix does not apply to --body."))
+        if body and (profile is not None or fix):
+            option = "--profile" if profile is not None else "--fix"
+            raise ToolError(Diagnostic("message.options", f"{option} does not apply to --body."))
         if not body and any(
             value is not None for value in (template, require_checklist, checklist_section, fail_on_empty_checklist)
         ):

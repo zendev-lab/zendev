@@ -183,8 +183,9 @@ def test_api_permission_failure_is_not_silenced() -> None:
     def forbidden(*_args: Any) -> None:
         raise HTTPError("https://api.github.com", 403, "Forbidden", Message(), None)
 
+    source = event(pull())
     with pytest.raises(HTTPError):
-        normalize_title(forbidden, event(pull()), event_name="workflow_run", profile="zendev")
+        normalize_title(forbidden, source, event_name="workflow_run", profile="zendev")
 
 
 @pytest.mark.parametrize("profile", ["conventional", "gitmoji"])

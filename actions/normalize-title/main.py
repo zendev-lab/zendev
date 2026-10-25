@@ -8,16 +8,16 @@ import sys
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
-from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 from zendev.message import MessageProfile, normalize_message
 
 Api = Callable[..., Any]
+Head = tuple[str, str, str]
 
 
-def _head(pr: dict[str, Any]) -> tuple[str, str, str]:
+def _head(pr: dict[str, Any]) -> Head:
     head = pr["head"]
     return (head.get("repo") or {}).get("full_name", ""), head["ref"], head["sha"]
 
@@ -26,30 +26,33 @@ def _notice(message: str) -> None:
     print("::notice::" + message.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A"))
 
 
+def _target(api: Api, event: dict[str, Any], event_name: str) -> tuple[int, Head, int | None] | None:
+    if event_name == "pull_request":
+        return int(event["number"]), _head(event["pull_request"]), None
+    if event_name != "workflow_run":
+        raise ValueError("normalize-title requires a pull_request or workflow_run event")
+    run = event["workflow_run"]
+    if run["event"] != "pull_request" or run["conclusion"] != "failure":
+        return None
+    head_repo = (run.get("head_repository") or {}).get("full_name", "")
+    if not head_repo or not run.get("head_branch") or not run.get("head_sha"):
+        return None
+    expected = head_repo, run["head_branch"], run["head_sha"]
+    query = urlencode({"state": "open", "head": f"{head_repo.split('/')[0]}:{expected[1]}", "per_page": 100})
+    pulls = api("GET", f"pulls?{query}")
+    candidates = [pr for pr in pulls if pr["state"] == "open" and _head(pr) == expected]
+    if len(pulls) == 100 or len(candidates) != 1:
+        return None
+    return int(candidates[0]["number"]), expected, int(run["id"])
+
+
 def normalize_title(api: Api, event: dict[str, Any], *, event_name: str, profile: str) -> dict[str, str]:
     selected = MessageProfile(profile)
     output = {"changed": "false", "title": ""}
-    run_id = None
-    if event_name == "pull_request":
-        number = int(event["number"])
-        expected = _head(event["pull_request"])
-    elif event_name == "workflow_run":
-        run = event["workflow_run"]
-        if run["event"] != "pull_request" or run["conclusion"] != "failure":
-            return output
-        head_repo = (run.get("head_repository") or {}).get("full_name", "")
-        if not head_repo or not run.get("head_branch") or not run.get("head_sha"):
-            return output
-        expected = head_repo, run["head_branch"], run["head_sha"]
-        query = urlencode({"state": "open", "head": f"{head_repo.split('/')[0]}:{expected[1]}", "per_page": 100})
-        pulls = api("GET", f"pulls?{query}")
-        candidates = [pr for pr in pulls if pr["state"] == "open" and _head(pr) == expected]
-        if len(pulls) == 100 or len(candidates) != 1:
-            return output
-        number = int(candidates[0]["number"])
-        run_id = int(run["id"])
-    else:
-        raise ValueError("normalize-title requires a pull_request or workflow_run event")
+    target = _target(api, event, event_name)
+    if target is None:
+        return output
+    number, expected, run_id = target
 
     path = f"pulls/{number}"
     current = api("GET", path)
@@ -112,7 +115,7 @@ def main() -> int:
         with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as stream:
             for key, value in output.items():
                 stream.write(f"{key}={value}\n")
-    except (HTTPError, URLError, OSError, ValueError) as error:
+    except (OSError, ValueError) as error:
         print(f"PR title normalization failed: {error}", file=sys.stderr)
         return 1
     return 0
