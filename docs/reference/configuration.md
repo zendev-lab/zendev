@@ -23,6 +23,19 @@ fail_on_empty_checklist = false
 
 For `pyproject.toml`, place `version = 1` inside `[tool.zendev]` and prefix every table with `tool.zendev`, including `[tool.zendev.message.body]`. Profiles are `zendev`, `conventional`, and `gitmoji`; an explicit `--profile` overrides a valid configured value. Invalid configuration always fails closed. A missing body template is an error, even without checklist enforcement.
 
+## Message normalization exceptions
+
+Default normalization converts Conventional messages only. To assign meaning to a known non-Conventional subject, add an explicit mapping to the selected configuration:
+
+```toml
+[message.normalization.replacements]
+"[ImgBot] Optimize images" = "⚡️ perf(assets): optimize images"
+```
+
+In `pyproject.toml`, the table is `[tool.zendev.message.normalization.replacements]`. The table defaults to empty; ZenDev has no built-in bot-title rules. Keys match the entire effective subject with exact case and whitespace, without regex, glob, variables, or recursive substitution. Values must be complete, single-line, valid zendev titles with an explicit emoji and type. Empty keys, multiline strings, invalid targets, unknown normalization keys, and incorrect value types are configuration errors even when a rule does not match.
+
+For invalid zendev messages, an exact exception takes precedence over default Conventional conversion. Already-valid messages retain the author's choice. Other profiles do not apply replacements. Only the subject changes; the original commit body, footers, comments and line endings remain. An invalid complete candidate is not written. The [normalization guide](../guides/message-checks.md#normalize-an-unambiguous-message) explains CLI behavior; the full conversion order and dependency-word rules are specified in [ZFP-0009](https://github.com/zendev-lab/zendev/blob/codex/message-normalization-proposal/zfps/ZFP-0009-message-normalization.md).
+
 ## Proposal policy
 
 Both dedicated and unified policies reject unknown keys and resolve configured paths relative to the selected file's directory. Paths may not escape that root.

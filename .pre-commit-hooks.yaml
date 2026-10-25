@@ -4,6 +4,12 @@
   entry: zendev message check --commit
   language: python
   stages: [commit-msg]
+- id: zendev-message-fix
+  name: zendev message fix
+  description: Normalize unambiguous commit messages; report remaining errors.
+  entry: zendev message check --commit --fix
+  language: python
+  stages: [commit-msg]
 - id: zendev-proposal-check
   name: zendev proposal check
   description: Validate repository-native proposals and their committed index.

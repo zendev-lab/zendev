@@ -20,7 +20,7 @@ jobs:
       - name: Check PR title
         uses: ./actions/validate-title
         with:
-          text: ${{ github.event.pull_request.title }}
+          pull-request-number: ${{ github.event.pull_request.number }}
 
       - name: Check PR body
         if: github.event.pull_request.user.login != 'renovate[bot]'

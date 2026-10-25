@@ -4,7 +4,16 @@ description: "Validate a PR title against a zendev, Conventional Commits, or git
 inputs:
   text:
     description: "Text to validate (for example github.event.pull_request.title)."
-    required: true
+    required: false
+    default: ""
+  pull-request-number:
+    description: "Read the current PR title from GitHub instead of text. Required when rerunning policy after a rename."
+    required: false
+    default: ""
+  token:
+    description: "GitHub token with pull-requests: read for pull-request-number."
+    required: false
+    default: ${{ github.token }}
   profile:
     description: "Optional profile override (zendev, conventional, or gitmoji)."
     required: false
@@ -23,11 +32,20 @@ runs:
       env:
         INPUT_TEXT: ${{ inputs.text }}
         INPUT_PROFILE: ${{ inputs.profile }}
+        INPUT_PR_NUMBER: ${{ inputs.pull-request-number }}
+        GH_TOKEN: ${{ inputs.token }}
       run: |
         set -euo pipefail
 
         zendev_root="$(cd "${GITHUB_ACTION_PATH}/../.." && pwd)"
         echo "Using zendev from ${zendev_root}"
+        if [[ -n "${INPUT_PR_NUMBER}" ]]; then
+          if [[ -n "${INPUT_TEXT}" || ! "${INPUT_PR_NUMBER}" =~ ^[1-9][0-9]*$ ]]; then
+            echo "::error::Supply either text or a positive pull-request-number."
+            exit 2
+          fi
+          INPUT_TEXT="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${INPUT_PR_NUMBER}" --jq '.title')"
+        fi
         args=(zendev-message check --title --format github --text "${INPUT_TEXT}")
         if [[ -n "${INPUT_PROFILE}" ]]; then
           args+=(--profile "${INPUT_PROFILE}")

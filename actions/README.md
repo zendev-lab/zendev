@@ -1,13 +1,14 @@
 # Composite Actions
 
 The composite Actions in this directory adapt GitHub pull-request inputs to
-`zendev message check` from the same pinned repository revision. Validation
+the message domain from the same pinned repository revision. Validation
 semantics remain in the Python packages.
 
 Available Actions:
 
 - `zendev-lab/zendev/actions/validate-title@<release-or-commit>`
 - `zendev-lab/zendev/actions/validate-body@<release-or-commit>`
+- `zendev-lab/zendev/actions/normalize-title@<release-or-commit>`
 
 Read the official
 [GitHub Actions integration](https://docs.zendev.zrr.dev/integrations/github-actions/)
@@ -16,7 +17,9 @@ for permissions, inputs, and copyable workflows. The
 defines title, body, template, and optional checklist behavior.
 
 Inside this repository, use `./actions/validate-title` or
-`./actions/validate-body` after checking out the repository.
+`./actions/validate-body` after checking out the repository. For privileged title
+automation, use a pinned remote Action or check out only the trusted default
+branch before using `./actions/normalize-title`.
 
 Replace `<release-or-commit>` with a pinned revision; do not mix it with older
 configuration examples.
