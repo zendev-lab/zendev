@@ -1,0 +1,42 @@
+name: Normalize PR title
+description: "Add an unambiguous missing emoji or normalize a known bot title, then rerun failed policy."
+
+inputs:
+  token:
+    description: "GitHub token with pull-requests: write and, for workflow_run, actions: write."
+    required: false
+    default: ${{ github.token }}
+  profile:
+    description: "Message profile; only zendev performs automatic conversions."
+    required: false
+    default: zendev
+
+outputs:
+  changed:
+    description: "Whether the PR title was renamed."
+    value: ${{ steps.normalize.outputs.changed }}
+  title:
+    description: "The current or successfully normalized title, empty when no current PR matches."
+    value: ${{ steps.normalize.outputs.title }}
+
+runs:
+  using: composite
+  steps:
+    - name: Set up uv
+      uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+      with:
+        python-version: "3.14"
+
+    - name: Normalize the current PR title
+      id: normalize
+      shell: bash
+      env:
+        INPUT_TOKEN: ${{ inputs.token }}
+        INPUT_PROFILE: ${{ inputs.profile }}
+      run: |
+        set -euo pipefail
+        zendev_root="$(cd "${GITHUB_ACTION_PATH}/../.." && pwd)"
+        uv run --isolated --no-project --no-config \
+          --with "${zendev_root}/packages/zendev-message" \
+          --with "${zendev_root}/packages/zendev-core" \
+          python "${GITHUB_ACTION_PATH}/main.py"

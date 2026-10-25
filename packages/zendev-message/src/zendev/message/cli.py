@@ -13,8 +13,9 @@ import typer
 from zendev.core.diagnostics import Diagnostic, OutputFormat, ToolError, render_report
 from zendev.core.markdown import markdown_session
 from zendev.message.body import check_body
-from zendev.message.commit import MessageProfile, check_git_message, check_message
+from zendev.message.commit import MessageProfile, check_git_message, check_message, normalize_git_message
 from zendev.message.config import load_message_config
+from zendev.message.normalization import normalize_message
 
 app = typer.Typer(
     name="zendev-message",
@@ -72,6 +73,9 @@ def check_command(
     commit: Annotated[
         bool, typer.Option("--commit", help="Use Git message cleanup and special-message rules.")
     ] = False,
+    fix: Annotated[
+        bool, typer.Option("--fix", help="Normalize unambiguous messages; write back FILE if supplied.")
+    ] = False,
     config: Annotated[Path | None, typer.Option("--config", help="Explicit ZenDev configuration source.")] = None,
     profile: Annotated[
         MessageProfile | None, typer.Option("--profile", help="Override the title and commit profile.")
@@ -95,6 +99,8 @@ def check_command(
 ) -> None:
     """Check FILE or --text using the selected message scope."""
     diagnostics: tuple[Diagnostic, ...] = ()
+    summary: dict[str, object] | None = None
+    success_message = "Check passed."
     exit_code = 0
     try:
         if (source_file is None) == (text is None):
@@ -103,12 +109,14 @@ def check_command(
             raise ToolError(Diagnostic("message.scope", "--title, --body, and --commit are mutually exclusive."))
         if body and profile is not None:
             raise ToolError(Diagnostic("message.options", "--profile does not apply to --body."))
+        if body and fix:
+            raise ToolError(Diagnostic("message.options", "--fix does not apply to --body."))
         if not body and any(
             value is not None for value in (template, require_checklist, checklist_section, fail_on_empty_checklist)
         ):
             raise ToolError(Diagnostic("message.options", "Template and checklist options require --body."))
         settings = load_message_config(config, profile=profile)
-        payload = source_file.read_text(encoding="utf-8") if source_file is not None else text
+        payload = source_file.read_bytes().decode("utf-8") if source_file is not None else text
         assert payload is not None
         scope = (
             MessageScope.TITLE
@@ -120,6 +128,7 @@ def check_command(
             else MessageScope.AUTO
         )
         scope = resolve_message_scope(scope, payload)
+        comment_char = _comment_char() if scope is MessageScope.COMMIT and source_file is not None else "#"
         with markdown_session():
             if scope is MessageScope.BODY:
                 template_path = template if template is not None else settings.template
@@ -141,12 +150,45 @@ def check_command(
             elif scope is MessageScope.TITLE:
                 if not input_is_single_line(payload):
                     diagnostics = (Diagnostic("message.title.multiline", "Title scope requires a single-line input."),)
+            if scope is not MessageScope.BODY and not diagnostics:
+                normalized = normalize_message(
+                    payload,
+                    profile=settings.profile,
+                    commit=scope is MessageScope.COMMIT,
+                    comment_char=comment_char,
+                )
+                subject = ""
+                if normalized.changed:
+                    visible = (
+                        normalize_git_message(normalized.text, comment_char=comment_char)
+                        if scope is MessageScope.COMMIT
+                        else normalized.text
+                    )
+                    subject = visible.splitlines()[0]
+                if fix:
+                    diagnostics = normalized.diagnostics
+                    if normalized.changed:
+                        if source_file is not None:
+                            try:
+                                source_file.write_bytes(normalized.text.encode("utf-8"))
+                            except OSError as error:
+                                raise ToolError(
+                                    Diagnostic("message.input.write", str(error), path=str(source_file))
+                                ) from error
+                        success_message = "Normalized message: " + subject
+                    summary = {"changed": normalized.changed, "text": normalized.text}
+                elif normalized.changed:
+                    checked = (
+                        check_git_message(payload, profile=settings.profile, comment_char=comment_char)
+                        if scope is MessageScope.COMMIT
+                        else check_message(payload, profile=settings.profile)
+                    )
+                    diagnostics = tuple(
+                        replace(item, hint=f"Suggested message: {subject}\nRun with --fix to apply.", fixable=True)
+                        for item in checked.diagnostics
+                    )
                 else:
-                    diagnostics = check_message(payload, profile=settings.profile).diagnostics
-            else:
-                diagnostics = check_git_message(
-                    payload, profile=settings.profile, comment_char=_comment_char() if source_file is not None else "#"
-                ).diagnostics
+                    diagnostics = normalized.diagnostics
         if source_file is not None:
             diagnostics = tuple(replace(item, path=str(source_file)) for item in diagnostics)
         exit_code = 1 if diagnostics else 0
@@ -156,7 +198,13 @@ def check_command(
     except (OSError, UnicodeError) as error:
         diagnostics = (Diagnostic("message.input.read", str(error), path=str(source_file) if source_file else None),)
         exit_code = 2
-    report = render_report(diagnostics, command="message check", output_format=output_format)
+    report = render_report(
+        diagnostics,
+        command="message check",
+        output_format=output_format,
+        summary=summary,
+        success_message=success_message,
+    )
     stream = "stderr" if diagnostics and output_format is OutputFormat.HUMAN else "stdout"
     typer.echo(report, file=typer.get_text_stream(stream, encoding="utf-8"))
     if exit_code:

@@ -19,6 +19,7 @@ zendev proposal check [OPTIONS]
 | `--text TEXT` | Validate literal text; mutually exclusive with `FILE`. |
 | `--title` | Check exactly one title line. |
 | `--commit` | Explicit Git commit context, including single-line generated messages. |
+| `--fix` | Normalize an unambiguous subject, writing back `FILE` or returning the corrected `--text`; unavailable with `--body`. |
 | `--config PATH` | Select one ZenDev configuration source. |
 | `--format human\|json\|github` | Select shared diagnostic output; defaults to human. |
 | `--body` | Check a PR body against a template. |
@@ -29,6 +30,8 @@ zendev proposal check [OPTIONS]
 | `--fail-on-empty-checklist` | Fail if checklist enforcement finds no checked template rows. |
 
 Without `--title`, `--body`, or `--commit`, a single line selects title validation and a multi-line input selects complete commit-message validation.
+
+Checks suggest available repairs by default. With `--fix --format json`, `summary` contains `changed` and `text`; without `--fix`, the existing diagnostic envelope is unchanged. See [normalization](../guides/message-checks.md#normalize-an-unambiguous-message) for supported conversions.
 
 ## Proposal check
 
