@@ -25,4 +25,4 @@ jobs:
       actions: write
     steps:
       - name: Normalize the title and rerun failed policy
-        uses: zendev-lab/zendev/actions/normalize-title@846ec3d37b3bf0600355f89c0bca46373ac5966f # message normalization
+        uses: zendev-lab/zendev/actions/normalize-title@a686442420f0558fa95ee4c6b7c5585a357853a2 # Conventional normalization and configured exceptions
