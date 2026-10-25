@@ -57,6 +57,8 @@ hooks = [
 
 Both message hooks run at `commit-msg`. The fix hook adds `--fix`, so a message such as `feat: add export` is committed as `✨ feat: add export`. It preserves the body and Git's message-file formatting. An ambiguous message still blocks the commit. The check hook only shows a suggested replacement and leaves the file unchanged. You can also enable fixes by adding `args = ["--fix"]` to the existing check hook; select one message hook per repository.
 
+Both message hooks load [exact exceptions from repository TOML](../reference/configuration.md#message-normalization-exceptions); no bot title is recognized by default. Forward `--config` through hook `args` to select one explicit configuration file.
+
 For a workspace-local hook, use `entry = "uv run zendev message check --commit --fix"` with `language = "system"` and `stages = ["commit-msg"]`. See the [message checks guide](../guides/message-checks.md#normalize-an-unambiguous-message) for the conversion boundaries.
 
 A released hook installs the complete toolkit and its exact-version components. For unreleased development, use the workspace `uv run zendev` command or build all components together with `just packages` to validate their contents and isolated installations.

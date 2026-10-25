@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass
 
 from zendev.core.diagnostics import Diagnostic
@@ -60,9 +61,10 @@ def _dependency_intention(description: str) -> str | None:
     return intention
 
 
-def _candidate_header(text: str) -> str | None:
-    if text.splitlines()[0] == "[ImgBot] Optimize images":
-        return "⚡️ perf(assets): optimize images"
+def _candidate_header(text: str, replacements: Mapping[str, str]) -> str | None:
+    replacement = replacements.get(text.splitlines()[0])
+    if replacement is not None:
+        return replacement if replacement.splitlines() == [replacement] and check_message(replacement).ok else None
     parsed, _ = parse_conventional_commit(text)
     if parsed is None:
         return None
@@ -80,6 +82,7 @@ def normalize_message(
     profile: MessageProfile | str = MessageProfile.ZENDEV,
     commit: bool = False,
     comment_char: str = "#",
+    replacements: Mapping[str, str] | None = None,
 ) -> MessageNormalization:
     """Repair only the subject; preserve valid messages and all other bytes of text."""
     selected = MessageProfile(profile)
@@ -93,7 +96,7 @@ def normalize_message(
     effective = normalize_git_message(text, comment_char=comment_char) if commit else text
     if not effective:
         return MessageNormalization(text, diagnostics=checked.diagnostics)
-    header = _candidate_header(effective)
+    header = _candidate_header(effective, replacements or {})
     if header is None:
         return MessageNormalization(text, diagnostics=checked.diagnostics)
     lines = text.splitlines(keepends=True)

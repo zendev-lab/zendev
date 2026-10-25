@@ -24,12 +24,14 @@ A failed check suggests a valid replacement when the intention can be determined
 ```shell
 zendev message check --commit --fix .git/COMMIT_EDITMSG
 zendev message check --title --fix --text "feat(api): add export"
-zendev message check --title --fix --text "[ImgBot] Optimize images" --format json
+zendev message check --title --fix --text "deps: downgrade requests" --format json
 ```
 
 The first command writes the corrected subject into the file. Literal text is only returned, never written to a file. JSON output uses the existing v1 envelope with `summary.changed` and `summary.text` when `--fix` is present. An unfixable message exits `1`; input or write failures exit `2`. `--fix` does not apply to `--body`.
 
-Missing emoji are filled from the declared change type: for example, `feat(api): add export` becomes `✨ feat(api): add export`. Dependency descriptions need an explicit leading operation: `upgrade`, `update`, or `bump` selects ⬆️, `downgrade` selects ⬇️, `pin` selects 📌, `add` selects ➕, and `remove` selects ➖. Conflicting operations and `update`/`bump` messages containing `from` require manual choice; no version ordering is guessed. `deps: change dependencies` remains an error. The exact bot title `[ImgBot] Optimize images` becomes `⚡️ perf(assets): optimize images`.
+Default conversion requires a valid Conventional Commit. Missing emoji are filled from the declared change type: for example, `feat(api): add export` becomes `✨ feat(api): add export`. Dependency descriptions need an explicit leading operation: `upgrade`, `update`, or `bump` selects ⬆️, `downgrade` selects ⬇️, `pin` selects 📌, `add` selects ➕, and `remove` selects ➖. Conflicting operations and `update`/`bump` messages containing `from` require manual choice; no version ordering is guessed. `deps: change dependencies` remains an error.
+
+Non-Conventional titles such as `[ImgBot] Optimize images` have no built-in conversion. To give a repository-specific title an explicit meaning, declare an [exact TOML replacement](../reference/configuration.md#message-normalization-exceptions). Matching is case-sensitive and covers the complete subject. An explicit match takes precedence over default conversion, while already-valid messages remain unchanged. Each replacement is applied once and the complete candidate must still validate.
 
 Valid messages retain their original emoji or shortcode. Incorrect emoji/type pairs, legacy types, and other free-form titles are left for the author. Conversion only repairs zendev-profile messages and always validates the candidate. Commit bodies, footers, comments, scissors, and line endings are preserved. See [prek](../integrations/prek.md) and [GitHub Actions](../integrations/github-actions.md) for automatic integration.
 

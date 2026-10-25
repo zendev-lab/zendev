@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import copy
 import io
 import json
@@ -12,13 +13,18 @@ from email.message import Message
 from pathlib import Path
 from typing import Any
 from urllib.error import HTTPError
+from urllib.parse import parse_qs, unquote, urlsplit
 
 import pytest
 import yaml
 
+from zendev.core.diagnostics import ToolError
+
 ROOT = Path(__file__).resolve().parents[1]
 ACTION = ROOT / "actions/normalize-title/main.py"
 normalize_title = runpy.run_path(str(ACTION))["normalize_title"]
+CONFIG = (ROOT / "tests/fixtures/message/normalization.toml").read_text(encoding="utf-8")
+DEFAULT_SHA = "d" * 40
 
 
 def pull(title: str = "feat: add export") -> dict[str, Any]:
@@ -32,8 +38,9 @@ def pull(title: str = "feat: add export") -> dict[str, Any]:
 
 def event(pr: dict[str, Any], *, workflow_run: bool = True) -> dict[str, Any]:
     if not workflow_run:
-        return {"number": pr["number"], "pull_request": copy.deepcopy(pr)}
+        return {"repository": {"default_branch": "main"}, "number": pr["number"], "pull_request": copy.deepcopy(pr)}
     return {
+        "repository": {"default_branch": "main"},
         "workflow_run": {
             "event": "pull_request",
             "conclusion": "failure",
@@ -52,9 +59,23 @@ class GitHub:
         self.pulls = [copy.deepcopy(pr)]
         self.calls: list[tuple[str, str, Any]] = []
         self.reads = 0
+        self.files: dict[str, str] = {}
 
     def __call__(self, method: str, path: str, payload: Any = None) -> Any:
         self.calls.append((method, path, payload))
+        if method == "GET" and path.startswith("git/ref/heads/"):
+            return {"object": {"sha": DEFAULT_SHA}}
+        if method == "GET" and path.startswith("contents/"):
+            url = urlsplit(path)
+            assert parse_qs(url.query)["ref"] == [DEFAULT_SHA]
+            filename = unquote(url.path.removeprefix("contents/"))
+            if filename not in self.files:
+                raise HTTPError("https://api.github.com/" + path, 404, "Not Found", Message(), None)
+            return {
+                "type": "file",
+                "encoding": "base64",
+                "content": base64.b64encode(self.files[filename].encode()).decode(),
+            }
         if method == "GET" and path.startswith("pulls?"):
             return copy.deepcopy(self.pulls)
         if method == "GET":
@@ -74,7 +95,7 @@ class GitHub:
 
 @pytest.mark.parametrize("workflow_run", [False, True])
 def test_current_title_is_renamed_and_only_a_completed_policy_is_rerun(workflow_run: bool) -> None:
-    pr = pull("[ImgBot] Optimize images")
+    pr = pull("perf(assets): optimize images")
     api = GitHub(pr)
     source = event(pr, workflow_run=workflow_run)
     if not workflow_run:
@@ -105,7 +126,10 @@ def test_rerun_is_idempotent() -> None:
     assert not api.writes
 
 
-@pytest.mark.parametrize("title", ["✨ feat: already valid", "deps: change dependencies", "ship it", "bad\ntitle"])
+@pytest.mark.parametrize(
+    "title",
+    ["✨ feat: already valid", "deps: change dependencies", "[ImgBot] Optimize images", "ship it", "bad\ntitle"],
+)
 def test_valid_or_ambiguous_titles_do_not_write_or_rerun(title: str) -> None:
     pr = pull(title)
     api = GitHub(pr)
@@ -194,6 +218,103 @@ def test_other_profiles_do_not_get_a_zendev_conversion(profile: str) -> None:
     api = GitHub(pr)
 
     assert normalize_title(api, event(pr), event_name="workflow_run", profile=profile)["changed"] == "false"
+    assert not api.writes
+
+
+@pytest.mark.parametrize("embedded", [False, True])
+def test_non_conventional_exception_comes_only_from_default_branch_toml(embedded: bool) -> None:
+    pr = pull("[ImgBot] Optimize images")
+    api = GitHub(pr)
+    content = "[tool.zendev]\n" + CONFIG.replace("[message.", "[tool.zendev.message.") if embedded else CONFIG
+    api.files["pyproject.toml" if embedded else "zendev.toml"] = content
+    source = event(pr)
+    source["pull_request_config"] = "untrusted PR configuration is not an input"
+
+    result = normalize_title(api, source, event_name="workflow_run")
+
+    assert result == {"changed": "true", "title": "⚡️ perf(assets): optimize images"}
+    assert ("GET", "git/ref/heads/main", None) in api.calls
+    contents = [path for method, path, _ in api.calls if method == "GET" and path.startswith("contents/")]
+    assert len(contents) == 2
+    assert all(parse_qs(urlsplit(path).query)["ref"] == [DEFAULT_SHA] for path in contents)
+
+
+def test_explicit_config_selects_one_repository_path_without_merging() -> None:
+    pr = pull("[ImgBot] Optimize images")
+    api = GitHub(pr)
+    api.files = {".github/title-policy.toml": CONFIG, "zendev.toml": "invalid TOML"}
+
+    result = normalize_title(api, event(pr), event_name="workflow_run", config=".github/title-policy.toml")
+
+    assert result["changed"] == "true"
+    contents = [path for _, path, _ in api.calls if path.startswith("contents/")]
+    assert contents == [f"contents/.github/title-policy.toml?ref={DEFAULT_SHA}"]
+
+
+@pytest.mark.parametrize("profile", ["", "zendev"])
+def test_action_uses_configured_profile_unless_explicitly_overridden(profile: str) -> None:
+    pr = pull()
+    api = GitHub(pr)
+    api.files["zendev.toml"] = 'version = 1\n[message]\nprofile = "conventional"\n'
+
+    result = normalize_title(api, event(pr), event_name="workflow_run", profile=profile)
+
+    assert result["changed"] == ("true" if profile else "false")
+    assert result["title"] == ("✨ " + pr["title"] if profile else pr["title"])
+
+
+@pytest.mark.parametrize("case", ["malformed", "conflict", "invalid-rule", "missing-explicit", "proposal-only"])
+def test_action_configuration_errors_fail_without_renaming(case: str) -> None:
+    pr = pull()
+    api = GitHub(pr)
+    config = ""
+    if case == "malformed":
+        api.files["zendev.toml"] = "invalid TOML"
+    elif case == "conflict":
+        api.files = {"zendev.toml": CONFIG, "pyproject.toml": "[tool.zendev]\nversion = 1\n"}
+    elif case == "invalid-rule":
+        api.files["zendev.toml"] = CONFIG.replace("⚡️ perf(assets): optimize images", "perf: missing emoji")
+    elif case == "proposal-only":
+        api.files["proposal.toml"] = "version = 1\n"
+        config = "proposal.toml"
+    else:
+        config = "missing.toml"
+    source = event(pr)
+
+    with pytest.raises((ToolError, HTTPError)):
+        normalize_title(api, source, event_name="workflow_run", config=config)
+
+    assert not api.writes
+
+
+@pytest.mark.parametrize(
+    "config", ["/tmp/policy.toml", "../policy.toml", "a/../../policy.toml", "a\\policy.toml", "policy.py"]
+)
+def test_action_rejects_unsafe_or_non_toml_config_paths(config: str) -> None:
+    pr = pull()
+    api = GitHub(pr)
+    source = event(pr)
+
+    with pytest.raises(ValueError):
+        normalize_title(api, source, event_name="workflow_run", config=config)
+
+    assert not api.writes
+    assert not any(path.startswith("contents/") for _, path, _ in api.calls)
+
+
+def test_default_branch_configuration_permission_errors_do_not_fall_back_to_defaults() -> None:
+    pr = pull()
+    source = event(pr)
+    api = GitHub(pr)
+
+    def forbidden_config(method: str, path: str, payload: Any = None) -> Any:
+        if path.startswith("contents/"):
+            raise HTTPError("https://api.github.com/" + path, 403, "Forbidden", Message(), None)
+        return api(method, path, payload)
+
+    with pytest.raises(HTTPError):
+        normalize_title(forbidden_config, source, event_name="workflow_run")
+
     assert not api.writes
 
 

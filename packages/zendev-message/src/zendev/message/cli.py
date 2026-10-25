@@ -155,6 +155,7 @@ def check_command(
                     profile=settings.profile,
                     commit=scope is MessageScope.COMMIT,
                     comment_char=comment_char,
+                    replacements=settings.replacements,
                 )
                 subject = ""
                 if normalized.changed:

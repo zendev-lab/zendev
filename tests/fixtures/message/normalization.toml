@@ -1,0 +1,4 @@
+version = 1
+
+[message.normalization.replacements]
+"[ImgBot] Optimize images" = "⚡️ perf(assets): optimize images"

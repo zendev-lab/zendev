@@ -38,7 +38,6 @@ runner = CliRunner()
         ("deps: pin requests", "📌 deps: pin requests"),
         ("deps: add requests", "\u2795 deps: add requests"),
         ("deps: remove requests", "\u2796 deps: remove requests"),
-        ("[ImgBot] Optimize images", "⚡️ perf(assets): optimize images"),
     ],
 )
 def test_unambiguous_messages_normalize_and_are_idempotent(text: str, expected: str) -> None:
@@ -72,6 +71,7 @@ def test_unambiguous_messages_normalize_and_are_idempotent(text: str, expected: 
         "😀 feat: unknown emoji",
         "✨  feat: invalid spacing",
         "[ImgBot] Optimize images and remove assets",
+        "[ImgBot] Optimize images",
         "optimize images",
         "ship it",
         "",

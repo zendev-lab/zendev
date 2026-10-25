@@ -2,16 +2,21 @@
 
 from __future__ import annotations
 
+import base64
 import json
 import os
 import sys
-from collections.abc import Callable
-from pathlib import Path
+import tempfile
+from collections.abc import Callable, Mapping
+from pathlib import Path, PurePosixPath
 from typing import Any
-from urllib.parse import urlencode
+from urllib.error import HTTPError
+from urllib.parse import quote, urlencode
 from urllib.request import Request, urlopen
 
+from zendev.core.diagnostics import ToolError
 from zendev.message import MessageProfile, normalize_message
+from zendev.message.config import load_message_config
 
 Api = Callable[..., Any]
 Head = tuple[str, str, str]
@@ -24,6 +29,46 @@ def _head(pr: dict[str, Any]) -> Head:
 
 def _notice(message: str) -> None:
     print("::notice::" + message.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A"))
+
+
+def _config_file(api: Api, path: str, revision: str, *, required: bool) -> bytes | None:
+    query = urlencode({"ref": revision})
+    try:
+        response = api("GET", f"contents/{quote(path, safe='/')}?{query}")
+    except HTTPError as error:
+        if error.code == 404 and not required:
+            return None
+        raise
+    if not isinstance(response, dict) or response.get("type") != "file" or response.get("encoding") != "base64":
+        raise ValueError(f"Configuration {path!r} must be a base64-encoded TOML file")
+    return base64.b64decode(response["content"])
+
+
+def _settings(api: Api, event: dict[str, Any], profile: str, config: str) -> tuple[MessageProfile, Mapping[str, str]]:
+    entry = PurePosixPath(config) if config else None
+    if entry is not None and (
+        entry.is_absolute() or ".." in entry.parts or not entry.parts or entry.suffix != ".toml" or "\\" in config
+    ):
+        raise ValueError("config must be a repository-relative TOML file path without '..'")
+    branch = event["repository"]["default_branch"]
+    revision = api("GET", f"git/ref/heads/{quote(branch, safe='/')}")["object"]["sha"]
+    paths = [config] if entry is not None else ["zendev.toml", "pyproject.toml"]
+    local_name = (
+        entry.name if entry is not None and entry.name in {"pyproject.toml", "proposal.toml"} else "zendev.toml"
+    )
+    with tempfile.TemporaryDirectory(prefix="zendev-title-config-") as directory:
+        root = Path(directory)
+        # Stop configuration discovery at these downloaded data files.
+        (root / ".git").touch()
+        for path in paths:
+            payload = _config_file(api, path, revision, required=entry is not None)
+            if payload is not None:
+                name = local_name if entry is not None else path
+                (root / name).write_bytes(payload)
+        settings = load_message_config(
+            root / local_name if entry is not None else None, start=root, profile=profile or None
+        )
+        return settings.profile, settings.replacements
 
 
 def _target(api: Api, event: dict[str, Any], event_name: str) -> tuple[int, Head, int | None] | None:
@@ -46,8 +91,9 @@ def _target(api: Api, event: dict[str, Any], event_name: str) -> tuple[int, Head
     return int(candidates[0]["number"]), expected, int(run["id"])
 
 
-def normalize_title(api: Api, event: dict[str, Any], *, event_name: str, profile: str) -> dict[str, str]:
-    selected = MessageProfile(profile)
+def normalize_title(
+    api: Api, event: dict[str, Any], *, event_name: str, profile: str = "", config: str = ""
+) -> dict[str, str]:
     output = {"changed": "false", "title": ""}
     target = _target(api, event, event_name)
     if target is None:
@@ -63,7 +109,8 @@ def normalize_title(api: Api, event: dict[str, Any], *, event_name: str, profile
         _notice("The PR title must be a single line; choose a normalized title manually.")
         return output
     output["title"] = title
-    result = normalize_message(title, profile=selected)
+    selected, replacements = _settings(api, event, profile, config)
+    result = normalize_message(title, profile=selected, replacements=replacements)
     if not result.ok:
         _notice("The PR title needs an explicit intention: " + result.diagnostics[0].message)
         return output
@@ -111,11 +158,12 @@ def main() -> int:
             json.loads(Path(os.environ["GITHUB_EVENT_PATH"]).read_text(encoding="utf-8")),
             event_name=os.environ["GITHUB_EVENT_NAME"],
             profile=os.environ["INPUT_PROFILE"],
+            config=os.environ.get("INPUT_CONFIG", ""),
         )
         with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as stream:
             for key, value in output.items():
                 stream.write(f"{key}={value}\n")
-    except (OSError, ValueError) as error:
+    except (OSError, ValueError, ToolError) as error:
         print(f"PR title normalization failed: {error}", file=sys.stderr)
         return 1
     return 0
