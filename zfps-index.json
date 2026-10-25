@@ -100,7 +100,7 @@
     {
       "zfp": 9,
       "path": "zfps/ZFP-0009-message-normalization.md",
-      "title": "确定性消息转换与自动化接入",
+      "title": "Conventional 消息转换与可配置特例",
       "type": "Feature",
       "authors": [
         "zrr1999"
