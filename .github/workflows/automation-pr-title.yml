@@ -1,7 +1,7 @@
 name: Automation - PR Title
 
 on:
-  # Only the trusted default branch supplies executable code.
+  # Read PR metadata through a pinned Action; never check out PR code.
   workflow_run: # zizmor: ignore[dangerous-triggers]
     workflows: ["Policy - PR"]
     types: [completed]
@@ -20,15 +20,8 @@ jobs:
       github.event.workflow_run.conclusion == 'failure'
     runs-on: ubuntu-latest
     permissions:
-      contents: read
       pull-requests: write
       actions: write
     steps:
-      - name: Check out the trusted automation implementation
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ github.event.repository.default_branch }}
-          persist-credentials: false
-
       - name: Normalize the title and rerun failed policy
-        uses: ./actions/normalize-title
+        uses: zendev-lab/zendev/actions/normalize-title@846ec3d37b3bf0600355f89c0bca46373ac5966f # message normalization
