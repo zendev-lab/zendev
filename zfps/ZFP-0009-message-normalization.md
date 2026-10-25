@@ -1,5 +1,5 @@
 ---
-zfp: 8
+zfp: 9
 title: "确定性消息转换与自动化接入"
 type: Feature
 authors:
@@ -8,7 +8,7 @@ created: 2026-10-25
 supersedes: []
 ---
 
-# ZFP-0008: 确定性消息转换与自动化接入
+# ZFP-0009: 确定性消息转换与自动化接入
 
 ## 摘要
 

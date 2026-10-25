@@ -98,8 +98,8 @@
       "superseded_by": []
     },
     {
-      "zfp": 8,
-      "path": "zfps/ZFP-0008-message-normalization.md",
+      "zfp": 9,
+      "path": "zfps/ZFP-0009-message-normalization.md",
       "title": "确定性消息转换与自动化接入",
       "type": "Feature",
       "authors": [
