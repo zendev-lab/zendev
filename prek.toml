@@ -1,5 +1,6 @@
 default_install_hook_types = ["pre-commit", "commit-msg"]
 default_stages = ["pre-commit"]
+minimum_prek_version = "0.5.7"
 
 [[repos]]
 repo = "builtin"
@@ -13,10 +14,10 @@ hooks = [
   { id = "check-json" },
   { id = "check-merge-conflict" },
   { id = "detect-private-key" },
-  { id = "end-of-file-fixer" },
-  { id = "fix-byte-order-marker" },
-  { id = "mixed-line-ending" },
-  { id = "trailing-whitespace" },
+  { id = "end-of-file-fixer", args = ["--check"] },
+  { id = "fix-byte-order-marker", args = ["--check"] },
+  { id = "mixed-line-ending", args = ["--fix=no"] },
+  { id = "trailing-whitespace", args = ["--check"] },
 ]
 
 [[repos]]
@@ -33,8 +34,8 @@ hooks = [
 repo = "https://github.com/astral-sh/ruff-pre-commit"
 rev = "v0.17.2"
 hooks = [
-  { id = "ruff-check", args = ["--fix"] },
-  { id = "ruff-format" },
+  { id = "ruff-check", args = ["--no-fix"] },
+  { id = "ruff-format", args = ["--check"] },
 ]
 
 [[repos]]
@@ -56,32 +57,46 @@ hooks = [
 [[repos]]
 repo = "https://github.com/astral-sh/uv-pre-commit"
 rev = "0.13.5"
-hooks = [{ id = "uv-lock" }]
+hooks = [{ id = "uv-lock", args = ["--check"] }]
 
 [[repos]]
 repo = "https://github.com/tombi-toml/tombi-pre-commit"
 rev = "v1.9.0"
 hooks = [
-  { id = "tombi-format", exclude = "^uv\\.lock$" },
-  { id = "tombi-lint", args = ["--error-on-warnings"], exclude = "^uv\\.lock$" },
+  { id = "tombi-format", args = ["--check", "--offline"], exclude = "^uv\\.lock$" },
+  { id = "tombi-lint", args = ["--error-on-warnings", "--offline"], exclude = "^uv\\.lock$" },
 ]
 
 [[repos]]
-repo = "https://github.com/rhysd/actionlint"
-rev = "v1.7.12"
-hooks = [{ id = "actionlint" }]
+repo = "local"
+hooks = [
+  {
+    id = "jactionlint",
+    name = "GitHub Actions correctness and security",
+    entry = "jactionlint --no-online --shellcheck=shellcheck --pyflakes=pyflakes",
+    language = "python",
+    additional_dependencies = ["jactionlint==2.3.0", "shellcheck-py==0.11.0.1", "pyflakes==3.4.0"],
+    pass_filenames = false,
+    files = '^(\.github/|(.*/)?action\.ya?ml$|prek\.toml$)',
+    stages = ["pre-commit"],
+  },
+]
 
 [[repos]]
 repo = "https://github.com/zizmorcore/zizmor-pre-commit"
 rev = "v1.31.1"
-hooks = [{ id = "zizmor", args = ["--min-severity", "medium"] }]
+hooks = [{ id = "zizmor", args = ["--offline", "--min-severity", "medium"] }]
 
 [[repos]]
-repo = "https://github.com/lycheeverse/lychee"
-rev = "lychee-v0.24.2"
+repo = "local"
 hooks = [
   {
     id = "lychee",
+    name = "Local documentation links",
+    entry = "lychee",
+    language = "python",
+    additional_dependencies = ["lychee-bin==0.24.2"],
+    require_serial = true,
     files = "\\.md$",
     args = ["--offline", "--scheme", "file", "--no-progress"],
   },
@@ -104,4 +119,18 @@ repo = "local"
 hooks = [
   { id = "zendev-message", name = "zendev commit message", entry = "uv run zendev message check --commit --fix", language = "system", stages = ["commit-msg"] },
   { id = "zendev-proposal", name = "zendev proposal repository", entry = "uv run zendev proposal check", language = "system", pass_filenames = false, always_run = true },
+  { id = "deptry", name = "Distribution dependencies", entry = "uv run --frozen python scripts/check_dependencies.py", language = "system", pass_filenames = false, files = "(^|/)(pyproject\\.toml|.*\\.py)$" },
+  { id = "import-linter", name = "Python package boundaries", entry = "uv run --frozen lint-imports", language = "system", pass_filenames = false, files = "(^|/)(pyproject\\.toml|.*\\.py)$" },
+  { id = "rumdl", name = "Markdown structure", entry = "rumdl check", language = "python", additional_dependencies = ["rumdl==0.3.0"], types = ["markdown"], exclude = "^tests/fixtures/" },
+  { id = "vale", name = "Documentation terminology", entry = "vale", language = "python", additional_dependencies = ["vale==3.25.1.0"], require_serial = true, files = "^(README\\.md|CONTRIBUTING\\.md|docs/.*\\.md|zfps/.*\\.md)$" },
+  { id = "ast-grep", name = "Domain structure", entry = "ast-grep scan", language = "python", additional_dependencies = ["ast-grep-cli==0.51.0"], pass_filenames = false, files = "(\\.py$|^quality/ast-grep/|^sgconfig\\.yml$)" },
+  { id = "ast-grep-tests", name = "Structure rule examples", entry = "ast-grep test --skip-snapshot-tests", language = "python", additional_dependencies = ["ast-grep-cli==0.51.0"], pass_filenames = false, files = "^quality/ast-grep/" },
+  { id = "semgrep", name = "Python security patterns", entry = "semgrep scan --config quality/semgrep --metrics=off --error src packages scripts", language = "python", language_version = "python3.13", additional_dependencies = ["semgrep==1.182.1"], pass_filenames = false, files = "(\\.py$|^quality/semgrep/)" },
+  { id = "semgrep-tests", name = "Security rule examples", entry = "semgrep --test --config quality/semgrep quality/semgrep --metrics=off", language = "python", language_version = "python3.13", additional_dependencies = ["semgrep==1.182.1"], pass_filenames = false, files = "^quality/semgrep/" },
+  { id = "renovate-schema", name = "Renovate configuration schema", entry = "check-jsonschema --builtin-schema vendor.renovate", language = "python", additional_dependencies = ["check-jsonschema==0.39.0"], files = "^\\.github/renovate\\.json$" },
 ]
+
+[[repos]]
+repo = "https://github.com/gitleaks/gitleaks"
+rev = "v8.30.1"
+hooks = [{ id = "gitleaks", args = ["--redact"] }]

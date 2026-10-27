@@ -1,0 +1,10 @@
+id: domain-process-exit
+valid:
+  - 'return Diagnostic("invalid", "Invalid input")'
+  - 'raise ValueError("Invalid input")'
+invalid:
+  - 'raise SystemExit(1)'
+  - 'raise SystemExit'
+  - 'sys.exit(1)'
+  - 'raise typer.Exit(1)'
+  - 'raise typer.Exit'

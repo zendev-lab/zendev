@@ -14,7 +14,7 @@ The equivalent `[tool.zendev]` configuration in `pyproject.toml` uses `version =
 | Profile | Contract |
 | --- | --- |
 | `zendev` | A Gitmoji intention followed by an allowed change type and Conventional Commits syntax. |
-| `conventional` | Conventional Commits syntax, without the ZenDev type or emoji policy. |
+| `conventional` | Conventional Commits syntax, without the Zendev type or emoji policy. |
 | `gitmoji` | Gitmoji Unicode or shortcode intention, optional scope, subject and body. |
 
 When `--profile` is omitted, the repository setting applies, falling back to `zendev` when no setting exists.

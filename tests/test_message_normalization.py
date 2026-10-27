@@ -9,12 +9,34 @@ import sys
 from pathlib import Path
 
 import pytest
+from hypothesis import given
+from hypothesis import strategies as st
 from typer.testing import CliRunner
 
 from zendev.message import check_message, normalize_message
 from zendev.message.cli import app
 
 runner = CliRunner()
+
+
+@given(
+    description=st.text(alphabet="abcdefghijklmnopqrstuvwxyz更新修复", min_size=1, max_size=80),
+    body=st.text(alphabet="abcdefghijklmnopqrstuvwxyz 0123456789正文", min_size=1, max_size=200),
+    ending=st.sampled_from(["\n", "\r\n"]),
+)
+def test_normalization_preserves_commit_bytes_and_is_idempotent(description: str, body: str, ending: str) -> None:
+    prefix = f"# template{ending}{ending}"
+    subject = f"feat: {description}"
+    suffix = f"{ending}{ending}Details {body}{ending}{ending}Refs: #42{ending}# comment{ending}"
+    result = normalize_message(prefix + subject + suffix, commit=True)
+
+    assert result.ok
+    assert result.changed
+    assert result.text == prefix + "✨ " + subject + suffix
+    again = normalize_message(result.text, commit=True)
+    assert again.ok
+    assert not again.changed
+    assert again.text == result.text
 
 
 @pytest.mark.parametrize(

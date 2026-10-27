@@ -14,7 +14,7 @@ graph TD
 
 Core owns configuration discovery, diagnostic rendering, operation-scoped source snapshots and shared Markdown facts. It knows neither domain policy nor CLI/Git. Domain loaders interpret their own tables from one discovered source.
 
-Message exposes pure `parse_message`, `check_message`, `check_git_message`, `normalize_message`, `render_message` and `check_body` functions. Parsing supplies structure; the ZenDev policy checks type/intention pairs. Normalization proposes and validates conservative repairs without I/O. Interactive, CLI, hook and Action adapters read inputs and display the same diagnostics; adapters own file writes and PR metadata changes.
+Message exposes pure `parse_message`, `check_message`, `check_git_message`, `normalize_message`, `render_message` and `check_body` functions. Parsing supplies structure; the Zendev policy checks type/intention pairs. Normalization proposes and validates conservative repairs without I/O. Interactive, CLI, hook and Action adapters read inputs and display the same diagnostics; adapters own file writes and PR metadata changes.
 
 Proposal separates repository parsing, document shape, content, relationships, history and index projection. Indexing depends on relationship validation; validation does not import indexing. `application.py` owns the workflow:
 

@@ -20,7 +20,7 @@ zendev proposal check [OPTIONS]
 | `--title` | Check exactly one title line. |
 | `--commit` | Explicit Git commit context, including single-line generated messages. |
 | `--fix` | Normalize an unambiguous subject, writing back `FILE` or returning the corrected `--text`; unavailable with `--body`. |
-| `--config PATH` | Select one ZenDev configuration source. |
+| `--config PATH` | Select one Zendev configuration source. |
 | `--format human\|json\|github` | Select shared diagnostic output; defaults to human. |
 | `--body` | Check a PR body against a template. |
 | `--profile zendev\|conventional\|gitmoji` | Select the title or complete-message profile. |

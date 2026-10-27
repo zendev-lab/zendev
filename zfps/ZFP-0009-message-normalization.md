@@ -103,7 +103,7 @@ version = 1
 "[ImgBot] Optimize images" = "⚡️ perf(assets): optimize images"
 ```
 
-此例是消费仓库明确声明的策略，不是 ZenDev 的内置知识。删除该条目后同一标题
+此例是消费仓库明确声明的策略，不是 Zendev 的内置知识。删除该条目后同一标题
 不会转换。键是完整的原始有效首行，区分大小写和空白，不支持子串、glob、正则、
 模板变量或模糊匹配。值是完整、单行的合法 zendev 标题，须显式包含 emoji、type
 及可选 scope，不是待进一步推断的 Conventional 文本。替换只发生一次。

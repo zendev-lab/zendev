@@ -30,7 +30,7 @@ Coding agents are a primary zendev audience, so the build also publishes `llms.t
 - Keep ZFP policy and records under `zfps/`; link to them instead of copying
   them into the site.
 - Keep contributor-only operating instructions in `CONTRIBUTING.md`.
-- Use copyable `shell` blocks without a leading `$ ` prompt.
+- Use copyable `shell` blocks without a leading dollar-sign prompt.
 - Use `uv` for Python project workflows and `uvx` for one-off Python tools.
 
 Do not commit generated `site/` output or add custom CSS, JavaScript, plugins, or a shared documentation preset without a demonstrated product requirement.

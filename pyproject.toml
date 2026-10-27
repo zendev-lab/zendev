@@ -22,7 +22,9 @@ dev = [
   { include-group = "test" },
 ]
 check = [
+  "deptry==0.25.1",
   "hatchling>=1.27",
+  "import-linter==2.15",
   "pyrefly==1.4.0",
   "types-PyYAML>=6.0",
   "types-jsonschema>=4.26",
@@ -30,7 +32,14 @@ check = [
 docs = [
   "zensical>=0.0.69",
 ]
+quality = [
+  "mutmut==3.8.0",
+  "pytest-benchmark==5.3.0",
+  "pytest-codspeed==5.0.3",
+  "radon==6.0.1",
+]
 test = [
+  "hypothesis==6.170.12",
   "pytest>=8.0",
   "pytest-cov>=5.0",
 ]
@@ -83,6 +92,31 @@ dependencies = [
   "zendev-proposal=={version}",
   "zendev-message=={version}",
 ]
+
+[tool.importlinter]
+root_packages = [
+  "zendev.cli",
+  "zendev.core",
+  "zendev.evolution",
+  "zendev.log",
+  "zendev.message",
+  "zendev.proposal",
+]
+
+[[tool.importlinter.contracts]]
+name = "Components only depend on core; the CLI composes them"
+type = "layers"
+layers = [
+  "zendev.cli",
+  "zendev.evolution | zendev.log | zendev.message | zendev.proposal",
+  "zendev.core",
+]
+
+[tool.mutmut]
+# scripts/check_mutations.py assembles the namespace distributions under src/.
+source_paths = ["src/"]
+only_mutate = ["src/zendev/message/conventional.py"]
+pytest_add_cli_args_test_selection = ["tests/test_conventional.py"]
 
 [tool.pyrefly]
 python-version = "3.12.0"

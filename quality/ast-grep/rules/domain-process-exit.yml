@@ -1,0 +1,17 @@
+id: domain-process-exit
+language: Python
+severity: error
+message: Domain mechanisms return diagnostics; process exit belongs to CLI adapters (ZFP-0006).
+files:
+  - packages/*/src/**/*.py
+ignores:
+  - '**/cli.py'
+  - '**/interactive.py'
+  - '**/__main__.py'
+rule:
+  any:
+    - pattern: raise SystemExit($$$ARGS)
+    - pattern: raise SystemExit
+    - pattern: sys.exit($$$ARGS)
+    - pattern: raise typer.Exit($$$ARGS)
+    - pattern: raise typer.Exit

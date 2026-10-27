@@ -1,0 +1,11 @@
+[global]
+# Prose uses semantic lines, including Chinese text; no fixed character width.
+disable = ["MD013"]
+exclude = ["tests/fixtures/**", ".agents/worktrees/**"]
+
+[MD025]
+# Proposal frontmatter describes the same visible H1, not a second title.
+front-matter-title = ""
+
+[per-file-ignores]
+".github/pull_request_template.md" = ["MD041"]
