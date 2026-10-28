@@ -35,7 +35,7 @@ jobs:
           uv sync --frozen --all-packages --all-groups
           just check
           just test
-          just packages
+          bash scripts/check_packages.sh
 
   build:
     name: Build ${{ matrix.package }}

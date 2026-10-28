@@ -2,19 +2,22 @@ name: CI - Tests
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   pull_request:
+  schedule:
+    - cron: '23 3 * * 1'
+  workflow_dispatch:
 
 permissions:
   contents: read
-
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
-
 jobs:
   test:
     name: Python ${{ matrix.python }}
+    if: (github.event_name == 'push') || (github.event_name == 'pull_request')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -43,10 +46,10 @@ jobs:
         run: uv sync --frozen --all-packages --all-groups
 
       - name: Run tests with coverage
-        run: just cov
+        run: just coverage
 
       - name: Build and validate distributions
-        run: just packages
+        run: bash scripts/check_packages.sh
 
       - name: Upload coverage to Codecov
         if: matrix.python == '3.14'
@@ -55,3 +58,52 @@ jobs:
           files: coverage.xml
           use_oidc: true
           fail_ci_if_error: true
+  performance:
+    name: Parser Performance
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        with:
+          version: "0.13.5"
+          python-version: "3.13"
+      - run: uv sync --frozen --all-packages --group quality
+      - name: Measure parser and normalization
+        uses: CodSpeedHQ/action@78102a468f96d8e0ccb92d0ec49425753fc42062 # v5.6.0
+        with:
+          mode: simulation
+          runner-version: "5.6.0"
+          run: uv run --frozen --group quality pytest benchmarks --codspeed
+
+  mutation:
+    name: Mutation and Local Benchmarks
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        with:
+          version: "0.13.5"
+          python-version: "3.13"
+      - uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4.0.0
+        with:
+          just-version: "1.59.0"
+      - run: uv sync --frozen --all-packages --group quality
+      - run: uv run --frozen --group quality python scripts/check_mutations.py
+      - run: just benchmark
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        if: ${{ !cancelled() }}
+        with:
+          name: mutation-and-benchmark-reports
+          path: .artifacts/quality
+          include-hidden-files: true
+          if-no-files-found: error

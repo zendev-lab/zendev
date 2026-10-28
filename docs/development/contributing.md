@@ -40,7 +40,7 @@ Do not commit generated `site/` output or add custom CSS, JavaScript, plugins, o
 Build all six workspace wheels into `dist/`, check their contents, and run each distribution's entry point in an isolated environment:
 
 ```shell
-just packages
+bash scripts/check_packages.sh
 ```
 
 [check-wheel-contents](https://github.com/jwodder/check-wheel-contents) compares each wheel with its source tree, so a missing, extra, or duplicated module, data file, or `py.typed` fails the build. The pinned sibling versions exist only in `dist/`, so each installation uses the wheels just built. CI and the release workflow use this same entry point.

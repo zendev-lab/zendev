@@ -61,4 +61,4 @@ Both message hooks load [exact exceptions from repository TOML](../reference/con
 
 For a workspace-local hook, use `entry = "uv run zendev message check --commit --fix"` with `language = "system"` and `stages = ["commit-msg"]`. See the [message checks guide](../guides/message-checks.md#normalize-an-unambiguous-message) for the conversion boundaries.
 
-A released hook installs the complete toolkit and its exact-version components. For unreleased development, use the workspace `uv run zendev` command or build all components together with `just packages` to validate their contents and isolated installations.
+A released hook installs the complete toolkit and its exact-version components. For unreleased development, use the workspace `uv run zendev` command or build all components together with `bash scripts/check_packages.sh` to validate their contents and isolated installations.
