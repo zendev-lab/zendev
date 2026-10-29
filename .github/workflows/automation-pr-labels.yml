@@ -4,6 +4,8 @@ on:
   # This workflow never checks out or executes pull request code. Its only
   # untrusted input is reduced to a boolean by the expression evaluator.
   pull_request_target: # zizmor: ignore[dangerous-triggers]
+    branches:
+      - main
     types: [opened, edited, reopened, synchronize, ready_for_review]
 
 permissions: {}
