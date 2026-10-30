@@ -34,7 +34,7 @@ The mutation job in [CE - Quality](.github/workflows/ce-quality.yml) checks the 
 
 Regular CI runs for pull requests targeting `main` and merge groups targeting `main`; a push after merging does not repeat these checks. CE runs the periodic checks weekly and on manual dispatch with its own triggers; tool setup and maintenance commands live in the owning workflows. CodSpeed runs the same benchmark cases using CPU simulation on pull requests; local walltime samples are a separate measurement. Dependency vulnerabilities block their CI job. Codecov upload failures are errors. SonarQube Cloud automatic analysis covers Python sources and classifies tests separately; this mode does not ingest coverage, which remains available through Codecov and the local reports.
 
-Jactionlint runs offline locally with ShellCheck and Pyflakes. Trusted main-branch runs also perform a strict online audit and retain its report; failed or skipped queries are not accepted as a completed audit. Zizmor remains enabled because its bot-condition checks cover cases not detected by the pinned jactionlint release.
+Jactionlint runs offline locally with ShellCheck and Ruff. Trusted main-branch runs also perform a strict online audit and retain its report; failed or skipped queries are not accepted as a completed audit. Zizmor remains enabled because its bot-condition checks cover cases not detected by the pinned jactionlint release.
 
 ## Vendored Gitmoji data
 
