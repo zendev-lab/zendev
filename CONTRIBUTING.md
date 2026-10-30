@@ -28,13 +28,15 @@ uv run zendev proposal check --fix
 
 Dependency checks read each distribution's Hatch metadata through `scripts/check_dependencies.py`. Deptry checks third-party imports; Import Linter enforces the CLI/component/core layers; alint checks the declared namespace owners and sibling pins. Negative controls in `tests/test_quality_tools.py` exercise missing and unused dependencies and prohibited imports.
 
+Use upstream hooks when available. The local entries run Zendev from this checkout, adapt Hatch dependency metadata, or run ast-grep, whose pinned release provides no hook manifest. Import Linter's upstream system hook runs through `uv run --frozen` so it sees the workspace's installed namespace packages.
+
 Structural rules under `quality/ast-grep` enforce ZFP-0006's domain boundary. Security rules under `quality/semgrep` check shell execution and unsafe YAML loading. Keep passing and failing examples with every rule. Vale checks documented names; rumdl checks Markdown structure while allowing semantic line wrapping and frontmatter titles. Test fixture documents are validated by their owning tests.
 
 The mutation job in [CE - Quality](.github/workflows/ce-quality.yml) checks the Conventional Commits parser through `scripts/check_mutations.py`. It stages the workspace namespace in a temporary `src` tree so mutmut loads the mutated modules. [CE - Quality](.github/workflows/ce-quality.yml) reports complexity and exact clones without imposing a universal score. `just benchmark` measures parsing a 100-paragraph commit and normalizing a CRLF commit, with returned values checked outside timing. Reports go to `.artifacts/quality/`.
 
 Regular CI runs for pull requests targeting `main` and merge groups targeting `main`; a push after merging does not repeat these checks. CE runs the periodic checks weekly and on manual dispatch with its own triggers; tool setup and maintenance commands live in the owning workflows. CodSpeed runs the same benchmark cases using CPU simulation on pull requests; local walltime samples are a separate measurement. Dependency vulnerabilities block their CI job. Codecov upload failures are errors. SonarQube Cloud automatic analysis covers Python sources and classifies tests separately; this mode does not ingest coverage, which remains available through Codecov and the local reports.
 
-Jactionlint runs offline locally with ShellCheck and Ruff. Trusted main-branch runs also perform a strict online audit and retain its report; failed or skipped queries are not accepted as a completed audit. Zizmor remains enabled because its bot-condition checks cover cases not detected by the pinned jactionlint release.
+Jactionlint uses its upstream ShellCheck hook for offline workflow checks. Python files use independent Ruff hooks. The workflows and composite actions currently have no `shell: python` steps, so jactionlint's Python integration is disabled. Trusted main-branch runs also perform a strict online audit and retain its report; failed or skipped queries are not accepted as a completed audit. Zizmor remains enabled because its bot-condition checks cover cases not detected by the pinned jactionlint release.
 
 ## Vendored Gitmoji data
 
