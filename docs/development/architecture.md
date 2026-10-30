@@ -14,7 +14,7 @@ graph TD
 
 Core owns configuration discovery, diagnostic rendering, operation-scoped source snapshots and shared Markdown facts. It knows neither domain policy nor CLI/Git. Domain loaders interpret their own tables from one discovered source.
 
-Message exposes pure `parse_message`, `check_message`, `check_git_message`, `normalize_message`, `render_message` and `check_body` functions. Parsing supplies structure; the ZenDev policy checks type/intention pairs. Normalization proposes and validates conservative repairs without I/O. Interactive, CLI, hook and Action adapters read inputs and display the same diagnostics; adapters own file writes and PR metadata changes.
+Message exposes pure `parse_message`, `check_message`, `check_git_message`, `normalize_message`, `render_message` and `check_body` functions. Parsing supplies structure; the Zendev policy checks type/intention pairs. Normalization proposes and validates conservative repairs without I/O. Interactive, CLI, hook and Action adapters read inputs and display the same diagnostics; adapters own file writes and PR metadata changes.
 
 Proposal separates repository parsing, document shape, content, relationships, history and index projection. Indexing depends on relationship validation; validation does not import indexing. `application.py` owns the workflow:
 
@@ -30,7 +30,7 @@ A plan records configuration, schemas (including discovered local references), t
 
 Evolution exposes pure `check_document`, which returns immutable sections or shared diagnostics. It consumes core Markdown facts; evolution owns the fixed document rules. The CLI alone reads UTF-8 files, creates new documents exclusively, and renders human, JSON, or GitHub output. It has no proposal dependency, configuration discovery, repair transaction, or auxiliary index. Editors own subsequent changes.
 
-`just check` runs the repository hooks configured in `prek.toml` and checks justfile formatting. Hooks own formatting, lint, type, and repository policy checks and may apply fixes. `just ci` also runs the test suite with coverage. `just packages` builds wheels, checks their contents against the source trees, and runs each distribution in an isolated installation. `.alint.yml` and Ruff's banned-import rule enforce namespace ownership, sibling pins, and the CLI boundary.
+`just check` runs the repository hooks configured in `prek.toml` and checks justfile formatting. Hooks own formatting, lint, type, and repository policy checks and may apply fixes. `just ci` also runs the test suite with coverage. `bash scripts/check_packages.sh` builds wheels, checks their contents against the source trees, and runs each distribution in an isolated installation. `.alint.yml` and Ruff's banned-import rule enforce namespace ownership, sibling pins, and the CLI boundary.
 
 [Hatch metadata hooks](https://hatch.pypa.io/latest/plugins/metadata-hook/reference/) resolve sibling pins from the VCS version. Component builds reference the same root hook file from the complete repository checkout. Releases publish independently installable wheels. Release ordering is core/log, then message/proposal/evolution, then the CLI distribution. uv cache keys include the Git commit/tags and all workspace build metadata, so editable installs rebuild together after a commit or metadata edit. See [uv dynamic metadata caching](https://docs.astral.sh/uv/concepts/cache/#dynamic-metadata).
 

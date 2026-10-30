@@ -1,0 +1,9 @@
+extends: substitution
+message: "Use '%s' instead of '%s' for the documented project or protocol name."
+level: error
+ignorecase: false
+swap:
+  'ZenDev|ZendeV': Zendev
+  'Github': GitHub
+  'Pypi|PyPi': PyPI
+  'PEP420': PEP 420

@@ -19,10 +19,11 @@ jobs:
       github.event.workflow_run.event == 'pull_request' &&
       github.event.workflow_run.conclusion == 'failure'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
       pull-requests: write
       actions: write
     steps:
       - name: Normalize the title and rerun failed policy
-        uses: zendev-lab/zendev/actions/normalize-title@a686442420f0558fa95ee4c6b7c5585a357853a2 # Conventional normalization and configured exceptions
+        uses: zendev-lab/zendev/actions/normalize-title@66d020624b6d3e318c3e5c26acab29458998b74d # v0.6.0

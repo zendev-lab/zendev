@@ -24,6 +24,11 @@ coverage.xml
 # Testing
 .pytest_cache/
 .ruff_cache/
+.hypothesis/
+.benchmarks/
+.import_linter_cache/
+mutants/
+.artifacts/
 
 # OS
 .DS_Store

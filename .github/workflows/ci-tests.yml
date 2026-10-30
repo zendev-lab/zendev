@@ -2,16 +2,25 @@ name: CI - Tests
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   pull_request:
+    branches:
+      - main
 
 permissions:
   contents: read
-
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   test:
     name: Python ${{ matrix.python }}
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
     strategy:
       fail-fast: false
       matrix:
@@ -35,14 +44,37 @@ jobs:
         run: uv sync --frozen --all-packages --all-groups
 
       - name: Run tests with coverage
-        run: just cov
+        run: just coverage
 
       - name: Build and validate distributions
-        run: just packages
+        run: bash scripts/check_packages.sh
 
       - name: Upload coverage to Codecov
         if: matrix.python == '3.14'
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7
         with:
           files: coverage.xml
-          fail_ci_if_error: false
+          use_oidc: true
+          fail_ci_if_error: true
+  performance:
+    name: Parser Performance
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        with:
+          version: "0.13.5"
+          python-version: "3.13"
+      - run: uv sync --frozen --all-packages --group quality
+      - name: Measure parser and normalization
+        uses: CodSpeedHQ/action@78102a468f96d8e0ccb92d0ec49425753fc42062 # v5.6.0
+        with:
+          mode: simulation
+          runner-version: "5.6.0"
+          run: uv run --frozen --group quality pytest benchmarks --codspeed

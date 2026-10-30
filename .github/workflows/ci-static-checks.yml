@@ -2,29 +2,38 @@ name: CI - Static Checks
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   pull_request:
+    branches:
+      - main
 
 permissions:
   contents: read
-
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   pre-commit:
     name: Pre-commit Checks
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
       - uses: j178/prek-action@44924fe9ef4a6f88253c4b6b1bf11c689d3ce53d # v3.1.0
+        with:
+          prek-version: "0.5.7"
 
       - name: Validate public hook manifest
-        run: uvx prek validate-manifest .pre-commit-hooks.yaml
+        run: uvx prek==0.5.7 validate-manifest .pre-commit-hooks.yaml
 
   codeql:
     name: CodeQL
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       actions: read
       contents: read
@@ -52,6 +61,7 @@ jobs:
   documentation:
     name: Documentation Checks
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -64,3 +74,48 @@ jobs:
 
       - name: Build documentation
         run: uv run --locked --group docs zensical build --strict
+  dependencies:
+    name: Dependency Vulnerabilities
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install verified OSV-Scanner
+        run: |
+          curl --fail --silent --show-error --location https://github.com/google/osv-scanner/releases/download/v2.7.0/osv-scanner_linux_amd64 --output "$RUNNER_TEMP/osv-scanner"
+          printf '%s  %s\n' '160c6253e2922e9e0a6a9771c5c4c40a4b3c6090b34a3cdd5e80c96cc2e4218b' "$RUNNER_TEMP/osv-scanner" | sha256sum --check
+          chmod +x "$RUNNER_TEMP/osv-scanner"
+      - name: Scan locked dependencies
+        run: '"$RUNNER_TEMP/osv-scanner" scan source --lockfile uv.lock --format json --output-file osv.json'
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        if: ${{ !cancelled() }}
+        with:
+          name: dependency-audit
+          path: osv.json
+          if-no-files-found: error
+
+  workflow-audit:
+    name: Online Workflow Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        with:
+          version: "0.13.5"
+      - name: Audit action provenance and references
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: uvx --with shellcheck-py==0.11.0.1 --with pyflakes==3.4.0 jactionlint==2.3.0 --online=strict
+          --online-report=workflow-audit.json --shellcheck=shellcheck --pyflakes=pyflakes
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        if: ${{ !cancelled() }}
+        with:
+          name: workflow-audit
+          path: workflow-audit.json
+          if-no-files-found: error
+    if: github.ref == 'refs/heads/main'

@@ -1,0 +1,17 @@
+rules:
+  - id: subprocess-shell
+    languages: [python]
+    severity: ERROR
+    message: Pass repository paths and commit text as argument arrays, never through a shell.
+    pattern-either:
+      - pattern: subprocess.$CALL(..., shell=True, ...)
+      - pattern: os.system(...)
+  - id: unsafe-yaml-loader
+    languages: [python]
+    severity: ERROR
+    message: Proposal frontmatter must not instantiate Python objects; use SafeLoader or its FrontmatterLoader subclass.
+    pattern-either:
+      - pattern: yaml.unsafe_load(...)
+      - pattern: yaml.load(..., Loader=yaml.Loader, ...)
+      - pattern: yaml.load(..., Loader=yaml.UnsafeLoader, ...)
+      - pattern: yaml.load(..., Loader=yaml.CLoader, ...)

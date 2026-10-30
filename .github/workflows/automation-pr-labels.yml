@@ -4,14 +4,21 @@ on:
   # This workflow never checks out or executes pull request code. Its only
   # untrusted input is reduced to a boolean by the expression evaluator.
   pull_request_target: # zizmor: ignore[dangerous-triggers]
+    branches:
+      - main
     types: [opened, edited, reopened, synchronize, ready_for_review]
 
 permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
   labels:
     name: PR label classification
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       pull-requests: write
     steps:

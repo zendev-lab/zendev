@@ -7,10 +7,15 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   verify:
     name: Verify release
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -30,11 +35,12 @@ jobs:
           uv sync --frozen --all-packages --all-groups
           just check
           just test
-          just packages
+          bash scripts/check_packages.sh
 
   build:
     name: Build ${{ matrix.package }}
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
@@ -69,6 +75,7 @@ jobs:
     name: Publish zendev-core
     needs: [verify, build]
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     environment: pypi-zendev-core
     permissions:
       actions: read
@@ -85,6 +92,7 @@ jobs:
     name: Publish zendev-log
     needs: [verify, build]
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     environment: pypi-zendev-log
     permissions:
       actions: read
@@ -101,6 +109,7 @@ jobs:
     name: Publish zendev-proposal
     needs: [publish-core, publish-log]
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     environment: pypi-zendev-proposal
     permissions:
       actions: read
@@ -117,6 +126,7 @@ jobs:
     name: Publish zendev-message
     needs: [publish-core, publish-log]
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     environment: pypi-zendev-message
     permissions:
       actions: read
@@ -133,6 +143,7 @@ jobs:
     name: Publish zendev-evolution
     needs: [publish-core, publish-log]
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     environment: pypi-zendev-evolution
     permissions:
       actions: read
@@ -149,6 +160,7 @@ jobs:
     name: Publish zendev
     needs: [publish-message, publish-proposal, publish-evolution]
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       actions: read
       id-token: write
@@ -164,6 +176,7 @@ jobs:
     name: Create GitHub release
     needs: publish-zendev
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       actions: read
       contents: write
@@ -174,7 +187,14 @@ jobs:
           path: dist
           merge-multiple: true
 
-      - uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
-        with:
-          files: dist/*
-          generate_release_notes: true
+      - name: Create release and upload distributions
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" dist/* --clobber
+          else
+            gh release create "$RELEASE_TAG" dist/* --verify-tag --generate-notes
+          fi

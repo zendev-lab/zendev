@@ -30,7 +30,7 @@ Coding agents are a primary zendev audience, so the build also publishes `llms.t
 - Keep ZFP policy and records under `zfps/`; link to them instead of copying
   them into the site.
 - Keep contributor-only operating instructions in `CONTRIBUTING.md`.
-- Use copyable `shell` blocks without a leading `$ ` prompt.
+- Use copyable `shell` blocks without a leading dollar-sign prompt.
 - Use `uv` for Python project workflows and `uvx` for one-off Python tools.
 
 Do not commit generated `site/` output or add custom CSS, JavaScript, plugins, or a shared documentation preset without a demonstrated product requirement.
@@ -40,7 +40,7 @@ Do not commit generated `site/` output or add custom CSS, JavaScript, plugins, o
 Build all six workspace wheels into `dist/`, check their contents, and run each distribution's entry point in an isolated environment:
 
 ```shell
-just packages
+bash scripts/check_packages.sh
 ```
 
 [check-wheel-contents](https://github.com/jwodder/check-wheel-contents) compares each wheel with its source tree, so a missing, extra, or duplicated module, data file, or `py.typed` fails the build. The pinned sibling versions exist only in `dist/`, so each installation uses the wheels just built. CI and the release workflow use this same entry point.

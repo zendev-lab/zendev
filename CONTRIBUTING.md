@@ -22,19 +22,29 @@ When ZFP documents, templates, or policy change, write a drifted index into the 
 uv run zendev proposal check --fix
 ```
 
-`just check` runs the repository's pre-commit hooks, then checks justfile formatting. Hooks may format files or apply fixes; review those changes and rerun the gate. Use `just --fmt --unstable` to format the justfile.
+`just check` runs read-only pre-commit checks, then checks justfile formatting. Use `just format` for Python repairs and `just --fmt --unstable` to format the justfile. The commit-message hook still normalizes the commit subject when committing.
 
-`just test` runs the test suite; `just cov` also writes HTML and XML coverage reports. `just ci` combines `check` and `cov`. Use `just packages` to validate isolated wheel installations. Tests should assert observable behavior and public contracts rather than implementation control flow.
+`just test` runs the test suite; `just coverage` also writes HTML and XML coverage reports. `just ci` combines `check` and `coverage`. Use `bash scripts/check_packages.sh` to validate isolated wheel installations. Tests should assert observable behavior and public contracts rather than implementation control flow.
+
+Dependency checks read each distribution's Hatch metadata through `scripts/check_dependencies.py`. Deptry checks third-party imports; Import Linter enforces the CLI/component/core layers; alint checks the declared namespace owners and sibling pins. Negative controls in `tests/test_quality_tools.py` exercise missing and unused dependencies and prohibited imports.
+
+Structural rules under `quality/ast-grep` enforce ZFP-0006's domain boundary. Security rules under `quality/semgrep` check shell execution and unsafe YAML loading. Keep passing and failing examples with every rule. Vale checks documented names; rumdl checks Markdown structure while allowing semantic line wrapping and frontmatter titles. Test fixture documents are validated by their owning tests.
+
+The mutation job in [CE - Quality](.github/workflows/ce-quality.yml) checks the Conventional Commits parser through `scripts/check_mutations.py`. It stages the workspace namespace in a temporary `src` tree so mutmut loads the mutated modules. [CE - Quality](.github/workflows/ce-quality.yml) reports complexity and exact clones without imposing a universal score. `just benchmark` measures parsing a 100-paragraph commit and normalizing a CRLF commit, with returned values checked outside timing. Reports go to `.artifacts/quality/`.
+
+CI handles push and pull-request integration. CE runs the periodic checks weekly and on manual dispatch with its own triggers; tool setup and maintenance commands live in the owning workflows. CodSpeed runs the same benchmark cases using CPU simulation on pull requests; local walltime samples are a separate measurement. Dependency vulnerabilities block their CI job. Codecov upload failures are errors. SonarQube Cloud automatic analysis covers Python sources and classifies tests separately; this mode does not ingest coverage, which remains available through Codecov and the local reports.
+
+Jactionlint runs offline locally with ShellCheck and Pyflakes. Trusted main-branch runs also perform a strict online audit and retain its report; failed or skipped queries are not accepted as a completed audit. Zizmor remains enabled because its bot-condition checks cover cases not detected by the pinned jactionlint release.
 
 ## Vendored Gitmoji data
 
-The message package keeps an offline Gitmoji catalog pinned to an upstream revision. Refresh it only through the repository task:
+The message package keeps an offline Gitmoji catalog pinned to an upstream revision. Refresh it through the maintained script:
 
 ```shell
-just sync-gitmoji
+uv run --frozen python scripts/sync_gitmoji.py
 ```
 
-The task validates the upstream payload before updating the vendored file. Review both the data diff and the pairing table in [`packages/zendev-message/src/zendev/message/data`](./packages/zendev-message/src/zendev/message/data/) before committing the result.
+The script validates the upstream payload before updating the vendored file. Review both the data diff and the pairing table in [`packages/zendev-message/src/zendev/message/data`](./packages/zendev-message/src/zendev/message/data/) before committing the result.
 
 ## Documentation ownership
 
