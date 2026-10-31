@@ -28,7 +28,7 @@ Start with the files needed by the workflows the repository actually adopts:
 ├── .github/
 │   ├── pull_request_template.md
 │   └── workflows/
-│       ├── policy-pr.yml
+│       ├── policy-check.yml
 │       └── ci-static-checks.yml
 ├── .agents/
 │   └── skills/
@@ -224,7 +224,7 @@ A repository-local `SKILL.md` can preserve the seven behavioral rules above and 
   own proposal policy.
 - [`.github/pull_request_template.md`](https://github.com/zendev-lab/zendev/blob/main/.github/pull_request_template.md)
   owns the PR body contract.
-- [`policy-pr.yml`](https://github.com/zendev-lab/zendev/blob/main/.github/workflows/policy-pr.yml)
+- [`policy-check.yml`](https://github.com/zendev-lab/zendev/blob/main/.github/workflows/policy-check.yml)
   and [`ci-static-checks.yml`](https://github.com/zendev-lab/zendev/blob/main/.github/workflows/ci-static-checks.yml)
   apply the same contracts in CI.
 - [`zfps/`](https://github.com/zendev-lab/zendev/tree/main/zfps) and the
