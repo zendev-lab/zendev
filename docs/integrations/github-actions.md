@@ -24,10 +24,10 @@ Supply `text`, or at a revision containing message normalization use `pull-reque
 Use a separate workflow after your PR policy completes. This works for fork PRs while the privileged job executes only the pinned Action implementation. It does not require a checkout:
 
 ```yaml
-name: Policy - PR Title
+name: Policy - Fix
 on:
   workflow_run:
-    workflows: ["Policy - PR"]
+    workflows: ["Policy - Check"]
     types: [completed]
 permissions: {}
 concurrency:
@@ -57,7 +57,7 @@ Omit `profile` to use the configured profile, falling back to `zendev`; an expli
 
 Outputs are `changed` (`true` or `false`) and `title` (empty when no current PR matches). A direct `pull_request` invocation also works when its token can read configuration and write PR metadata; it does not rerun the currently executing workflow.
 
-[Edits made with GITHUB_TOKEN do not start an edited-event workflow](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow). Configure the title check in `Policy - PR` to read live metadata when the completed run is rerun:
+[Edits made with GITHUB_TOKEN do not start an edited-event workflow](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow). Configure the title check in `Policy - Check` to read live metadata when the completed run is rerun:
 
 ```yaml
 - uses: zendev-lab/zendev/actions/validate-title@<release-or-commit>
