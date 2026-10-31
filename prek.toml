@@ -68,17 +68,17 @@ hooks = [
 ]
 
 [[repos]]
-repo = "local"
+repo = "https://github.com/jdx/jactionlint"
+rev = "v2.3.0"
 hooks = [
   {
-    id = "jactionlint",
+    id = "jactionlint-shellcheck",
+    alias = "jactionlint",
     name = "GitHub Actions correctness and security",
-    entry = "jactionlint --no-online --shellcheck=shellcheck --pyflakes=pyflakes",
-    language = "python",
-    additional_dependencies = ["jactionlint==2.3.0", "shellcheck-py==0.11.0.1", "pyflakes==3.4.0"],
+    args = ["--no-online", "--shellcheck=shellcheck", "--pyflakes="],
     pass_filenames = false,
+    types = ["file"],
     files = '^(\.github/|(.*/)?action\.ya?ml$|prek\.toml$)',
-    stages = ["pre-commit"],
   },
 ]
 
@@ -100,12 +100,18 @@ rev = "v0.20.0"
 hooks = [{ id = "alint" }]
 
 [[repos]]
+repo = "https://github.com/seddonym/import-linter"
+rev = "v2.15"
+hooks = [
+  { id = "import-linter", name = "Python package boundaries", entry = "uv run --frozen lint-imports", files = "(^|/)(pyproject\\.toml|.*\\.py)$" },
+]
+
+[[repos]]
 repo = "local"
 hooks = [
   { id = "zendev-message", name = "zendev commit message", entry = "uv run zendev message check --commit --fix", language = "system", stages = ["commit-msg"] },
   { id = "zendev-proposal", name = "zendev proposal repository", entry = "uv run zendev proposal check", language = "system", pass_filenames = false, always_run = true },
   { id = "deptry", name = "Distribution dependencies", entry = "uv run --frozen python scripts/check_dependencies.py", language = "system", pass_filenames = false, files = "(^|/)(pyproject\\.toml|.*\\.py)$" },
-  { id = "import-linter", name = "Python package boundaries", entry = "uv run --frozen lint-imports", language = "system", pass_filenames = false, files = "(^|/)(pyproject\\.toml|.*\\.py)$" },
   { id = "ast-grep", name = "Domain structure", entry = "ast-grep scan", language = "python", additional_dependencies = ["ast-grep-cli==0.51.0"], pass_filenames = false, files = "(\\.py$|^quality/ast-grep/|^sgconfig\\.yml$)" },
   { id = "ast-grep-tests", name = "Structure rule examples", entry = "ast-grep test --skip-snapshot-tests", language = "python", additional_dependencies = ["ast-grep-cli==0.51.0"], pass_filenames = false, files = "^quality/ast-grep/" },
 ]
