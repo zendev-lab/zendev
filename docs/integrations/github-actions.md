@@ -24,7 +24,7 @@ Supply `text`, or at a revision containing message normalization use `pull-reque
 Use a separate workflow after your PR policy completes. This works for fork PRs while the privileged job executes only the pinned Action implementation. It does not require a checkout:
 
 ```yaml
-name: Automation - PR Title
+name: Policy - PR Title
 on:
   workflow_run:
     workflows: ["Policy - PR"]
@@ -47,7 +47,7 @@ jobs:
       - uses: zendev-lab/zendev/actions/normalize-title@<release-or-commit>
 ```
 
-Replace the revision with a commit or release containing normalization, and match `workflows` to the name of your policy workflow. The automation must be on the default branch before `workflow_run` can trigger it. Never check out the PR head or execute its files in this job. Zendev's own workflow also invokes a pinned remote Action without checking out the repository.
+Replace the revision with a commit or release containing normalization, and match `workflows` to the name of your validation workflow. The normalization workflow must be on the default branch before `workflow_run` can trigger it. Never check out the PR head or execute its files in this job. Zendev's own workflow also invokes a pinned remote Action without checking out the repository.
 
 The Action reads the current title and applies only [unambiguous conversions](../guides/message-checks.md#normalize-an-unambiguous-message). It requires a unique open PR matching the source repository, branch, and head SHA. It checks the head and title again before writing; an outdated or ambiguous match is skipped. Already-valid titles stay unchanged. Unfixable titles emit a notice; GitHub API errors fail the Action. Only an actual rename reruns the completed policy run, so repeated runs stop after a valid title is present.
 
