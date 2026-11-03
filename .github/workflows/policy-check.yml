@@ -1,4 +1,4 @@
-name: Policy - PR
+name: Policy - Check
 
 on:
   pull_request:
