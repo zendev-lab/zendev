@@ -24,10 +24,10 @@ Supply `text`, or at a revision containing message normalization use `pull-reque
 Use a separate workflow after your PR policy completes. This works for fork PRs while the privileged job executes only the pinned Action implementation. It does not require a checkout:
 
 ```yaml
-name: Automation - PR Title
+name: Policy - Fix
 on:
   workflow_run:
-    workflows: ["Policy - PR"]
+    workflows: ["Policy - Check"]
     types: [completed]
 permissions: {}
 concurrency:
@@ -47,7 +47,7 @@ jobs:
       - uses: zendev-lab/zendev/actions/normalize-title@<release-or-commit>
 ```
 
-Replace the revision with a commit or release containing normalization, and match `workflows` to the name of your policy workflow. The automation must be on the default branch before `workflow_run` can trigger it. Never check out the PR head or execute its files in this job. Zendev's own workflow also invokes a pinned remote Action without checking out the repository.
+Replace the revision with a commit or release containing normalization, and match `workflows` to the name of your validation workflow. The normalization workflow must be on the default branch before `workflow_run` can trigger it. Never check out the PR head or execute its files in this job. Zendev's own workflow also invokes a pinned remote Action without checking out the repository.
 
 The Action reads the current title and applies only [unambiguous conversions](../guides/message-checks.md#normalize-an-unambiguous-message). It requires a unique open PR matching the source repository, branch, and head SHA. It checks the head and title again before writing; an outdated or ambiguous match is skipped. Already-valid titles stay unchanged. Unfixable titles emit a notice; GitHub API errors fail the Action. Only an actual rename reruns the completed policy run, so repeated runs stop after a valid title is present.
 
@@ -57,7 +57,7 @@ Omit `profile` to use the configured profile, falling back to `zendev`; an expli
 
 Outputs are `changed` (`true` or `false`) and `title` (empty when no current PR matches). A direct `pull_request` invocation also works when its token can read configuration and write PR metadata; it does not rerun the currently executing workflow.
 
-[Edits made with GITHUB_TOKEN do not start an edited-event workflow](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow). Configure the title check in `Policy - PR` to read live metadata when the completed run is rerun:
+[Edits made with GITHUB_TOKEN do not start an edited-event workflow](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow). Configure the title check in `Policy - Check` to read live metadata when the completed run is rerun:
 
 ```yaml
 - uses: zendev-lab/zendev/actions/validate-title@<release-or-commit>
